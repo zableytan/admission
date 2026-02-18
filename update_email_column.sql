@@ -1,0 +1,1 @@
+ALTER TABLE admins MODIFY email TEXT;

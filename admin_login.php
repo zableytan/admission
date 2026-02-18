@@ -1,12 +1,37 @@
 <?php
-// session_start(); // Commented out for screen recording
+session_start();
 require 'db.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
-    // For screen recording, accept any login and pass college as GET parameter
-    header("Location: admin_dashboard.php?college=" . urlencode($college));
+// Handle Logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: admin_login.php");
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS);
+    $password = $_POST['password'];
+    $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
+    $stmt->execute([$username]);
+    $admin = $stmt->fetch();
+
+    if ($admin && password_verify($password, $admin['password'])) {
+        // Double check college if not super admin
+        if (!$admin['is_super_admin'] && $admin['college'] !== $college) {
+            $error = "Access denied: You are not authorized for the " . htmlspecialchars($college) . " department.";
+        } else {
+            $_SESSION['admin_id'] = $admin['id'];
+            $_SESSION['admin_college'] = $admin['is_super_admin'] ? $college : $admin['college'];
+            $_SESSION['is_super_admin'] = (bool)$admin['is_super_admin'];
+            header("Location: admin_dashboard.php");
+            exit;
+        }
+    } else {
+        $error = "Invalid username or password.";
+    }
 }
 ?>
 
@@ -16,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal Login - DMSF</title>
+    <link rel="icon" type="image/png" href="DMSF_Logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>

@@ -1,9 +1,35 @@
+-- Davao Medical School Foundation, Inc.
+-- Admission System Database Schema
+-- Version: 1.2 (Updated with full document requirements)
 
 -- 1. Create the Database
 CREATE DATABASE IF NOT EXISTS admission_system;
 USE admission_system;
 
--- 2. Create the Applications Table
+-- 2. Create the Admins Table
+-- Contains credentials for college-specific admins and the superadmin.
+CREATE TABLE IF NOT EXISTS admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL, -- Store hashed passwords
+    email TEXT NULL, -- Email for notifications (comma-separated for multiple)
+    college ENUM('Medicine', 'Nursing', 'Dentistry', 'Midwifery', 'Biology', 'All') NOT NULL,
+    is_super_admin TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Default Admins (Password for all: password)
+-- These will be inserted only if they don't cause a conflict (username is UNIQUE).
+INSERT IGNORE INTO admins (username, password, email, college, is_super_admin) VALUES 
+('admin_med', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'med_admin@dmsf.edu.ph', 'Medicine', 0),
+('admin_nursing', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'nursing_admin@dmsf.edu.ph', 'Nursing', 0),
+('admin_dent', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'dent_admin@dmsf.edu.ph', 'Dentistry', 0),
+('admin_mid', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'mid_admin@dmsf.edu.ph', 'Midwifery', 0),
+('admin_bio', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'bio_admin@dmsf.edu.ph', 'Biology', 0),
+('superadmin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'superadmin@dmsf.edu.ph', 'All', 1);
+
+-- 3. Create the Applications Table
+-- Stores all data spread across the 5-step application process.
 CREATE TABLE IF NOT EXISTS applications (
     -- Internal Tracking
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -24,7 +50,6 @@ CREATE TABLE IF NOT EXISTS applications (
     home_address TEXT,
     tel_no_home VARCHAR(20),
     social_media VARCHAR(100),
-    attachment_path VARCHAR(255) NULL, -- Stores path to uploaded NMAT/GWA document
     
     -- STEP 2: Personal & Medical Data
     age INT,
@@ -92,7 +117,6 @@ CREATE TABLE IF NOT EXISTS applications (
     college_honors_list TEXT,
     board_profession VARCHAR(255),
     board_exam_date VARCHAR(50),
-    -- (board_rating is already defined in Step 1 section)
     post_grad_course VARCHAR(255),
     post_grad_school VARCHAR(255),
     post_grad_date VARCHAR(50),
@@ -149,8 +173,15 @@ CREATE TABLE IF NOT EXISTS applications (
     pref_third_med_school VARCHAR(255),
     pref_other_med_schools TEXT,
     
-    -- Processing & Administration
-    signed_document_path VARCHAR(255) NULL, -- Stores path to the signed acceptance form
+    -- STEP 5: Processing & Administration
+    tor_path VARCHAR(255) NULL,
+    nmat_path VARCHAR(255) NULL,
+    diploma_path VARCHAR(255) NULL,
+    gwa_cert_path VARCHAR(255) NULL,
+    entrance_exam_path VARCHAR(255) NULL,
+    receipt_path VARCHAR(255) NULL,
+    other_docs_paths TEXT NULL,
+    signed_document_path VARCHAR(255) NULL,
     status ENUM('Pending', 'Accepted', 'Declined') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

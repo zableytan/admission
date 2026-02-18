@@ -1,39 +1,28 @@
 <?php
-// session_start(); // Commented out for screen recording
+session_start();
 require 'db.php'; 
 
 $message = '';
 
 // 1. GET LOGIC: Validate Application ID
 if (!isset($_GET['app_id']) || !is_numeric($_GET['app_id'])) {
-    // For screen recording, provide dummy data if app_id is missing
-    $app_id = 0; // A dummy ID
-    $application = [
-        'family_name' => 'Applicant',
-        'given_name' => 'Dummy',
-        'college' => 'Medicine' // Default college for display
-    ];
-    $student_name = "Dummy Applicant";
-} else {
-    $app_id = $_GET['app_id'];
-
-    // Fetch application basics to display the applicant's name
-    $stmt = $pdo->prepare("SELECT family_name, given_name, college FROM applications WHERE id = ?");
-    $stmt->execute([$app_id]);
-    $application = $stmt->fetch();
-
-    if (!$application) {
-        // For screen recording, provide dummy data if application not found
-        $application = [
-            'family_name' => 'Applicant',
-            'given_name' => 'Dummy',
-            'college' => 'Medicine'
-        ];
-        $student_name = "Dummy Applicant";
-    } else {
-        $student_name = htmlspecialchars($application['given_name'] . ' ' . $application['family_name']);
-    }
+    header("Location: apply.php");
+    exit;
 }
+
+$app_id = $_GET['app_id'];
+
+// Fetch application basics to display the applicant's name
+$stmt = $pdo->prepare("SELECT family_name, given_name, college FROM applications WHERE id = ?");
+$stmt->execute([$app_id]);
+$application = $stmt->fetch();
+
+if (!$application) {
+    header("Location: apply.php");
+    exit;
+}
+
+$student_name = htmlspecialchars($application['given_name'] . ' ' . $application['family_name']);
 
 
 // 2. POST LOGIC: Process form submission
@@ -192,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Step 4: Educational Background & Intent | Admission</title>
+    <link rel="icon" type="image/png" href="DMSF_Logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>

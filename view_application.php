@@ -1,5 +1,12 @@
 <?php
+session_start();
 require 'db.php';
+
+// Security Check
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: admin_login.php");
+    exit;
+}
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Invalid Application ID.");
@@ -12,6 +19,13 @@ $app = $stmt->fetch();
 
 if (!$app) {
     die("Application not found.");
+}
+
+// College Access Check
+if (!isset($_SESSION['is_super_admin']) || !$_SESSION['is_super_admin']) {
+    if ($app['college'] !== $_SESSION['admin_college']) {
+        die("Unauthorized access: You do not have permission to view this department's applications.");
+    }
 }
 
 // Helper function for boolean display
@@ -37,6 +51,7 @@ function listItems($app, $prefix, $fields) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Full Application Record - <?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?></title>
+    <link rel="icon" type="image/png" href="DMSF_Logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>

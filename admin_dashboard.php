@@ -512,11 +512,20 @@ $applications = $stmt->fetchAll();
                 // Show loading overlay
                 document.getElementById('loadingOverlay').style.display = 'flex';
 
+                // Create hidden input to ensure the button's value is sent
+                if (e.submitter && e.submitter.name) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = e.submitter.name;
+                    input.value = e.submitter.value;
+                    e.target.appendChild(input);
+                }
+
                 // Disable the specific buttons in this form
                 const buttons = e.target.querySelectorAll('button');
                 buttons.forEach(btn => {
                     btn.disabled = true;
-                    if (btn.value === e.submitter.value) {
+                    if (e.submitter && btn === e.submitter) {
                         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + btn.innerText;
                     }
                 });

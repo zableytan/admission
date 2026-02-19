@@ -54,10 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Conditional data collection
     $nmat_date = $is_medicine ? filter_input(INPUT_POST, 'nmat_date', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $board_rating = filter_input(INPUT_POST, 'board_rating', FILTER_VALIDATE_FLOAT);
+    if ($board_rating === false) $board_rating = null;
 
     // Set score type and value based on college selection
     $score_type = $is_medicine ? 'NMAT' : 'GWA';
     $score_val = $is_medicine ? filter_input(INPUT_POST, 'nmat_score', FILTER_VALIDATE_FLOAT) : filter_input(INPUT_POST, 'gwa_score', FILTER_VALIDATE_FLOAT);
+    if ($score_val === false) $score_val = null;
 
     // Default attachment path to NULL since we are skipping upload for now
     $target_file = null;

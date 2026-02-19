@@ -35,19 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $secondary_location = filter_input(INPUT_POST, 'secondary_location', FILTER_SANITIZE_SPECIAL_CHARS);
     $secondary_dates = filter_input(INPUT_POST, 'secondary_dates', FILTER_SANITIZE_SPECIAL_CHARS);
     
-    $hs_honors_flag = isset($_POST['hs_honors_flag']) ? ($_POST['hs_honors_flag'] == 'YES') : false;
+    $hs_honors_flag = (isset($_POST['hs_honors_flag']) && $_POST['hs_honors_flag'] == 'YES') ? 1 : 0;
     $hs_honor_type = $hs_honors_flag ? filter_input(INPUT_POST, 'hs_honor_type', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     
     $college_name_address = filter_input(INPUT_POST, 'college_name_address', FILTER_SANITIZE_SPECIAL_CHARS);
     $degree_obtained = filter_input(INPUT_POST, 'degree_obtained', FILTER_SANITIZE_SPECIAL_CHARS);
     $date_of_graduation = filter_input(INPUT_POST, 'date_of_graduation', FILTER_SANITIZE_SPECIAL_CHARS);
-    $college_honors_flag = isset($_POST['college_honors_flag']) ? ($_POST['college_honors_flag'] == 'YES') : false;
+    $college_honors_flag = (isset($_POST['college_honors_flag']) && $_POST['college_honors_flag'] == 'YES') ? 1 : 0;
     $college_honors_list = $college_honors_flag ? filter_input(INPUT_POST, 'college_honors_list', FILTER_SANITIZE_SPECIAL_CHARS) : null;
 
     // --- Board Exam ---
     $board_profession = filter_input(INPUT_POST, 'board_profession', FILTER_SANITIZE_SPECIAL_CHARS);
     $board_exam_date = filter_input(INPUT_POST, 'board_exam_date', FILTER_SANITIZE_SPECIAL_CHARS);
     $board_rating = filter_input(INPUT_POST, 'board_rating', FILTER_VALIDATE_FLOAT);
+    if ($board_rating === false) $board_rating = null;
 
     // --- Post-Grad & Gap Activity ---
     $post_grad_course = filter_input(INPUT_POST, 'post_grad_course', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -61,34 +62,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $employee_work = ($post_grad_activity == 'Worked as employee') ? filter_input(INPUT_POST, 'employee_work', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $employee_position = ($post_grad_activity == 'Worked as employee') ? filter_input(INPUT_POST, 'employee_position', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $employee_years = ($post_grad_activity == 'Worked as employee') ? filter_input(INPUT_POST, 'employee_years', FILTER_VALIDATE_INT) : null;
+    if ($employee_years === false) $employee_years = null;
+
     $trainings_seminars = ($post_grad_activity == 'Worked as employee') ? filter_input(INPUT_POST, 'trainings_seminars', FILTER_SANITIZE_SPECIAL_CHARS) : null;
 
     // --- Interests and Skills ---
-    $interest_school_orgs = isset($_POST['interest_school_orgs']);
-    $interest_religious = isset($_POST['interest_religious']);
-    $interest_sociocivic = isset($_POST['interest_sociocivic']);
-    $interest_sports = isset($_POST['interest_sports']);
-    $interest_music_vocal = isset($_POST['interest_music_vocal']);
-    $interest_dance = isset($_POST['interest_dance']);
-    $interest_creative_writing = isset($_POST['interest_creative_writing']);
-    $interest_philately = isset($_POST['interest_philately']);
+    $interest_school_orgs = isset($_POST['interest_school_orgs']) ? 1 : 0;
+    $interest_religious = isset($_POST['interest_religious']) ? 1 : 0;
+    $interest_sociocivic = isset($_POST['interest_sociocivic']) ? 1 : 0;
+    $interest_sports = isset($_POST['interest_sports']) ? 1 : 0;
+    $interest_music_vocal = isset($_POST['interest_music_vocal']) ? 1 : 0;
+    $interest_dance = isset($_POST['interest_dance']) ? 1 : 0;
+    $interest_creative_writing = isset($_POST['interest_creative_writing']) ? 1 : 0;
+    $interest_philately = isset($_POST['interest_philately']) ? 1 : 0;
     $interest_others = filter_input(INPUT_POST, 'interest_others', FILTER_SANITIZE_SPECIAL_CHARS);
     $other_skills_work_exp = filter_input(INPUT_POST, 'other_skills_work_exp', FILTER_SANITIZE_SPECIAL_CHARS);
     
     // --- Admission History ---
-    $first_time_md_flag = isset($_POST['first_time_md_flag']) ? ($_POST['first_time_md_flag'] == 'YES') : false;
+    $first_time_md_flag = (isset($_POST['first_time_md_flag']) && $_POST['first_time_md_flag'] == 'YES') ? 1 : 0;
     $prev_app_status = !$first_time_md_flag ? filter_input(INPUT_POST, 'prev_app_status', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $prev_med_school_name = ($prev_app_status == 'Accepted and enrolled at' || $prev_app_status == 'Accepted but did not enroll at') ? filter_input(INPUT_POST, 'prev_med_school_name', FILTER_SANITIZE_SPECIAL_CHARS) : null;
 
     // --- Motivation ---
-    $motivation_parents = isset($_POST['motivation_parents']);
-    $motivation_siblings = isset($_POST['motivation_siblings']);
-    $motivation_relatives = isset($_POST['motivation_relatives']);
-    $motivation_friends = isset($_POST['motivation_friends']);
-    $motivation_illness = isset($_POST['motivation_illness']);
-    $motivation_prestige = isset($_POST['motivation_prestige']);
-    $motivation_health_awareness = isset($_POST['motivation_health_awareness']);
-    $motivation_community_needs = isset($_POST['motivation_community_needs']);
+    $motivation_parents = isset($_POST['motivation_parents']) ? 1 : 0;
+    $motivation_siblings = isset($_POST['motivation_siblings']) ? 1 : 0;
+    $motivation_relatives = isset($_POST['motivation_relatives']) ? 1 : 0;
+    $motivation_friends = isset($_POST['motivation_friends']) ? 1 : 0;
+    $motivation_illness = isset($_POST['motivation_illness']) ? 1 : 0;
+    $motivation_prestige = isset($_POST['motivation_prestige']) ? 1 : 0;
+    $motivation_health_awareness = isset($_POST['motivation_health_awareness']) ? 1 : 0;
+    $motivation_community_needs = isset($_POST['motivation_community_needs']) ? 1 : 0;
     $motivation_others = filter_input(INPUT_POST, 'motivation_others', FILTER_SANITIZE_SPECIAL_CHARS);
     
     // --- Future Plan & Support ---
@@ -96,22 +99,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $future_plan_other_postgrad = ($future_plan == 'Pursue another Post-graduate course') ? filter_input(INPUT_POST, 'future_plan_other_postgrad', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $future_plan_others = ($future_plan == 'Others') ? filter_input(INPUT_POST, 'future_plan_others', FILTER_SANITIZE_SPECIAL_CHARS) : null;
 
-    $support_parents = isset($_POST['support_parents']);
-    $support_veteran_benefit = isset($_POST['support_veteran_benefit']);
-    $support_scholarship_flag = isset($_POST['support_scholarship_flag']);
+    $support_parents = isset($_POST['support_parents']) ? 1 : 0;
+    $support_veteran_benefit = isset($_POST['support_veteran_benefit']) ? 1 : 0;
+    $support_scholarship_flag = isset($_POST['support_scholarship_flag']) ? 1 : 0;
     $support_scholarship_name = $support_scholarship_flag ? filter_input(INPUT_POST, 'support_scholarship_name', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $support_status = filter_input(INPUT_POST, 'support_status', FILTER_SANITIZE_SPECIAL_CHARS);
     
     // --- Info Source & Staying Place ---
-    $info_parents = isset($_POST['info_parents']);
-    $info_family_friends = isset($_POST['info_family_friends']);
-    $info_student_friends = isset($_POST['info_student_friends']);
-    $info_siblings = isset($_POST['info_siblings']);
-    $info_teachers = isset($_POST['info_teachers']);
-    $info_newspaper = isset($_POST['info_newspaper']);
-    $info_convocation = isset($_POST['info_convocation']);
-    $info_internet = isset($_POST['info_internet']);
-    $info_own_effort = isset($_POST['info_own_effort']);
+    $info_parents = isset($_POST['info_parents']) ? 1 : 0;
+    $info_family_friends = isset($_POST['info_family_friends']) ? 1 : 0;
+    $info_student_friends = isset($_POST['info_student_friends']) ? 1 : 0;
+    $info_siblings = isset($_POST['info_siblings']) ? 1 : 0;
+    $info_teachers = isset($_POST['info_teachers']) ? 1 : 0;
+    $info_newspaper = isset($_POST['info_newspaper']) ? 1 : 0;
+    $info_convocation = isset($_POST['info_convocation']) ? 1 : 0;
+    $info_internet = isset($_POST['info_internet']) ? 1 : 0;
+    $info_own_effort = isset($_POST['info_own_effort']) ? 1 : 0;
     $info_others = filter_input(INPUT_POST, 'info_others', FILTER_SANITIZE_SPECIAL_CHARS);
     
     $staying_place = filter_input(INPUT_POST, 'staying_place', FILTER_SANITIZE_SPECIAL_CHARS);

@@ -36,35 +36,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $family_contact_no = filter_input(INPUT_POST, 'family_contact_no', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // --- Income Sources (Convert checkbox state to boolean) ---
-    $income_salaries = isset($_POST['income_salaries']);
-    $income_farm = isset($_POST['income_farm']);
-    $income_commissions = isset($_POST['income_commissions']);
-    $income_rentals = isset($_POST['income_rentals']);
-    $income_pension = isset($_POST['income_pension']);
-    $income_business = isset($_POST['income_business']);
+    $income_salaries = isset($_POST['income_salaries']) ? 1 : 0;
+    $income_farm = isset($_POST['income_farm']) ? 1 : 0;
+    $income_commissions = isset($_POST['income_commissions']) ? 1 : 0;
+    $income_rentals = isset($_POST['income_rentals']) ? 1 : 0;
+    $income_pension = isset($_POST['income_pension']) ? 1 : 0;
+    $income_business = isset($_POST['income_business']) ? 1 : 0;
     $income_others = filter_input(INPUT_POST, 'income_others', FILTER_SANITIZE_SPECIAL_CHARS);
 
     $total_family_income = filter_input(INPUT_POST, 'total_family_income', FILTER_VALIDATE_FLOAT);
+    if ($total_family_income === false) $total_family_income = null;
+
     $family_assets = filter_input(INPUT_POST, 'family_assets', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // --- DMSF Affiliation ---
-    $parent_dmsf_grad_flag = isset($_POST['parent_dmsf_grad_flag']) ? ($_POST['parent_dmsf_grad_flag'] == 'YES') : false;
+    $parent_dmsf_grad_flag = (isset($_POST['parent_dmsf_grad_flag']) && $_POST['parent_dmsf_grad_flag'] == 'YES') ? 1 : 0;
     $parent_dmsf_course_year = filter_input(INPUT_POST, 'parent_dmsf_course_year', FILTER_SANITIZE_SPECIAL_CHARS);
-    $parent_dmsf_teaching_flag = isset($_POST['parent_dmsf_teaching_flag']) ? ($_POST['parent_dmsf_teaching_flag'] == 'YES') : false;
+    $parent_dmsf_teaching_flag = (isset($_POST['parent_dmsf_teaching_flag']) && $_POST['parent_dmsf_teaching_flag'] == 'YES') ? 1 : 0;
     $parent_dmsf_teaching_years = filter_input(INPUT_POST, 'parent_dmsf_teaching_years', FILTER_VALIDATE_INT);
+    if ($parent_dmsf_teaching_years === false) $parent_dmsf_teaching_years = null;
 
     // --- Siblings ---
     $num_brothers = filter_input(INPUT_POST, 'num_brothers', FILTER_VALIDATE_INT);
+    if ($num_brothers === false) $num_brothers = null;
+
     $num_sisters = filter_input(INPUT_POST, 'num_sisters', FILTER_VALIDATE_INT);
+    if ($num_sisters === false) $num_sisters = null;
+
     $brothers_hs = filter_input(INPUT_POST, 'brothers_hs', FILTER_VALIDATE_INT);
+    if ($brothers_hs === false) $brothers_hs = null;
+
     $sisters_hs = filter_input(INPUT_POST, 'sisters_hs', FILTER_VALIDATE_INT);
+    if ($sisters_hs === false) $sisters_hs = null;
+
     $brothers_college = filter_input(INPUT_POST, 'brothers_college', FILTER_VALIDATE_INT);
+    if ($brothers_college === false) $brothers_college = null;
+
     $sisters_college = filter_input(INPUT_POST, 'sisters_college', FILTER_VALIDATE_INT);
+    if ($sisters_college === false) $sisters_college = null;
+
     $siblings_middle_school = filter_input(INPUT_POST, 'siblings_middle_school', FILTER_VALIDATE_INT);
+    if ($siblings_middle_school === false) $siblings_middle_school = null;
+
     $brothers_courses = filter_input(INPUT_POST, 'brothers_courses', FILTER_SANITIZE_SPECIAL_CHARS);
     $sisters_courses = filter_input(INPUT_POST, 'sisters_courses', FILTER_SANITIZE_SPECIAL_CHARS);
 
-    $sibling_dmsf_flag = isset($_POST['sibling_dmsf_flag']) ? ($_POST['sibling_dmsf_flag'] == 'YES') : false;
+    $sibling_dmsf_flag = (isset($_POST['sibling_dmsf_flag']) && $_POST['sibling_dmsf_flag'] == 'YES') ? 1 : 0;
     $sibling_dmsf_details = filter_input(INPUT_POST, 'sibling_dmsf_details', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // Prepare the comprehensive UPDATE statement

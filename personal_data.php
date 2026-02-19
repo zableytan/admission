@@ -34,6 +34,8 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Collect and sanitize all fields
     $age = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT);
+    if ($age === false) $age = null;
+
     $dob = filter_input(INPUT_POST, 'date_of_birth', FILTER_SANITIZE_SPECIAL_CHARS);
     $pob = filter_input(INPUT_POST, 'place_of_birth', FILTER_SANITIZE_SPECIAL_CHARS);
     $sex = filter_input(INPUT_POST, 'sex', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -42,17 +44,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $citizenship = filter_input(INPUT_POST, 'citizenship', FILTER_SANITIZE_SPECIAL_CHARS);
 
     $height_ft = filter_input(INPUT_POST, 'height_ft', FILTER_VALIDATE_INT);
+    if ($height_ft === false) $height_ft = null;
+
     $height_in = filter_input(INPUT_POST, 'height_in', FILTER_VALIDATE_INT);
+    if ($height_in === false) $height_in = null;
+
     $weight_initial = filter_input(INPUT_POST, 'weight_kilos_initial', FILTER_VALIDATE_FLOAT);
+    if ($weight_initial === false) $weight_initial = null;
+
     $weight_now = filter_input(INPUT_POST, 'weight_kilos_now', FILTER_VALIDATE_FLOAT);
+    if ($weight_now === false) $weight_now = null;
 
     $med_history = filter_input(INPUT_POST, 'medical_history', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // Boolean fields (convert 'YES'/'NO' or checkbox presence)
-    $disability_flag = isset($_POST['disability_flag']) ? ($_POST['disability_flag'] == 'YES') : false;
+    $disability_flag = (isset($_POST['disability_flag']) && $_POST['disability_flag'] == 'YES') ? 1 : 0;
     $disability_details = filter_input(INPUT_POST, 'physical_disability_details', FILTER_SANITIZE_SPECIAL_CHARS);
 
-    $convicted_flag = isset($_POST['convicted_flag']) ? ($_POST['convicted_flag'] == 'YES') : false;
+    $convicted_flag = (isset($_POST['convicted_flag']) && $_POST['convicted_flag'] == 'YES') ? 1 : 0;
     $convicted_explanation = filter_input(INPUT_POST, 'convicted_explanation', FILTER_SANITIZE_SPECIAL_CHARS);
 
 

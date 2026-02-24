@@ -97,23 +97,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $other_docs_paths = !empty($other_paths) ? implode(',', $other_paths) : null;
 
     // Update the database with file paths
-    $sql = "UPDATE applications SET
-        tor_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
-        entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
-        WHERE id = ?";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        $tor_path,
-        $birth_cert_path,
-        $nmat_path,
-        $diploma_path,
-        $gwa_path,
-        $entrance_path,
-        $receipt_path,
-        $good_moral_path,
-        $other_docs_paths,
-        $app_id
-    ]);
+    try {
+        $sql = "UPDATE applications SET
+            tor_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
+            entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
+            WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $tor_path,
+            $birth_cert_path,
+            $nmat_path,
+            $diploma_path,
+            $gwa_path,
+            $entrance_path,
+            $receipt_path,
+            $good_moral_path,
+            $other_docs_paths,
+            $app_id
+        ]);
+    } catch (PDOException $e) {
+        error_log("Database Error in Step 5 initial update: " . $e->getMessage());
+        // We continue to try generating PDF and sending email if possible
+    }
 
     // 3. EMAIL NOTIFICATION TO ADMINS
     $college = $application['college'];
@@ -315,6 +320,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
             </table>
 
+            <!-- VI. ATTACHED DOCUMENTS CHECKLIST -->
+            <div class='section-header'>ATTACHED DOCUMENTS CHECKLIST</div>
+            <table class='info-table'>
+                <tr>
+                    <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . ($tor_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . ($birth_cert_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+                <tr>
+                    <td class='row-label'>NMAT Result</td><td class='row-value'>" . ($nmat_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Diploma</td><td class='row-value'>" . ($diploma_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+                <tr>
+                    <td class='row-label'>GWA Certificate</td><td class='row-value'>" . ($gwa_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Entrance Exam</td><td class='row-value'>" . ($entrance_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+                <tr>
+                    <td class='row-label'>Payment Receipt</td><td class='row-value'>" . ($receipt_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Good Moral</td><td class='row-value'>" . ($good_moral_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+            </table>
+
             <div class='footer'>
                 <table class='sig-table'>
                     <tr>
@@ -336,11 +362,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Save the generated PDF summary to disk
     $pdf_filename = "Admission_Record_" . $app_id . "_" . time() . ".pdf";
     $pdf_path = 'uploads/' . $pdf_filename;
-    file_put_contents($pdf_path, $pdf_output);
+    if (file_put_contents($pdf_path, $pdf_output) === false) {
+        error_log("Failed to save PDF to $pdf_path. Check permissions for 'uploads/' directory.");
+    }
 
     // Update the database with the PDF record path
-    $stmt = $pdo->prepare("UPDATE applications SET record_pdf_path = ? WHERE id = ?");
-    $stmt->execute([$pdf_path, $app_id]);
+    try {
+        $stmt = $pdo->prepare("UPDATE applications SET record_pdf_path = ? WHERE id = ?");
+        $stmt->execute([$pdf_path, $app_id]);
+    } catch (PDOException $e) {
+        error_log("Database Error updating record_pdf_path: " . $e->getMessage());
+        // We continue even if this fails, as the email might still be sent
+    }
 
     // --- 2. SEND EMAIL WITH PDF ATTACHMENT ---
     $smtp_config = require 'mail_config.php';
@@ -356,55 +389,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->Port = $smtp_config['port'];
 
         $mail->setFrom($smtp_config['from_email'], $smtp_config['from_name']);
+        
+        $hasRecipient = false;
         foreach ($admin_emails as $admin_email_list) {
             $emails = explode(',', $admin_email_list);
             foreach ($emails as $email) {
                 $email = trim($email);
-                if (!empty($email))
+                if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $mail->addAddress($email);
+                    $hasRecipient = true;
+                }
             }
+        }
+
+        // If no admin emails found, add the sender as a fallback or a default admin email
+        if (!$hasRecipient) {
+            // Use the from_email as a fallback recipient if no admins are configured
+            $mail->addAddress($smtp_config['from_email']);
         }
 
         $mail->addReplyTo($app_data['email'], $student_name);
 
-        // Attach the generated PDF Summary
+        // --- ATTACHMENT STRATEGY: Links for large files ---
+        $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . dirname($_SERVER['REQUEST_URI']);
+        
+        // Always attach the generated PDF Summary (usually small)
         $mail->addStringAttachment($pdf_output, "Admission_Record_#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ".pdf");
 
-        // Attach original uploaded files with absolute paths
+        // Map for file links
+        $file_links_html = "<ul>";
+        $total_attachment_size = strlen($pdf_output);
+
         $file_map = [
             'TOR'           => $tor_path,
-            'Birth_Cert'    => $birth_cert_path,
+            'Birth Cert'    => $birth_cert_path,
             'NMAT'          => $nmat_path,
             'Diploma'       => $diploma_path,
-            'GWA_Cert'      => $gwa_path,
-            'Entrance_Exam' => $entrance_path,
+            'GWA Cert'      => $gwa_path,
+            'Entrance Exam' => $entrance_path,
             'Receipt'       => $receipt_path,
-            'Good_Moral'    => $good_moral_path
+            'Good Moral'    => $good_moral_path
         ];
 
         foreach ($file_map as $label => $path) {
             if ($path) {
                 $abs_path = __DIR__ . DIRECTORY_SEPARATOR . $path;
                 if (file_exists($abs_path)) {
-                    $mail->addAttachment($abs_path, $label . "_" . basename($path));
+                    $fsize = filesize($abs_path);
+                    $file_url = $base_url . '/' . $path;
+                    $file_links_html .= "<li><a href='$file_url'>$label</a> (" . round($fsize / 1024 / 1024, 2) . " MB)</li>";
+                    
+                    // Only attach if we are well under Gmail's 25MB limit (total)
+                    if (($total_attachment_size + $fsize) < 20 * 1024 * 1024) {
+                        $mail->addAttachment($abs_path, str_replace(' ', '_', $label) . "_" . basename($path));
+                        $total_attachment_size += $fsize;
+                    }
                 }
             }
         }
 
-        // Also attach any "other" documents
+        // Also handle any "other" documents
         if (!empty($other_paths)) {
             foreach ($other_paths as $idx => $path) {
                 $abs_path = __DIR__ . DIRECTORY_SEPARATOR . $path;
                 if (file_exists($abs_path)) {
-                    $mail->addAttachment($abs_path, "Other_Doc_" . ($idx + 1) . "_" . basename($path));
+                    $fsize = filesize($abs_path);
+                    $file_url = $base_url . '/' . $path;
+                    $label = "Other Doc " . ($idx + 1);
+                    $file_links_html .= "<li><a href='$file_url'>$label</a> (" . round($fsize / 1024 / 1024, 2) . " MB)</li>";
+                    
+                    if (($total_attachment_size + $fsize) < 20 * 1024 * 1024) {
+                        $mail->addAttachment($abs_path, str_replace(' ', '_', $label) . "_" . basename($path));
+                        $total_attachment_size += $fsize;
+                    }
                 }
             }
         }
+        $file_links_html .= "</ul>";
 
         $mail->isHTML(true);
         $mail->Subject = "Admission Submission: " . $student_name . " (" . $college . ")";
-        $mail->Body = "<h3>New Admission Application</h3>
-                           <p>Please find attached the official <strong>Admission Record PDF</strong> and the original documents for <strong>$student_name</strong> (#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ").</p>";
+        
+        $mail->Body = "<h3>New Admission Application Received</h3>
+                           <p>A new application has been submitted by <strong>$student_name</strong> (#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ") for the <strong>$college</strong>.</p>
+                           <p><strong>Documents & Credentials:</strong></p>
+                           $file_links_html
+                           <p><em>Note: Large files are provided as links to avoid email size limits. Small files are attached directly.</em></p>
+                           <p>The complete <strong>Official Admission Record PDF</strong> summary is also attached for your reference.</p>";
 
         $mail->send();
     } catch (Exception $e) {
@@ -749,6 +820,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/form-draft.js"></script>
     <script>
         document.querySelector('form').addEventListener('submit', function (e) {
             // Show loading overlay

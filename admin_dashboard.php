@@ -128,18 +128,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                         $emails = explode(',', $admin_email_list);
                         foreach ($emails as $email) {
                             $email = trim($email);
-                            if (!empty($email))
+                            if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                                 $mail->addCC($email);
+                            }
                         }
                     }
 
-                    // Attach the signed document
+                    // Attach the signed document if it's not too large
+                    $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . dirname($_SERVER['REQUEST_URI']);
+                    $signed_doc_url = $base_url . '/' . $signed_doc_path;
+                    
                     if ($signed_doc_path) {
                         $abs_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $signed_doc_path);
                         if (file_exists($abs_path)) {
-                            $mail->addAttachment($abs_path, "Signed_Admission_Form_" . str_replace(' ', '_', $s_name) . ".pdf");
+                            // Gmail limit is 25MB. We'll use 20MB as a safe threshold.
+                            if (filesize($abs_path) < 20 * 1024 * 1024) {
+                                $mail->addAttachment($abs_path, "Signed_Admission_Form_" . str_replace(' ', '_', $s_name) . ".pdf");
+                                $attachment_status = "attached to this email";
+                            } else {
+                                $attachment_status = "available for download via the link below (file too large to attach)";
+                            }
                         }
                     }
+
+                    // Performance optimization
+                    $mail->SMTPKeepAlive = true; 
 
                     $mail->isHTML(true);
                     $mail->Subject = "Admission Accepted: $s_name - " . $app_college;
@@ -149,8 +162,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     <p>Dear <strong>$s_name</strong>,</p>
     <p>We are pleased to inform you that your application for admission to the <strong>$app_college</strong> at Davao
         Medical School Foundation, Inc. has been <strong>ACCEPTED</strong>.</p>
-    <p>Attached to this email is your <strong>Signed Admission Form</strong>. Please keep this for your records and
+    <p>Your <strong>Signed Admission Form</strong> is $attachment_status. Please keep this for your records and
         follow the next steps as advised by the registrar.</p>
+    <p><a href='$signed_doc_url' style='background-color: #1a237e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Download Signed Form</a></p>
     <br>
     <p>Best Regards,</p>
     <p><strong>DMSF Admissions Office</strong><br>Davao Medical School Foundation, Inc.</p>
@@ -475,6 +489,24 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                             </span>
                                         </td>
                                         <td>
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                <?php 
+                                                $doc_icons = [
+                                                    'tor_path' => 'file-earmark-text',
+                                                    'birth_cert_path' => 'person-badge',
+                                                    'nmat_path' => 'journal-check',
+                                                    'diploma_path' => 'award',
+                                                    'gwa_cert_path' => 'calculator',
+                                                    'entrance_exam_path' => 'pencil-square',
+                                                    'receipt_path' => 'receipt',
+                                                    'good_moral_path' => 'shield-check'
+                                                ];
+                                                foreach($doc_icons as $field => $icon):
+                                                    if(!empty($app[$field])):
+                                                ?>
+                                                    <i class="bi bi-<?= $icon ?> text-success" title="<?= str_replace('_', ' ', strtoupper($field)) ?>"></i>
+                                                <?php endif; endforeach; ?>
+                                            </div>
                                             <div class="d-flex gap-2">
                                                 <a href="view_application.php?id=<?= $app['id'] ?>"
                                                     class="btn btn-view btn-sm rounded-pill px-3">

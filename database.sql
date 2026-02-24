@@ -175,12 +175,15 @@ CREATE TABLE IF NOT EXISTS applications (
     
     -- STEP 5: Processing & Administration
     tor_path VARCHAR(255) NULL,
+    birth_cert_path VARCHAR(255) NULL,
     nmat_path VARCHAR(255) NULL,
     diploma_path VARCHAR(255) NULL,
     gwa_cert_path VARCHAR(255) NULL,
     entrance_exam_path VARCHAR(255) NULL,
     receipt_path VARCHAR(255) NULL,
+    good_moral_path VARCHAR(255) NULL,
     other_docs_paths TEXT NULL,
+    record_pdf_path VARCHAR(255) NULL,
     signed_document_path VARCHAR(255) NULL,
     status ENUM('Pending', 'Accepted', 'Declined') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

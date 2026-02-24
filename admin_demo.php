@@ -124,7 +124,7 @@ $app = [
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container-fluid px-4">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="DMSF_logo.png" alt="DMSF Logo" height="40" class="me-2" style="filter: brightness(0) invert(1);">
+            <img src="DMSF_Logo.png" alt="DMSF Logo" height="40" class="me-2" style="filter: brightness(0) invert(1);">
             <div>
                 <span class="fw-bold d-block" style="line-height: 1.2;">DMSF</span>
                 <span class="small opacity-75" style="font-size: 0.7rem;">Medicine Portal (DEMO)</span>

@@ -135,7 +135,7 @@
     </a>
     
     <div class="logo-container">
-        <img src="DMSF_logo.png" alt="DMSF Logo" class="logo-img">
+        <img src="DMSF_Logo.png" alt="DMSF Logo" class="logo-img">
     </div>
     
     <h2>Welcome</h2>

@@ -18,6 +18,11 @@ if (isset($_GET['college']) && isset($_SESSION['is_super_admin']) && $_SESSION['
     $_SESSION['admin_college'] = $college;
 } else {
     $college = $_SESSION['admin_college'];
+    if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && !isset($_GET['college'])) {
+        // Default super admin view to All departments
+        $college = 'All';
+        $_SESSION['admin_college'] = 'All';
+    }
 }
 
 $msg = '';
@@ -34,21 +39,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     if ($decision === 'Accepted') {
         if (isset($_FILES['signed_doc']) && $_FILES['signed_doc']['error'] == 0) {
             $target_dir = "uploads/signed/";
-            if (!is_dir($target_dir))
-                mkdir($target_dir, 0777, true);
+            if (!is_dir($target_dir)) {
+                if (!mkdir($target_dir, 0777, true)) {
+                    $msg = "Error: Could not create directory '$target_dir'. Please create it manually.";
+                }
+            }
+            
+            if (empty($msg)) {
+                // Ensure the directory is writable
+                @chmod($target_dir, 0777);
 
-            // Generate unique filename for the signed document
-            $file_name = "SIGNED_" . $app_id . "_" . time() . "_" . basename($_FILES["signed_doc"]["name"]);
-            $signed_doc_path = $target_dir . $file_name;
+                // Generate unique filename for the signed document
+                $file_ext = pathinfo($_FILES["signed_doc"]["name"], PATHINFO_EXTENSION);
+                $file_name = "SIGNED_" . $app_id . "_" . time() . "." . $file_ext;
+                
+                // Use absolute path for move_uploaded_file for better reliability
+                $resolved_dir = realpath($target_dir);
+                if (!$resolved_dir) {
+                    $msg = "Error: Directory '$target_dir' does not exist or is not accessible.";
+                } else {
+                    $target_path = $resolved_dir . DIRECTORY_SEPARATOR . $file_name;
 
-            if (move_uploaded_file($_FILES["signed_doc"]["tmp_name"], $signed_doc_path)) {
-                // File moved successfully
-            } else {
-                $msg = "Error uploading signed document.";
-                $signed_doc_path = null; // Revert path if upload fails
+                    if (move_uploaded_file($_FILES["signed_doc"]["tmp_name"], $target_path)) {
+                        $signed_doc_path = "uploads/signed/" . $file_name;
+                    } else {
+                        $msg = "Error: Failed to move uploaded file to $target_path. Check folder permissions.";
+                        $signed_doc_path = null;
+                    }
+                }
             }
         } else {
-            $msg = "Error: Signed document upload is required for Acceptance.";
+            $upload_error = isset($_FILES['signed_doc']) ? $_FILES['signed_doc']['error'] : 'No file uploaded';
+            $error_desc = [
+                1 => 'File exceeds upload_max_filesize in php.ini',
+                2 => 'File exceeds MAX_FILE_SIZE in HTML form',
+                3 => 'File was only partially uploaded',
+                4 => 'No file was uploaded',
+                6 => 'Missing a temporary folder',
+                7 => 'Failed to write file to disk',
+                8 => 'A PHP extension stopped the file upload'
+            ];
+            $desc = is_numeric($upload_error) ? ($error_desc[$upload_error] ?? "Unknown error ($upload_error)") : $upload_error;
+            $msg = "Error: Signed document upload failed ($desc).";
         }
     }
 
@@ -102,8 +134,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                     }
 
                     // Attach the signed document
-                    if ($signed_doc_path && file_exists($signed_doc_path)) {
-                        $mail->addAttachment($signed_doc_path, "Signed_Admission_Form_" . str_replace(' ', '_', $s_name) . ".pdf");
+                    if ($signed_doc_path) {
+                        $abs_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $signed_doc_path);
+                        if (file_exists($abs_path)) {
+                            $mail->addAttachment($abs_path, "Signed_Admission_Form_" . str_replace(' ', '_', $s_name) . ".pdf");
+                        }
                     }
 
                     $mail->isHTML(true);
@@ -134,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
             header("Location: admin_dashboard.php");
             exit;
         }
-    } else if ($decision === 'Accepted' && !$signed_doc_path) {
+    } else if ($decision === 'Accepted' && !$signed_doc_path && empty($msg)) {
         $msg = "Action failed: Signed document must be uploaded to accept the application.";
     }
 }
@@ -145,10 +180,17 @@ if (isset($_SESSION['flash_msg'])) {
     unset($_SESSION['flash_msg']);
 }
 
-// Fetch Applications for this Specific College ONLY
-$stmt = $pdo->prepare("SELECT * FROM applications WHERE college = ? ORDER BY created_at DESC");
-$stmt->execute([$college]);
-$applications = $stmt->fetchAll();
+// Fetch Applications
+if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin viewing all departments
+    $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
+    $applications = $stmt->fetchAll();
+} else {
+    // Department-specific view
+    $stmt = $pdo->prepare("SELECT * FROM applications WHERE college = ? ORDER BY created_at DESC");
+    $stmt->execute([$college]);
+    $applications = $stmt->fetchAll();
+}
 ?>
 
 <!DOCTYPE html>
@@ -331,7 +373,7 @@ $applications = $stmt->fetchAll();
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="DMSF_logo.png" alt="DMSF Logo" height="40" class="me-2"
+                <img src="DMSF_Logo.png" alt="DMSF Logo" height="40" class="me-2"
                     style="filter: brightness(0) invert(1);">
                 <div>
                     <span class="fw-bold d-block" style="line-height: 1.2;">DMSF</span>
@@ -343,6 +385,7 @@ $applications = $stmt->fetchAll();
                     <form action="admin_dashboard.php" method="GET" class="me-3">
                         <select name="college" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
                             onchange="this.form.submit()">
+                            <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All</option>
                             <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Medicine</option>
                             <option value="Nursing" <?= $college === 'Nursing' ? 'selected' : '' ?>>Nursing</option>
                             <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Dentistry</option>

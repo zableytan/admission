@@ -72,13 +72,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $tor_path = handleUpload('tor_file', $upload_dir, $app_id);
+    $birth_cert_path = handleUpload('birth_cert_file', $upload_dir, $app_id);
     $nmat_path = handleUpload('nmat_file', $upload_dir, $app_id);
     $diploma_path = handleUpload('diploma_file', $upload_dir, $app_id); // Optional
     $gwa_path = handleUpload('gwa_file', $upload_dir, $app_id);
     $entrance_path = handleUpload('entrance_exam_file', $upload_dir, $app_id);
     $receipt_path = handleUpload('receipt_file', $upload_dir, $app_id);
+    $good_moral_path = handleUpload('good_moral_file', $upload_dir, $app_id);
 
-    // Handle multiple "other" docs (removed from form but keeping logic just in case or for cleanup)
+    // Handle multiple "other" docs
     if (isset($_FILES['other_docs'])) {
         foreach ($_FILES['other_docs']['name'] as $key => $name) {
             if ($_FILES['other_docs']['error'][$key] === UPLOAD_ERR_OK) {
@@ -95,18 +97,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $other_docs_paths = !empty($other_paths) ? implode(',', $other_paths) : null;
 
     // Update the database with file paths
-// Note: Database schema must be updated to include these new columns: diploma_path, gwa_cert_path, entrance_exam_path, receipt_path
     $sql = "UPDATE applications SET
-tor_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, entrance_exam_path=?, receipt_path=?, other_docs_paths=?
-WHERE id = ?";
+        tor_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
+        entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
+        WHERE id = ?";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         $tor_path,
+        $birth_cert_path,
         $nmat_path,
         $diploma_path,
         $gwa_path,
         $entrance_path,
         $receipt_path,
+        $good_moral_path,
         $other_docs_paths,
         $app_id
     ]);
@@ -329,6 +333,15 @@ WHERE id = ?";
     $dompdf->render();
     $pdf_output = $dompdf->output();
 
+    // Save the generated PDF summary to disk
+    $pdf_filename = "Admission_Record_" . $app_id . "_" . time() . ".pdf";
+    $pdf_path = 'uploads/' . $pdf_filename;
+    file_put_contents($pdf_path, $pdf_output);
+
+    // Update the database with the PDF record path
+    $stmt = $pdo->prepare("UPDATE applications SET record_pdf_path = ? WHERE id = ?");
+    $stmt->execute([$pdf_path, $app_id]);
+
     // --- 2. SEND EMAIL WITH PDF ATTACHMENT ---
     $smtp_config = require 'mail_config.php';
     $mail = new PHPMailer(true);
@@ -357,11 +370,34 @@ WHERE id = ?";
         // Attach the generated PDF Summary
         $mail->addStringAttachment($pdf_output, "Admission_Record_#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ".pdf");
 
-        // Attach original uploaded files
-        $file_map = ['TOR' => $tor_path, 'NMAT' => $nmat_path, 'Diploma' => $diploma_path, 'GWA_Cert' => $gwa_path, 'Entrance_Exam' => $entrance_path, 'Receipt' => $receipt_path];
+        // Attach original uploaded files with absolute paths
+        $file_map = [
+            'TOR'           => $tor_path,
+            'Birth_Cert'    => $birth_cert_path,
+            'NMAT'          => $nmat_path,
+            'Diploma'       => $diploma_path,
+            'GWA_Cert'      => $gwa_path,
+            'Entrance_Exam' => $entrance_path,
+            'Receipt'       => $receipt_path,
+            'Good_Moral'    => $good_moral_path
+        ];
+
         foreach ($file_map as $label => $path) {
-            if ($path && file_exists($path)) {
-                $mail->addAttachment($path, $label . "_" . basename($path));
+            if ($path) {
+                $abs_path = __DIR__ . DIRECTORY_SEPARATOR . $path;
+                if (file_exists($abs_path)) {
+                    $mail->addAttachment($abs_path, $label . "_" . basename($path));
+                }
+            }
+        }
+
+        // Also attach any "other" documents
+        if (!empty($other_paths)) {
+            foreach ($other_paths as $idx => $path) {
+                $abs_path = __DIR__ . DIRECTORY_SEPARATOR . $path;
+                if (file_exists($abs_path)) {
+                    $mail->addAttachment($abs_path, "Other_Doc_" . ($idx + 1) . "_" . basename($path));
+                }
             }
         }
 
@@ -578,7 +614,7 @@ WHERE id = ?";
 
     <div class="container py-5">
         <div class="logo-container">
-            <img src="DMSF_logo.png" alt="DMSF Logo">
+            <img src="DMSF_Logo.png" alt="DMSF Logo">
             <h2 class="fw-bold">Davao Medical School Foundation</h2>
         </div>
 
@@ -617,12 +653,22 @@ WHERE id = ?";
                                 <input type="file" name="tor_file" class="form-control" required>
                             </div>
 
+                            <!-- Document: Birth Certificate -->
+                            <div class="file-upload-wrapper">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-person-badge upload-icon"></i>
+                                    <label class="form-label mb-0">2. Birth Certificate (PSA) <span
+                                            class="required-badge">Required</span></label>
+                                </div>
+                                <input type="file" name="birth_cert_file" class="form-control" required>
+                            </div>
+
                             <!-- Document 2: NMAT (Conditional) -->
                             <?php if ($application['college'] === 'Medicine'): ?>
                                 <div class="file-upload-wrapper">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-journal-check upload-icon"></i>
-                                        <label class="form-label mb-0">2. Copy of NMAT Result <span
+                                        <label class="form-label mb-0">3. Copy of NMAT Result <span
                                                 class="required-badge">Required</span></label>
                                     </div>
                                     <input type="file" name="nmat_file" class="form-control" required>
@@ -633,7 +679,7 @@ WHERE id = ?";
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-award upload-icon"></i>
-                                    <label class="form-label mb-0">3. Copy of Diploma <span
+                                    <label class="form-label mb-0">4. Copy of Diploma <span
                                             class="text-muted small fw-normal ms-2">(If available)</span></label>
                                 </div>
                                 <input type="file" name="diploma_file" class="form-control">
@@ -643,7 +689,7 @@ WHERE id = ?";
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-calculator upload-icon"></i>
-                                    <label class="form-label mb-0">4. General Weighted Average in College <span
+                                    <label class="form-label mb-0">5. General Weighted Average in College <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="gwa_file" class="form-control" required>
@@ -653,7 +699,7 @@ WHERE id = ?";
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-pencil-square upload-icon"></i>
-                                    <label class="form-label mb-0">5. Result of Entrance Exam <span
+                                    <label class="form-label mb-0">6. Result of Entrance Exam <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="entrance_exam_file" class="form-control" required>
@@ -663,10 +709,20 @@ WHERE id = ?";
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-receipt upload-icon"></i>
-                                    <label class="form-label mb-0">6. Receipt of Application Fee <span
+                                    <label class="form-label mb-0">7. Receipt of Application Fee <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="receipt_file" class="form-control" required>
+                            </div>
+
+                            <!-- Document: Good Moral -->
+                            <div class="file-upload-wrapper">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-shield-check upload-icon"></i>
+                                    <label class="form-label mb-0">8. Certificate of Good Moral Character <span
+                                            class="required-badge">Required</span></label>
+                                </div>
+                                <input type="file" name="good_moral_file" class="form-control" required>
                             </div>
 
                             <div class="mt-5">

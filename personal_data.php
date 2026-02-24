@@ -243,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="container py-5">
         <div class="logo-container">
-            <img src="DMSF_logo.png" alt="DMSF Logo">
+            <img src="DMSF_Logo.png" alt="DMSF Logo">
             <h2 class="fw-bold">Davao Medical School Foundation</h2>
         </div>
 

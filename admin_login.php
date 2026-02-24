@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="login-card">
     <div class="login-header">
-        <img src="DMSF_logo.png" alt="DMSF Logo">
+        <img src="DMSF_Logo.png" alt="DMSF Logo">
         <h4 class="mb-0">Department Portal</h4>
         <p class="small opacity-75 mb-0">Secure Administrator Access</p>
     </div>

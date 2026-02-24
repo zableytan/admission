@@ -67,6 +67,16 @@ function listItems($app, $prefix, $fields) {
         .status-badge { font-size: 0.75rem; padding: 6px 16px; border-radius: 50px; font-weight: 800; letter-spacing: 1px; }
         .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
         .full-width { grid-column: span 2; }
+        .doc-item { display: flex; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; transition: all 0.2s; text-decoration: none; color: inherit; }
+        .doc-item:hover { background: #eef2ff; border-color: #1a237e; transform: translateY(-2px); }
+        .doc-icon { font-size: 1.5rem; margin-right: 15px; color: #1a237e; }
+        .doc-info { flex-grow: 1; }
+        .doc-name { font-weight: 600; font-size: 0.85rem; display: block; }
+        .doc-meta { font-size: 0.7rem; color: #666; }
+        .doc-card-wrapper { display: flex; flex-direction: column; }
+        .img-preview-box { transition: all 0.3s; border: 1px solid #ddd; }
+        .img-preview-box:hover { border-color: #1a237e; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .img-preview-box img { max-width: 100%; height: auto; object-fit: contain; }
         @media print {
             body { background: white; }
             .document-page { margin: 0; box-shadow: none; padding: 20px; max-width: 100%; border-radius: 0; }
@@ -88,7 +98,7 @@ function listItems($app, $prefix, $fields) {
 
 <div class="document-page">
     <div class="doc-header">
-        <img src="DMSF_logo.png" alt="DMSF Logo">
+        <img src="DMSF_Logo.png" alt="DMSF Logo">
         <div class="doc-title">
             <h2>Official Admission Record</h2>
             <p class="text-muted mb-0">Davao Medical School Foundation, Inc. | Registrar's Office</p>
@@ -174,6 +184,78 @@ function listItems($app, $prefix, $fields) {
         <div class="info-row full-width"><div class="info-label">Info Source</div><div class="info-value">
             <?= listItems($app, 'info_', ['parents'=>'Parents', 'family_friends'=>'Family Friends', 'student_friends'=>'Student Friends', 'siblings'=>'Siblings', 'teachers'=>'Teachers', 'newspaper'=>'Newspaper', 'internet'=>'Internet']) ?>
         </div></div>
+    </div>
+
+    <!-- 6. UPLOADED DOCUMENTS -->
+    <div class="section-header no-print"><span>Uploaded Documents & Credentials</span></div>
+    <div class="grid-container no-print">
+        <?php
+        $docs = [
+            'record_pdf_path' => ['label' => 'Admission Record (Generated Summary)', 'icon' => 'bi-file-pdf-fill', 'color' => '#dc3545'],
+            'tor_path' => ['label' => 'Transcript of Records (TOR)', 'icon' => 'bi-file-earmark-text'],
+            'birth_cert_path' => ['label' => 'Birth Certificate (PSA)', 'icon' => 'bi-person-badge'],
+            'nmat_path' => ['label' => 'NMAT Result', 'icon' => 'bi-journal-check'],
+            'diploma_path' => ['label' => 'College Diploma', 'icon' => 'bi-award'],
+            'gwa_cert_path' => ['label' => 'GWA Certification', 'icon' => 'bi-calculator'],
+            'entrance_exam_path' => ['label' => 'Entrance Exam Result', 'icon' => 'bi-pencil-square'],
+            'receipt_path' => ['label' => 'Payment Receipt', 'icon' => 'bi-receipt'],
+            'good_moral_path' => ['label' => 'Good Moral Certificate', 'icon' => 'bi-shield-check'],
+            'signed_document_path' => ['label' => 'Signed Admission Form', 'icon' => 'bi-file-earmark-check-fill', 'color' => '#198754']
+        ];
+
+        $has_docs = false;
+        foreach ($docs as $path_key => $info):
+            if (!empty($app[$path_key])):
+                $has_docs = true;
+                $file_path = $app[$path_key];
+                $file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+                $icon_color = isset($info['color']) ? $info['color'] : '#1a237e';
+                $is_image = in_array($file_ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+        ?>
+            <div class="doc-card-wrapper">
+                <a href="<?= htmlspecialchars($file_path) ?>" target="_blank" class="doc-item mb-2">
+                    <i class="bi <?= $info['icon'] ?> doc-icon" style="color: <?= $icon_color ?>;"></i>
+                    <div class="doc-info">
+                        <span class="doc-name"><?= $info['label'] ?></span>
+                        <span class="doc-meta"><?= strtoupper($file_ext) ?> File | Click to view full</span>
+                    </div>
+                    <i class="bi bi-box-arrow-up-right text-muted small"></i>
+                </a>
+                <?php if ($is_image): ?>
+                    <div class="img-preview-box text-center p-2 bg-light rounded border mb-3">
+                        <img src="<?= htmlspecialchars($file_path) ?>" class="img-fluid rounded" style="max-height: 150px; cursor: pointer;" onclick="window.open('<?= htmlspecialchars($file_path) ?>', '_blank')">
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php 
+            endif;
+        endforeach;
+
+        // Handle "Other" documents if they exist
+        if (!empty($app['other_docs_paths'])):
+            $other_docs = explode(',', $app['other_docs_paths']);
+            foreach ($other_docs as $idx => $path):
+                $has_docs = true;
+                $file_ext = strtoupper(pathinfo($path, PATHINFO_EXTENSION));
+        ?>
+            <a href="<?= htmlspecialchars(trim($path)) ?>" target="_blank" class="doc-item">
+                <i class="bi bi-file-earmark-plus doc-icon"></i>
+                <div class="doc-info">
+                    <span class="doc-name">Additional Document #<?= $idx + 1 ?></span>
+                    <span class="doc-meta"><?= $file_ext ?> File | Click to view</span>
+                </div>
+                <i class="bi bi-box-arrow-up-right text-muted small"></i>
+            </a>
+        <?php 
+            endforeach;
+        endif;
+
+        if (!$has_docs): ?>
+            <div class="full-width py-4 text-center text-muted">
+                <i class="bi bi-folder-x display-6 d-block mb-2"></i>
+                No documents have been uploaded for this application yet.
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- FOOTER SIGNATURES -->

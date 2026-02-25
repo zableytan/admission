@@ -46,7 +46,7 @@
             box-shadow: 0 30px 60px rgba(0,0,0,0.12);
         }
         .logo-img {
-            width: 110px;
+            width: 120px !important;
             height: auto;
             margin-bottom: 30px;
             filter: drop-shadow(0 8px 15px rgba(0,0,0,0.1));

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --primary-color: #dc3545; /* DMSF Red */
+            --primary-color: #196199; /* Updated to DMSF Blue */
             --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         }
         body {
@@ -85,7 +85,7 @@
         .form-select:focus {
             border-color: var(--primary-color);
             background-color: white;
-            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+            box-shadow: 0 0 0 4px rgba(25, 97, 153, 0.1);
         }
         .btn-apply {
             background-color: var(--primary-color);
@@ -102,8 +102,8 @@
             gap: 10px;
         }
         .btn-apply:hover {
-            background-color: #bb2d3b;
-            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+            background-color: #124d7a;
+            box-shadow: 0 8px 20px rgba(25, 97, 153, 0.3);
             transform: scale(1.02);
             color: white;
         }

@@ -175,6 +175,7 @@ CREATE TABLE IF NOT EXISTS applications (
     
     -- STEP 5: Processing & Administration
     tor_path VARCHAR(255) NULL,
+    form137_path VARCHAR(255) NULL,
     birth_cert_path VARCHAR(255) NULL,
     nmat_path VARCHAR(255) NULL,
     diploma_path VARCHAR(255) NULL,

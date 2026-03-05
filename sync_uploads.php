@@ -18,6 +18,7 @@ $sync_count = 0;
 // Mapping of filename prefix to database column name
 $mapping = [
     'tor_file'           => 'tor_path',
+    'form137_file'       => 'form137_path',
     'birth_cert_file'    => 'birth_cert_path',
     'nmat_file'          => 'nmat_path',
     'diploma_file'       => 'diploma_path',

@@ -139,6 +139,14 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <?= getFileLink($app['tor_path'], 'TOR') ?>
                     </div>
+
+                    <div class="doc-item">
+                        <div>
+                            <div class="fw-bold text-dark">Form 137</div>
+                            <div class="small text-muted">Secondary academic record</div>
+                        </div>
+                        <?= getFileLink($app['form137_path'], 'Form 137') ?>
+                    </div>
                     
                     <div class="doc-item">
                         <div>

@@ -310,6 +310,7 @@ unlink($temp_summary);
 // Attachments
 $file_fields = [
     'Transcript of Records (TOR)' => $app_data['tor_path'],
+    'Form 137'                   => $app_data['form137_path'],
     'Birth Certificate (PSA)'    => $app_data['birth_cert_path'],
     'NMAT Result'                => $app_data['nmat_path'],
     'Diploma'                    => $app_data['diploma_path'],

@@ -72,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $tor_path = handleUpload('tor_file', $upload_dir, $app_id);
+    $form137_path = handleUpload('form137_file', $upload_dir, $app_id);
     $birth_cert_path = handleUpload('birth_cert_file', $upload_dir, $app_id);
     $nmat_path = handleUpload('nmat_file', $upload_dir, $app_id);
     $diploma_path = handleUpload('diploma_file', $upload_dir, $app_id); // Optional
@@ -99,12 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update the database with file paths
     try {
         $sql = "UPDATE applications SET
-            tor_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
+            tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
             entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $tor_path,
+            $form137_path,
             $birth_cert_path,
             $nmat_path,
             $diploma_path,
@@ -325,19 +327,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <table class='info-table'>
                 <tr>
                     <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . ($tor_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Form 137</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+                <tr>
                     <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . ($birth_cert_path ? '✓ Provided' : '✗ Missing') . "</td>
-                </tr>
-                <tr>
                     <td class='row-label'>NMAT Result</td><td class='row-value'>" . ($nmat_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+                <tr>
                     <td class='row-label'>Diploma</td><td class='row-value'>" . ($diploma_path ? '✓ Provided' : '✗ Missing') . "</td>
-                </tr>
-                <tr>
                     <td class='row-label'>GWA Certificate</td><td class='row-value'>" . ($gwa_path ? '✓ Provided' : '✗ Missing') . "</td>
-                    <td class='row-label'>Entrance Exam</td><td class='row-value'>" . ($entrance_path ? '✓ Provided' : '✗ Missing') . "</td>
                 </tr>
                 <tr>
+                    <td class='row-label'>Entrance Exam</td><td class='row-value'>" . ($entrance_path ? '✓ Provided' : '✗ Missing') . "</td>
                     <td class='row-label'>Payment Receipt</td><td class='row-value'>" . ($receipt_path ? '✓ Provided' : '✗ Missing') . "</td>
+                </tr>
+                <tr>
                     <td class='row-label'>Good Moral</td><td class='row-value'>" . ($good_moral_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'></td><td class='row-value'></td>
                 </tr>
             </table>
 
@@ -422,6 +428,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $file_map = [
             'TOR'           => $tor_path,
+            'Form 137'      => $form137_path,
             'Birth Cert'    => $birth_cert_path,
             'NMAT'          => $nmat_path,
             'Diploma'       => $diploma_path,
@@ -725,11 +732,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="file" name="tor_file" class="form-control" required>
                             </div>
 
+                            <!-- Document: Form 137 -->
+                            <div class="file-upload-wrapper">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-file-earmark-spreadsheet upload-icon"></i>
+                                    <label class="form-label mb-0">2. Form 137 <span
+                                            class="required-badge">Required</span></label>
+                                </div>
+                                <input type="file" name="form137_file" class="form-control" required>
+                            </div>
+
                             <!-- Document: Birth Certificate -->
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-person-badge upload-icon"></i>
-                                    <label class="form-label mb-0">2. Birth Certificate (PSA) <span
+                                    <label class="form-label mb-0">3. Birth Certificate (PSA) <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="birth_cert_file" class="form-control" required>
@@ -740,7 +757,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="file-upload-wrapper">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-journal-check upload-icon"></i>
-                                        <label class="form-label mb-0">3. Copy of NMAT Result <span
+                                        <label class="form-label mb-0">4. Copy of NMAT Result <span
                                                 class="required-badge">Required</span></label>
                                     </div>
                                     <input type="file" name="nmat_file" class="form-control" required>
@@ -751,7 +768,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-award upload-icon"></i>
-                                    <label class="form-label mb-0">4. Copy of Diploma <span
+                                    <label class="form-label mb-0">5. Copy of Diploma <span
                                             class="text-muted small fw-normal ms-2">(If available)</span></label>
                                 </div>
                                 <input type="file" name="diploma_file" class="form-control">
@@ -761,7 +778,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-calculator upload-icon"></i>
-                                    <label class="form-label mb-0">5. General Weighted Average in College <span
+                                    <label class="form-label mb-0">6. General Weighted Average in College <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="gwa_file" class="form-control" required>
@@ -771,7 +788,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-pencil-square upload-icon"></i>
-                                    <label class="form-label mb-0">6. Result of Entrance Exam <span
+                                    <label class="form-label mb-0">7. Result of Entrance Exam <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="entrance_exam_file" class="form-control" required>
@@ -781,7 +798,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-receipt upload-icon"></i>
-                                    <label class="form-label mb-0">7. Receipt of Application Fee <span
+                                    <label class="form-label mb-0">8. Receipt of Application Fee <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="receipt_file" class="form-control" required>
@@ -791,7 +808,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-shield-check upload-icon"></i>
-                                    <label class="form-label mb-0">8. Certificate of Good Moral Character <span
+                                    <label class="form-label mb-0">9. Certificate of Good Moral Character <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="good_moral_file" class="form-control" required>

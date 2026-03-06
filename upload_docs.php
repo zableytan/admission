@@ -51,6 +51,7 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 // 2. POST LOGIC: Process file uploads
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $upload_dir = 'uploads/';
+    $photo_path = null;
     $tor_path = null;
     $birth_cert_path = null;
     $nmat_path = null;
@@ -71,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return null;
     }
 
+    $photo_path = handleUpload('photo_file', $upload_dir, $app_id);
     $tor_path = handleUpload('tor_file', $upload_dir, $app_id);
     $form137_path = handleUpload('form137_file', $upload_dir, $app_id);
     $birth_cert_path = handleUpload('birth_cert_file', $upload_dir, $app_id);
@@ -100,11 +102,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update the database with file paths
     try {
         $sql = "UPDATE applications SET
-            tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
+            photo_path=?, tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
             entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
+            $photo_path,
             $tor_path,
             $form137_path,
             $birth_cert_path,
@@ -142,6 +145,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $logo_data = 'data:image/' . $type . ';base64,' . base64_encode($data);
     }
 
+    // --- 2. PREPARE APPLICANT PHOTO FOR PDF ---
+    $photo_data = '';
+    if (!empty($app_data['photo_path'])) {
+        $real_photo_path = realpath(__DIR__ . DIRECTORY_SEPARATOR . $app_data['photo_path']);
+        if ($real_photo_path && file_exists($real_photo_path)) {
+            $type = pathinfo($real_photo_path, PATHINFO_EXTENSION);
+            $img_blob = file_get_contents($real_photo_path);
+            $photo_data = 'data:image/' . $type . ';base64,' . base64_encode($img_blob);
+        }
+    }
+
     // --- 2. GENERATE PDF RECORD ---
     $options = new Options();
     $options->set('isRemoteEnabled', true);
@@ -161,12 +175,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .header-table { width: 100%; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
             .logo-cell { width: 70px; vertical-align: middle; }
             .title-cell { vertical-align: middle; padding-left: 10px; }
-            .title-cell h1 { margin: 0; color: #1a237e; font-size: 24px; text-transform: uppercase; font-weight: 900; }
-            .title-cell p { margin: 0; color: #666; font-size: 11px; }
-            .id-cell { text-align: right; vertical-align: middle; }
-            .id-cell .label { font-size: 10px; color: #666; font-weight: bold; }
-            .id-cell .value { font-size: 22px; font-weight: bold; color: #0d6efd; margin: 2px 0; }
+            .title-cell h1 { margin: 0; color: #1a237e; font-size: 20px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
+            .subtitle { margin: 0; padding-top: 1px; color: #7f8c8d; font-size: 8px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.3px; }
+            .id-cell { text-align: right; vertical-align: middle; padding-right: 15px; }
+            .id-cell .label { font-size: 9px; color: #666; font-weight: bold; text-transform: uppercase; }
+            .id-cell .value { font-size: 20px; font-weight: bold; color: #3498db; margin: 0; line-height: 1; }
             .status-badge { background: #ffc107; color: white; padding: 3px 15px; border-radius: 50px; font-size: 10px; font-weight: bold; display: inline-block; }
+            
+            /* Photo Styling */
+            .photo-cell { width: 100px; padding: 0; vertical-align: top; text-align: right; }
+            .applicant-photo-box {
+                width: 100px;
+                height: 100px;
+                border: 1px solid #ddd;
+                background: #f9f9f9;
+                text-align: center;
+                overflow: hidden;
+                display: block;
+            }
+            .applicant-photo-box img {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+            }
+            .no-photo-text {
+                font-size: 8px;
+                color: #999;
+                padding-top: 40px;
+                display: block;
+            }
 
             /* Section Styling */
             .section-header { background: #1a237e; padding: 7px 15px; font-weight: bold; color: white; margin: 20px 0 5px 0; text-transform: uppercase; font-size: 11px; border-radius: 3px; }
@@ -194,12 +231,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td class='logo-cell'><img src='{$logo_data}' style='height: 65px;'></td>
                     <td class='title-cell'>
                         <h1>OFFICIAL ADMISSION RECORD</h1>
-                        <p>Davao Medical School Foundation, Inc. | Registrar's Office</p>
+                        <div class='subtitle'>Davao Medical School Foundation, Inc. | Registrar's Office</div>
                     </td>
-                    <td class='id-cell'>
+                    <td class='id-cell' style='width: 120px;'>
                         <div class='label'>APP ID</div>
                         <div class='value'>#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . "</div>
                         <div class='status-badge'>PENDING</div>
+                    </td>
+                    <td class='photo-cell'>
+                        <div class='applicant-photo-box'>
+                            " . ($photo_data ? "<img src='{$photo_data}'>" : "<span class='no-photo-text'>PASSPORT PHOTO</span>") . "
+                        </div>
                     </td>
                 </tr>
             </table>
@@ -395,7 +437,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->Port = $smtp_config['port'];
 
         $mail->setFrom($smtp_config['from_email'], $smtp_config['from_name']);
-        
+
         $hasRecipient = false;
         foreach ($admin_emails as $admin_email_list) {
             $emails = explode(',', $admin_email_list);
@@ -418,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // --- ATTACHMENT STRATEGY: Links for large files ---
         $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . dirname($_SERVER['REQUEST_URI']);
-        
+
         // Always attach the generated PDF Summary (usually small)
         $mail->addStringAttachment($pdf_output, "Admission_Record_#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ".pdf");
 
@@ -427,15 +469,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $total_attachment_size = strlen($pdf_output);
 
         $file_map = [
-            'TOR'           => $tor_path,
-            'Form 137'      => $form137_path,
-            'Birth Cert'    => $birth_cert_path,
-            'NMAT'          => $nmat_path,
-            'Diploma'       => $diploma_path,
-            'GWA Cert'      => $gwa_path,
+            'Applicant Photo' => $app_data['photo_path'],
+            'TOR' => $tor_path,
+            'Form 137' => $form137_path,
+            'Birth Cert' => $birth_cert_path,
+            'NMAT' => $nmat_path,
+            'Diploma' => $diploma_path,
+            'GWA Cert' => $gwa_path,
             'Entrance Exam' => $entrance_path,
-            'Receipt'       => $receipt_path,
-            'Good Moral'    => $good_moral_path
+            'Receipt' => $receipt_path,
+            'Good Moral' => $good_moral_path
         ];
 
         foreach ($file_map as $label => $path) {
@@ -445,7 +488,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $fsize = filesize($abs_path);
                     $file_url = $base_url . '/' . $path;
                     $file_links_html .= "<li><a href='$file_url'>$label</a> (" . round($fsize / 1024 / 1024, 2) . " MB)</li>";
-                    
+
                     // Only attach if we are well under Gmail's 25MB limit (total)
                     if (($total_attachment_size + $fsize) < 20 * 1024 * 1024) {
                         $mail->addAttachment($abs_path, str_replace(' ', '_', $label) . "_" . basename($path));
@@ -464,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $file_url = $base_url . '/' . $path;
                     $label = "Other Doc " . ($idx + 1);
                     $file_links_html .= "<li><a href='$file_url'>$label</a> (" . round($fsize / 1024 / 1024, 2) . " MB)</li>";
-                    
+
                     if (($total_attachment_size + $fsize) < 20 * 1024 * 1024) {
                         $mail->addAttachment($abs_path, str_replace(' ', '_', $label) . "_" . basename($path));
                         $total_attachment_size += $fsize;
@@ -476,7 +519,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $mail->isHTML(true);
         $mail->Subject = "Admission Submission: " . $student_name . " (" . $college . ")";
-        
+
         $mail->Body = "<h3>New Admission Application Received</h3>
                            <p>A new application has been submitted by <strong>$student_name</strong> (#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ") for the <strong>$college</strong>.</p>
                            <p><strong>Documents & Credentials:</strong></p>
@@ -626,7 +669,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 120px !important;
             height: auto;
             margin-bottom: 15px;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
+        }
+
+        .btn-demo {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-demo:hover {
+            background-color: #ffca2c;
+            transform: translateY(-1px);
+        }
+
+        .privacy-statement {
+            background-color: #f8f9fa;
+            border-left: 5px solid #0d6efd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .privacy-title {
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
         }
 
         .upload-icon {
@@ -706,7 +786,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <h3 class="mb-1 fw-bold">Step 5 of 5</h3>
                                 <p class="mb-0 opacity-75">Upload Credentials & Documents</p>
                             </div>
-                            <i class="bi bi-cloud-arrow-up-fill display-6"></i>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
+                                    <i class="bi bi-magic me-1"></i> Autofill Demo
+                                </button>
+                                <i class="bi bi-cloud-arrow-up-fill display-6"></i>
+                            </div>
                         </div>
                     </div>
 
@@ -721,6 +806,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h5 class="section-title">Required Documents</h5>
                             <p class="text-muted small mb-4">Please upload clear scans or photos of the following (PDF,
                                 JPG, or PNG formats only). Maximum file size: 5MB per file.</p>
+
+                            <!-- Document: Applicant Photo -->
+                            <div class="file-upload-wrapper">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-person-bounding-box upload-icon"></i>
+                                    <label class="form-label mb-0">1. Applicant Passport Size Photo <span
+                                            class="required-badge">Required</span></label>
+                                </div>
+                                <input type="file" name="photo_file" class="form-control" accept="image/*" required>
+                            </div>
 
                             <!-- Document 1: TOR -->
                             <div class="file-upload-wrapper">
@@ -814,17 +909,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="file" name="good_moral_file" class="form-control" required>
                             </div>
 
-                            <div class="mt-5">
-                                <button type="submit" class="btn btn-primary btn-submit w-100 shadow-sm text-white">
+                            <div class="mt-5 text-center">
+                                <button type="button" class="btn btn-primary btn-submit w-100 shadow-sm text-white py-3"
+                                    onclick="showPrivacyModal()">
                                     <i class="bi bi-check2-circle me-2"></i> Complete Final Submission
                                 </button>
                                 <p class="text-center mt-3 small text-muted">
-                                    By clicking submit, you certify that all uploaded documents are authentic and
-                                    original copies.
+                                    Finalizing your application will generate your admission record.
                                 </p>
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy & Consent Modal -->
+    <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4 justify-content-center">
+                    <div class="text-center">
+                        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3rem;"></i>
+                        <h4 class="modal-title fw-bold mt-2" id="privacyModalLabel">Data Privacy Statement</h4>
+                    </div>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="text-muted mb-0" style="font-size: 0.95rem; line-height: 1.6;">
+                        By submitting this application, you consent to the collection, processing, storage, and use of
+                        your personal data by Davao Medical School Foundation, Inc. (DMSFI) solely for admission and
+                        other legitimate academic-related purposes. All information shall be handled with strict
+                        confidentiality in accordance with the Data Privacy Act of 2012 (RA 10173) and its Implementing
+                        Rules and Regulations.
+                    </p>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 flex-column gap-2">
+                    <button type="button" class="btn btn-primary w-100 py-3 fw-bold" onclick="finalSubmitApplication()"
+                        style="border-radius: 12px;">
+                        I CONSENT AND SUBMIT
+                    </button>
+                    <button type="button" class="btn btn-link text-decoration-none text-muted small"
+                        data-bs-dismiss="modal">
+                        Review Application
+                    </button>
                 </div>
             </div>
         </div>
@@ -840,15 +969,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
     <script>
-        document.querySelector('form').addEventListener('submit', function (e) {
-            // Show loading overlay
+        const applicationForm = document.querySelector('form');
+        const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'));
+
+        function showPrivacyModal() {
+            if (applicationForm.checkValidity()) {
+                privacyModal.show();
+            } else {
+                applicationForm.reportValidity();
+            }
+        }
+
+        function finalSubmitApplication() {
+            privacyModal.hide();
+            // Trigger the loading overlay
             document.getElementById('loadingOverlay').style.display = 'flex';
 
-            // Disable submit button
-            const submitBtn = this.querySelector('.btn-submit');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+            // Disable original button if needed, though form is about to submit
+            const mainBtn = document.querySelector('.btn-submit');
+            mainBtn.disabled = true;
+            mainBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting...';
+
+            // Submit form
+            applicationForm.submit();
+        }
+
+        applicationForm.addEventListener('submit', function (e) {
+            // This is a safety catch in case the form is submitted via Enter key
+            if (!document.getElementById('privacyModal').classList.contains('show')) {
+                e.preventDefault();
+                showPrivacyModal();
+                return false;
+            }
+
+            // If modal IS showing, let the finalSubmitApplication handle it or let it pass
+            document.getElementById('loadingOverlay').style.display = 'flex';
         });
+
+        function autofillDemo() {
+            // Since we cannot programmatically set file input values for security reasons,
+            // we will remove the 'required' attribute from the file inputs for demo purposes
+            // to allow the user to test the submission process without actually uploading files.
+
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.required = false;
+                // Add a visual indicator
+                const wrapper = input.closest('.file-upload-wrapper');
+                if (wrapper) {
+                    wrapper.style.borderColor = '#ffc107';
+                    wrapper.style.backgroundColor = '#fff8e1';
+                }
+            });
+
+            alert("Demo Mode: 'Required' attributes removed from file inputs. You can now submit without uploading files.");
+        }
     </script>
 </body>
 

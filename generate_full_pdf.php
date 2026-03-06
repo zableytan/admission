@@ -55,8 +55,12 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $app_id = $_GET['id'];
 
 // Helper functions for PDF generation
-function getBoolText($val) { return $val ? 'YES' : 'NO'; }
-function getListText($app, $prefix, $fields) {
+function getBoolText($val)
+{
+    return $val ? 'YES' : 'NO';
+}
+function getListText($app, $prefix, $fields)
+{
     $items = [];
     foreach ($fields as $field => $label) {
         if (!empty($app[$prefix . $field])) {
@@ -76,12 +80,24 @@ if (!$app_data) {
 }
 
 // --- 1. GENERATE SUMMARY PDF (Using Dompdf) ---
+// --- 1. PREPARE LOGO FOR PDF ---
 $logo_path = 'DMSF_Logo.png';
 $logo_data = '';
 if (file_exists($logo_path)) {
     $type = pathinfo($logo_path, PATHINFO_EXTENSION);
     $data = file_get_contents($logo_path);
     $logo_data = 'data:image/' . $type . ';base64,' . base64_encode($data);
+}
+
+// --- 2. PREPARE APPLICANT PHOTO FOR PDF ---
+$photo_data = '';
+if (!empty($app_data['photo_path'])) {
+    $real_photo_path = realpath(__DIR__ . DIRECTORY_SEPARATOR . $app_data['photo_path']);
+    if ($real_photo_path && file_exists($real_photo_path)) {
+        $type = pathinfo($real_photo_path, PATHINFO_EXTENSION);
+        $img_blob = file_get_contents($real_photo_path);
+        $photo_data = 'data:image/' . $type . ';base64,' . base64_encode($img_blob);
+    }
 }
 
 $options = new Options();
@@ -99,11 +115,34 @@ $html = "
         .header-table { width: 100%; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
         .logo-cell { width: 70px; vertical-align: middle; }
         .title-cell { vertical-align: middle; padding-left: 10px; }
-        .title-cell h1 { margin: 0; color: #1a237e; font-size: 24px; text-transform: uppercase; font-weight: 900; }
-        .title-cell p { margin: 0; color: #666; font-size: 11px; }
-        .id-cell { text-align: right; vertical-align: middle; }
-        .id-cell .label { font-size: 10px; color: #666; font-weight: bold; }
-        .id-cell .value { font-size: 22px; font-weight: bold; color: #0d6efd; margin: 2px 0; }
+        .title-cell h1 { margin: 0; color: #1a237e; font-size: 20px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
+        .subtitle { margin: 0; padding-top: 1px; color: #7f8c8d; font-size: 8px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.3px; }
+        .id-cell { text-align: right; vertical-align: middle; padding-right: 15px; width: 120px; }
+        .id-cell .label { font-size: 9px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .id-cell .value { font-size: 20px; font-weight: bold; color: #3498db; margin: 0; line-height: 1; }
+        
+        /* Photo Styling */
+        .photo-cell { width: 100px; padding: 0; vertical-align: top; text-align: right; }
+        .applicant-photo-box {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            text-align: center;
+            overflow: hidden;
+            display: block;
+        }
+        .applicant-photo-box img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+        .no-photo-text {
+            font-size: 8px;
+            color: #999;
+            padding-top: 40px;
+            display: block;
+        }
         .section-header { background: #1a237e; padding: 7px 15px; font-weight: bold; color: white; margin: 20px 0 5px 0; text-transform: uppercase; font-size: 11px; border-radius: 3px; }
         .info-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .info-table td { border-bottom: 1px solid #f2f2f2; padding: 8px 5px; vertical-align: top; }
@@ -122,15 +161,21 @@ $html = "
     <div class='document-page'>
         <table class='header-table'>
             <tr>
-                <td class='logo-cell'><img src='{$logo_data}' style='height: 65px;'></td>
-                <td class='title-cell'>
-                    <h1>OFFICIAL ADMISSION RECORD</h1>
-                    <p>Davao Medical School Foundation, Inc. | Registrar's Office</p>
-                </td>
-                <td class='id-cell'>
-                    <div class='label'>APP ID</div>
-                    <div class='value'>#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . "</div>
-                </td>
+            <td class='logo-cell'><img src='{$logo_data}' style='height: 65px;'></td>
+            <td class='title-cell'>
+                <h1>OFFICIAL ADMISSION RECORD</h1>
+                <div class='subtitle'>Davao Medical School Foundation, Inc. | Registrar's Office</div>
+            </td>
+            <td class='id-cell'>
+                <div class='label'>APP ID</div>
+                <div class='value'>#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . "</div>
+                <div style='background: #ffc107; color: white; padding: 2px 10px; border-radius: 50px; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 5px;'>PENDING</div>
+            </td>
+            <td class='photo-cell'>
+                <div class='applicant-photo-box'>
+                    " . ($photo_data ? "<img src='{$photo_data}'>" : "<span class='no-photo-text'>PASSPORT PHOTO</span>") . "
+                </div>
+            </td>
             </tr>
         </table>
 
@@ -309,21 +354,22 @@ unlink($temp_summary);
 
 // Attachments
 $file_fields = [
+    'Applicant Passport Photo' => $app_data['photo_path'],
     'Transcript of Records (TOR)' => $app_data['tor_path'],
-    'Form 137'                   => $app_data['form137_path'],
-    'Birth Certificate (PSA)'    => $app_data['birth_cert_path'],
-    'NMAT Result'                => $app_data['nmat_path'],
-    'Diploma'                    => $app_data['diploma_path'],
-    'GWA Certificate'            => $app_data['gwa_cert_path'],
-    'Entrance Exam Result'       => $app_data['entrance_exam_path'],
-    'Application Fee Receipt'    => $app_data['receipt_path'],
-    'Good Moral Character'       => $app_data['good_moral_path']
+    'Form 137' => $app_data['form137_path'],
+    'Birth Certificate (PSA)' => $app_data['birth_cert_path'],
+    'NMAT Result' => $app_data['nmat_path'],
+    'Diploma' => $app_data['diploma_path'],
+    'GWA Certificate' => $app_data['gwa_cert_path'],
+    'Entrance Exam Result' => $app_data['entrance_exam_path'],
+    'Application Fee Receipt' => $app_data['receipt_path'],
+    'Good Moral Character' => $app_data['good_moral_path']
 ];
 
 foreach ($file_fields as $label => $path) {
     if ($path && file_exists($path)) {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        
+
         if ($ext === 'pdf') {
             try {
                 $pageCount = $pdf->setSourceFile($path);
@@ -335,9 +381,9 @@ foreach ($file_fields as $label => $path) {
                     $pdf->SetTextColor(26, 35, 126);
                     $pdf->Cell(0, 10, "$label - Page $n", 0, 1, 'L');
                     $pdf->Ln(5);
-                    
+
                     // Fit the imported page into the remaining A4 space
-                    $pdf->useTemplate($tplIdx, 10, 25, 190); 
+                    $pdf->useTemplate($tplIdx, 10, 25, 190);
                 }
             } catch (Exception $e) {
                 // Skip if PDF is too new version or encrypted
@@ -351,15 +397,18 @@ foreach ($file_fields as $label => $path) {
             $pdf->SetTextColor(26, 35, 126);
             $pdf->Cell(0, 10, $label, 0, 1, 'L');
             $pdf->Ln(10);
-            
+
             // Image fitting logic
             $img_info = getimagesize($path);
             if ($img_info) {
                 $w = $img_info[0];
                 $h = $img_info[1];
                 $ratio = $w / $h;
-                
-                if ($ratio > 1) { // Landscape image
+
+                if ($label === 'Applicant Passport Photo') {
+                    // Render passport photo at a smaller, standard size (60mm width)
+                    $pdf->Image($path, 10, 30, 60);
+                } else if ($ratio > 1) { // Landscape image
                     $pdf->Image($path, 10, 30, 190);
                 } else { // Portrait image
                     $pdf->Image($path, 10, 30, 0, 240);
@@ -376,7 +425,7 @@ if (!empty($app_data['other_docs_paths'])) {
         if ($path && file_exists($path)) {
             $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
             $label = "Other Document " . ($idx + 1);
-            
+
             if ($ext === 'pdf') {
                 try {
                     $pageCount = $pdf->setSourceFile($path);
@@ -387,7 +436,8 @@ if (!empty($app_data['other_docs_paths'])) {
                         $pdf->Cell(0, 10, "$label - Page $n", 0, 1, 'L');
                         $pdf->useTemplate($tplIdx, 10, 20, 190);
                     }
-                } catch (Exception $e) {}
+                } catch (Exception $e) {
+                }
             } else if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
                 $pdf->addPage();
                 $pdf->SetFont('Helvetica', 'B', 14);

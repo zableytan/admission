@@ -45,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $income_others = filter_input(INPUT_POST, 'income_others', FILTER_SANITIZE_SPECIAL_CHARS);
 
     $total_family_income = filter_input(INPUT_POST, 'total_family_income', FILTER_VALIDATE_FLOAT);
-    if ($total_family_income === false) $total_family_income = null;
+    if ($total_family_income === false)
+        $total_family_income = null;
 
     $family_assets = filter_input(INPUT_POST, 'family_assets', FILTER_SANITIZE_SPECIAL_CHARS);
 
@@ -54,29 +55,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $parent_dmsf_course_year = filter_input(INPUT_POST, 'parent_dmsf_course_year', FILTER_SANITIZE_SPECIAL_CHARS);
     $parent_dmsf_teaching_flag = (isset($_POST['parent_dmsf_teaching_flag']) && $_POST['parent_dmsf_teaching_flag'] == 'YES') ? 1 : 0;
     $parent_dmsf_teaching_years = filter_input(INPUT_POST, 'parent_dmsf_teaching_years', FILTER_VALIDATE_INT);
-    if ($parent_dmsf_teaching_years === false) $parent_dmsf_teaching_years = null;
+    if ($parent_dmsf_teaching_years === false)
+        $parent_dmsf_teaching_years = null;
 
     // --- Siblings ---
     $num_brothers = filter_input(INPUT_POST, 'num_brothers', FILTER_VALIDATE_INT);
-    if ($num_brothers === false) $num_brothers = null;
+    if ($num_brothers === false)
+        $num_brothers = null;
 
     $num_sisters = filter_input(INPUT_POST, 'num_sisters', FILTER_VALIDATE_INT);
-    if ($num_sisters === false) $num_sisters = null;
+    if ($num_sisters === false)
+        $num_sisters = null;
 
     $brothers_hs = filter_input(INPUT_POST, 'brothers_hs', FILTER_VALIDATE_INT);
-    if ($brothers_hs === false) $brothers_hs = null;
+    if ($brothers_hs === false)
+        $brothers_hs = null;
 
     $sisters_hs = filter_input(INPUT_POST, 'sisters_hs', FILTER_VALIDATE_INT);
-    if ($sisters_hs === false) $sisters_hs = null;
+    if ($sisters_hs === false)
+        $sisters_hs = null;
 
     $brothers_college = filter_input(INPUT_POST, 'brothers_college', FILTER_VALIDATE_INT);
-    if ($brothers_college === false) $brothers_college = null;
+    if ($brothers_college === false)
+        $brothers_college = null;
 
     $sisters_college = filter_input(INPUT_POST, 'sisters_college', FILTER_VALIDATE_INT);
-    if ($sisters_college === false) $sisters_college = null;
+    if ($sisters_college === false)
+        $sisters_college = null;
 
     $siblings_middle_school = filter_input(INPUT_POST, 'siblings_middle_school', FILTER_VALIDATE_INT);
-    if ($siblings_middle_school === false) $siblings_middle_school = null;
+    if ($siblings_middle_school === false)
+        $siblings_middle_school = null;
 
     $brothers_courses = filter_input(INPUT_POST, 'brothers_courses', FILTER_SANITIZE_SPECIAL_CHARS);
     $sisters_courses = filter_input(INPUT_POST, 'sisters_courses', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -277,7 +286,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 120px !important;
             height: auto;
             margin-bottom: 15px;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
+        }
+
+        .btn-demo {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-demo:hover {
+            background-color: #ffca2c;
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -296,7 +321,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="card-header-custom">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 3 of 5: Family Background</h3>
-                            <span class="badge bg-white text-success px-3 py-2">Admission Process</span>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
+                                    <i class="bi bi-magic me-1"></i> Autofill Demo
+                                </button>
+                                <span class="badge bg-white text-success px-3 py-2">Admission Process</span>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body p-4 p-md-5">
@@ -530,6 +560,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
+    <script>
+        function autofillDemo() {
+            const textFields = {
+                'father_name': 'Robert Doe',
+                'mother_name': 'Jane Doe',
+                'father_occupation': 'Civil Engineer',
+                'mother_occupation': 'Registered Nurse',
+                'family_address': '456 Residence Way, Davao City',
+                'family_contact_no': '0922 444 5555',
+                'total_family_income': '1200000',
+                'family_assets': 'Residential house and lot, family vehicle (SUV)',
+                'num_brothers': '1',
+                'num_sisters': '1',
+                'siblings_middle_school': '0',
+                'brothers_hs': '1',
+                'sisters_hs': '0',
+                'brothers_college': '0',
+                'sisters_college': '1',
+                'brothers_courses': 'Ongoing High School',
+                'sisters_courses': 'BS Architecture'
+            };
+
+            for (const [name, value] of Object.entries(textFields)) {
+                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"]`);
+                if (input) input.value = value;
+            }
+
+            // Checkboxes
+            document.querySelector('input[name="income_salaries"]').checked = true;
+            document.querySelector('input[name="income_business"]').checked = true;
+
+            // Radios
+            document.getElementById('parentGradNo').checked = true;
+            document.getElementById('parentTeachNo').checked = true;
+            document.getElementById('siblingDmsfNo').checked = true;
+
+            // Hide details
+            document.getElementById('parentGradDetails').style.display = 'none';
+            document.getElementById('parentTeachDetails').style.display = 'none';
+            document.getElementById('siblingDmsfDetails').style.display = 'none';
+        }
+    </script>
 </body>
 
 </html>

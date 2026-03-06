@@ -34,7 +34,8 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Collect and sanitize all fields
     $age = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT);
-    if ($age === false) $age = null;
+    if ($age === false)
+        $age = null;
 
     $dob = filter_input(INPUT_POST, 'date_of_birth', FILTER_SANITIZE_SPECIAL_CHARS);
     $pob = filter_input(INPUT_POST, 'place_of_birth', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -44,16 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $citizenship = filter_input(INPUT_POST, 'citizenship', FILTER_SANITIZE_SPECIAL_CHARS);
 
     $height_ft = filter_input(INPUT_POST, 'height_ft', FILTER_VALIDATE_INT);
-    if ($height_ft === false) $height_ft = null;
+    if ($height_ft === false)
+        $height_ft = null;
 
     $height_in = filter_input(INPUT_POST, 'height_in', FILTER_VALIDATE_INT);
-    if ($height_in === false) $height_in = null;
+    if ($height_in === false)
+        $height_in = null;
 
     $weight_initial = filter_input(INPUT_POST, 'weight_kilos_initial', FILTER_VALIDATE_FLOAT);
-    if ($weight_initial === false) $weight_initial = null;
+    if ($weight_initial === false)
+        $weight_initial = null;
 
     $weight_now = filter_input(INPUT_POST, 'weight_kilos_now', FILTER_VALIDATE_FLOAT);
-    if ($weight_now === false) $weight_now = null;
+    if ($weight_now === false)
+        $weight_now = null;
 
     $med_history = filter_input(INPUT_POST, 'medical_history', FILTER_SANITIZE_SPECIAL_CHARS);
 
@@ -235,7 +240,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 120px !important;
             height: auto;
             margin-bottom: 15px;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
+        }
+
+        .btn-demo {
+            background-color: #212529;
+            color: #ffc107;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-demo:hover {
+            background-color: #343a40;
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -254,7 +275,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="card-header-custom">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 2 of 5: Personal & Medical Data</h3>
-                            <span class="badge bg-white text-dark px-3 py-2">Admission Process</span>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
+                                    <i class="bi bi-magic me-1"></i> Autofill Demo
+                                </button>
+                                <span class="badge bg-white text-dark px-3 py-2">Admission Process</span>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body p-4 p-md-5">
@@ -410,6 +436,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
+    <script>
+        function autofillDemo() {
+            const textFields = {
+                'age': '22',
+                'date_of_birth': '2003-05-20',
+                'place_of_birth': 'Davao City',
+                'religion': 'Roman Catholic',
+                'citizenship': 'Filipino',
+                'height_ft': '5',
+                'height_in': '7',
+                'weight_kilos_initial': '65',
+                'weight_kilos_now': '68',
+                'medical_history': 'No significant medical history. Regular check-ups with clear results.',
+                'physical_disability_details': '',
+                'convicted_explanation': ''
+            };
+
+            for (const [name, value] of Object.entries(textFields)) {
+                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"]`);
+                if (input) input.value = value;
+            }
+
+            // Select elements
+            const selects = {
+                'sex': 'Male',
+                'civil_status': 'Single'
+            };
+
+            for (const [name, value] of Object.entries(selects)) {
+                const select = document.querySelector(`select[name="${name}"]`);
+                if (select) select.value = value;
+            }
+
+            // Radio buttons
+            document.getElementById('disabilityNo').checked = true;
+            document.getElementById('disabilityDetails').style.display = 'none';
+
+            document.getElementById('convictedNo').checked = true;
+            document.getElementById('convictedExplanation').style.display = 'none';
+        }
+    </script>
 </body>
 
 </html>

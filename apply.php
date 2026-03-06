@@ -54,12 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Conditional data collection
     $nmat_date = $is_medicine ? filter_input(INPUT_POST, 'nmat_date', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $board_rating = filter_input(INPUT_POST, 'board_rating', FILTER_VALIDATE_FLOAT);
-    if ($board_rating === false) $board_rating = null;
+    if ($board_rating === false)
+        $board_rating = null;
 
     // Set score type and value based on college selection
     $score_type = $is_medicine ? 'NMAT' : 'GWA';
     $score_val = $is_medicine ? filter_input(INPUT_POST, 'nmat_score', FILTER_VALIDATE_FLOAT) : filter_input(INPUT_POST, 'gwa_score', FILTER_VALIDATE_FLOAT);
-    if ($score_val === false) $score_val = null;
+    if ($score_val === false)
+        $score_val = null;
 
     // Default attachment path to NULL since we are skipping upload for now
     $target_file = null;
@@ -238,7 +240,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 120px !important;
             height: auto;
             margin-bottom: 15px;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
+        }
+
+        .btn-demo {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-demo:hover {
+            background-color: #ffca2c;
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -257,8 +275,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="card-header-custom text-white">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 1 of 5: Basic Application</h3>
-                            <span class="badge bg-white text-primary px-3 py-2">College of
-                                <?= htmlspecialchars($college) ?></span>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
+                                    <i class="bi bi-magic me-1"></i> Autofill Demo
+                                </button>
+                                <span class="badge bg-white text-primary px-3 py-2">College of
+                                    <?= htmlspecialchars($college) ?></span>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body p-4 p-md-5">
@@ -423,6 +446,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
         });
+
+        function autofillDemo() {
+            const fields = {
+                'last_name': 'Doe',
+                'first_name': 'John',
+                'middle_initial': 'M',
+                'email': 'john.doe@example.com',
+                'mailing_address': '123 Medical Ave, Davao City, 8000',
+                'mobile_no': '0912 345 6789',
+                'tel_no_mailing': '123-4567',
+                'home_address': 'Permanent Residence St., Davao City',
+                'tel_no_home': '765-4321',
+                'social_media': '@johndoe_md'
+            };
+
+            for (const [name, value] of Object.entries(fields)) {
+                const input = document.querySelector(`input[name="${name}"]`);
+                if (input) input.value = value;
+            }
+
+            // Handle score field separately because its name depends on the college
+            const scoreInput = document.querySelector('input[name="nmat_score"], input[name="gwa_score"]');
+            if (scoreInput) {
+                scoreInput.value = scoreInput.name === 'nmat_score' ? '85' : '1.50';
+                // Trigger input event for the NMAT validation warning
+                scoreInput.dispatchEvent(new Event('input'));
+            }
+
+            const nmatDate = document.querySelector('input[name="nmat_date"]');
+            if (nmatDate) nmatDate.value = '2025-01-15';
+
+            const boardRating = document.querySelector('input[name="board_rating"]');
+            if (boardRating) boardRating.value = '88.50';
+        }
     </script>
 
 </body>

@@ -146,11 +146,13 @@
             <label class="form-label">Select Your College</label>
             <select name="college" class="form-select" required>
                 <option value="" disabled selected>Choose a program...</option>
-                <option value="Medicine">College of Medicine</option>
+                <option value="Medicine (NMD)">College of Medicine (NMD)</option>
+                <option value="Medicine (IMD)">College of Medicine (IMD)</option>
                 <option value="Nursing">College of Nursing</option>
                 <option value="Dentistry">College of Dentistry</option>
                 <option value="Midwifery">College of Midwifery</option>
                 <option value="Biology">Department of Biology</option>
+                <option value="All Colleges" style="font-weight: 700; color: var(--primary-color);">All Colleges (Universal Application)</option>
             </select>
         </div>
         

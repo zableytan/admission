@@ -64,7 +64,11 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
         <div>
             <a href="admin_dashboard.php" class="btn btn-link text-decoration-none p-0 mb-2">← Back to Dashboard</a>
             <h2 class="fw-bold mb-0"><?= $student_name ?></h2>
-            <p class="text-muted">Application ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?> | <?= $app['college'] ?></p>
+            <p class="text-muted">Application ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?> | 
+                <span class="<?= $app['college'] === 'All Colleges' ? 'badge bg-primary rounded-pill px-2' : '' ?>">
+                    <?= $app['college'] ?>
+                </span>
+            </p>
         </div>
         <div class="text-end">
             <span class="badge bg-<?= $app['status'] == 'Accepted' ? 'success' : ($app['status'] == 'Declined' ? 'danger' : 'warning') ?> fs-6 px-3 py-2 rounded-pill">
@@ -124,6 +128,17 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="label">Score (<?= $app['score_type'] ?>)</div>
                             <div class="value"><?= $app['score_value'] ?></div>
                         </div>
+                        <!-- NMAT (Only for Medicine) -->
+                        <?php if(strpos($app['college'], 'Medicine') !== false): ?>
+                        <div class="col-md-6">
+                            <div class="label">NMAT Percentile</div>
+                            <div class="value"><?= $app['score_value'] ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Date Taken</div>
+                            <div class="value"><?= $app['nmat_date'] ?></div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -156,7 +171,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         <?= getFileLink($app['birth_cert_path'], 'Birth Cert') ?>
                     </div>
 
-                    <?php if($app['college'] === 'Medicine'): ?>
+                    <?php if(strpos($app['college'], 'Medicine') !== false): ?>
                     <div class="doc-item">
                         <div>
                             <div class="fw-bold text-dark">NMAT Result</div>

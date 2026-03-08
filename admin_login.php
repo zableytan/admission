@@ -146,7 +146,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 rounded-start-10"><i class="bi bi-building text-muted"></i></span>
                     <select name="college" class="form-select border-start-0 rounded-end-10 mb-0" required>
-                        <option value="Medicine" selected>College of Medicine</option>
+                        <option value="Medicine" selected>College of Medicine (ALL)</option>
+                        <option value="Medicine (NMD)">College of Medicine (NMD)</option>
+                        <option value="Medicine (IMD)">College of Medicine (IMD)</option>
                         <option value="Nursing">College of Nursing</option>
                         <option value="Dentistry">College of Dentistry</option>
                         <option value="Midwifery">College of Midwifery</option>

@@ -200,9 +200,15 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
     $applications = $stmt->fetchAll();
 } else {
-    // Department-specific view
-    $stmt = $pdo->prepare("SELECT * FROM applications WHERE college = ? ORDER BY created_at DESC");
-    $stmt->execute([$college]);
+    // Department-specific view + "All Colleges" applications
+    // Special case for Medicine: show both NMD and IMD
+    if ($college === 'Medicine') {
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE 'Medicine %' OR college = 'Medicine' OR college = 'All Colleges') ORDER BY created_at DESC");
+        $stmt->execute([]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE college = ? OR college = 'All Colleges' ORDER BY created_at DESC");
+        $stmt->execute([$college]);
+    }
     $applications = $stmt->fetchAll();
 }
 ?>
@@ -400,7 +406,9 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                         <select name="college" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
                             onchange="this.form.submit()">
                             <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All</option>
-                            <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Medicine</option>
+                            <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Medicine (ALL)</option>
+                            <option value="Medicine (NMD)" <?= $college === 'Medicine (NMD)' ? 'selected' : '' ?>>Medicine (NMD)</option>
+                            <option value="Medicine (IMD)" <?= $college === 'Medicine (IMD)' ? 'selected' : '' ?>>Medicine (IMD)</option>
                             <option value="Nursing" <?= $college === 'Nursing' ? 'selected' : '' ?>>Nursing</option>
                             <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Dentistry</option>
                             <option value="Midwifery" <?= $college === 'Midwifery' ? 'selected' : '' ?>>Midwifery</option>
@@ -478,7 +486,9 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                                 #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></div>
                                         </td>
                                         <td>
-                                            <div class="mb-1 fw-semibold small text-primary"><?= $app['college'] ?></div>
+                                            <div class="mb-1 fw-semibold small <?= $app['college'] === 'All Colleges' ? 'text-danger fw-bold' : 'text-primary' ?>">
+                                                <?= $app['college'] ?>
+                                            </div>
                                             <span class="score-pill"><?= $app['score_value'] ?>
                                                 (<?= $app['score_type'] ?>)</span>
                                         </td>

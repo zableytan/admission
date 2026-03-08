@@ -204,6 +204,7 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                                     <option value="Dentistry">Dentistry</option>
                                     <option value="Midwifery">Midwifery</option>
                                     <option value="Biology">Biology</option>
+                                    <option value="All Colleges">All Colleges (Universal)</option>
                                     <option value="All">All (Super Admin)</option>
                                 </select>
                             </div>

@@ -19,17 +19,18 @@ if (!isset($_GET['college']) && !isset($_POST['college'])) {
 // Determine the college from the GET parameter (URL) or POST submission (hidden field)
 $college = isset($_GET['college']) ? $_GET['college'] : $_POST['college'];
 
+// Determine if this is a Medicine application (NMD or IMD)
+$is_medicine = (strpos($college, 'Medicine') !== false);
+
 // Determine fields and logic based on College selection
-if ($college === 'Medicine') {
+if ($is_medicine) {
     $score_label = "NMAT Score";
     $score_field_name = "nmat_score";
-    $is_medicine = true;
     $score_placeholder = "Enter NMAT Percentile Rank (e.g., 90)";
 } else {
-    $score_label = "College GWA";
+    $score_label = ($college === 'All Colleges') ? "College GWA / NMAT Score" : "College GWA";
     $score_field_name = "gwa_score";
-    $is_medicine = false;
-    $score_placeholder = "Enter General Weighted Average (e.g., 1.75)";
+    $score_placeholder = ($college === 'All Colleges') ? "Enter your highest score (GWA or NMAT)" : "Enter General Weighted Average (e.g., 1.75)";
 }
 
 $message = '';

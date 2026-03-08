@@ -127,8 +127,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. EMAIL NOTIFICATION TO ADMINS
     $college = $application['college'];
-    $admin_stmt = $pdo->prepare("SELECT email FROM admins WHERE college = ? OR is_super_admin = 1");
-    $admin_stmt->execute([$college]);
+    if ($college === 'All Colleges') {
+        // Notify ALL admins for a universal application
+        $admin_stmt = $pdo->query("SELECT email FROM admins");
+    } else {
+        $admin_stmt = $pdo->prepare("SELECT email FROM admins WHERE college = ? OR is_super_admin = 1");
+        $admin_stmt->execute([$college]);
+    }
     $admin_emails = $admin_stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // Fetch COMPLETE application data for the report
@@ -848,7 +853,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <!-- Document 2: NMAT (Conditional) -->
-                            <?php if ($application['college'] === 'Medicine'): ?>
+                            <?php if (strpos($application['college'], 'Medicine') !== false): ?>
                                 <div class="file-upload-wrapper">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-journal-check upload-icon"></i>

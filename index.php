@@ -113,6 +113,30 @@
             color: #adb5bd;
             font-weight: 500;
         }
+        .college-selection-grid {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid #f1f3f5;
+        }
+        .custom-check {
+            padding: 10px 12px 10px 35px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .custom-check:hover {
+            background: #e9ecef;
+        }
+        .form-check-input:checked + .form-check-label {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .all-colleges-check {
+            margin-top: 10px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+        }
         .admin-link {
             position: absolute;
             top: 20px;
@@ -142,21 +166,41 @@
     <p class="sub-text">Embark on your medical journey with Davao Medical School Foundation.</p>
     
     <form action="apply.php" method="GET">
-        <div class="text-start">
-            <label class="form-label">Select Your College</label>
-            <select name="college" class="form-select" required>
-                <option value="" disabled selected>Choose a program...</option>
-                <option value="Medicine (NMD)">College of Medicine (NMD)</option>
-                <option value="Medicine (IMD)">College of Medicine (IMD)</option>
-                <option value="Nursing">College of Nursing</option>
-                <option value="Dentistry">College of Dentistry</option>
-                <option value="Midwifery">College of Midwifery</option>
-                <option value="Biology">Department of Biology</option>
-                <option value="All Colleges" style="font-weight: 700; color: var(--primary-color);">All Colleges (Universal Application)</option>
-            </select>
+        <div class="text-start mb-4">
+            <label class="form-label">Select Your Desired College(s)</label>
+            <div class="college-selection-grid">
+                <div class="form-check custom-check">
+                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Medicine (NMD)" id="medNmd">
+                    <label class="form-check-label" for="medNmd">College of Medicine (NMD)</label>
+                </div>
+                <div class="form-check custom-check">
+                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Medicine (IMD)" id="medImd">
+                    <label class="form-check-label" for="medImd">College of Medicine (IMD)</label>
+                </div>
+                <div class="form-check custom-check">
+                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Nursing" id="nursing">
+                    <label class="form-check-label" for="nursing">College of Nursing</label>
+                </div>
+                <div class="form-check custom-check">
+                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Dentistry" id="dentistry">
+                    <label class="form-check-label" for="dentistry">College of Dentistry</label>
+                </div>
+                <div class="form-check custom-check">
+                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Midwifery" id="midwifery">
+                    <label class="form-check-label" for="midwifery">College of Midwifery</label>
+                </div>
+                <div class="form-check custom-check">
+                     <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Biology" id="biology">
+                     <label class="form-check-label" for="biology">Department of Biology</label>
+                 </div>
+                 <div class="form-check custom-check all-colleges-check">
+                    <input class="form-check-input" type="checkbox" id="selectAllColleges" value="All Colleges">
+                    <label class="form-check-label fw-bold" for="selectAllColleges" style="color: var(--primary-color);">Select All Colleges (Universal Application)</label>
+                </div>
+            </div>
         </div>
         
-        <button type="submit" class="btn btn-apply w-100 shadow-sm">
+        <button type="submit" class="btn btn-apply w-100 shadow-sm mt-2" id="submitBtn" disabled>
             Begin Application <i class="bi bi-arrow-right"></i>
         </button>
     </form>
@@ -167,6 +211,33 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAll = document.getElementById('selectAllColleges');
+        const checkboxes = document.querySelectorAll('.college-checkbox');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function updateSubmitButton() {
+            const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+            submitBtn.disabled = !anyChecked;
+        }
+
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+            });
+            updateSubmitButton();
+        });
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                selectAll.checked = allChecked;
+                updateSubmitButton();
+            });
+        });
+    });
+</script>
     <script src="js/form-draft.js"></script>
 
 </body>

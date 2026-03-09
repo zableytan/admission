@@ -24,6 +24,15 @@ if (!$application) {
 
 $student_name = htmlspecialchars($application['given_name'] . ' ' . $application['family_name']);
 
+// Determine if this is a Medicine application OR if multiple colleges are selected
+$is_multiple = (strpos($application['college'], ',') !== false);
+$is_medicine = (strpos($application['college'], 'Medicine') !== false) || $is_multiple;
+
+// Dynamic labels based on college selection
+$program_label = $is_medicine ? "Medicine" : $application['college'];
+$degree_label = $is_medicine ? "medical degree" : "degree in " . $application['college'];
+$school_label = $is_medicine ? "Medical School" : "College";
+
 
 // 2. POST LOGIC: Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -712,7 +721,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h5 class="section-title">D. Admission History</h5>
                             <div class="info-group mb-4">
                                 <label class="form-label fw-bold d-block mb-3">Is this your first time applying for a
-                                    medical degree?</label>
+                                    <?= $degree_label ?>?</label>
                                 <div class="d-flex gap-4 mb-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="first_time_md_flag"
@@ -742,7 +751,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </select>
                                         </div>
                                         <div class="col-md-6" id="prevMedSchoolContainer" style="display: none;">
-                                            <label class="form-label small">Name of Medical School:</label>
+                                            <label class="form-label small">Name of <?= $school_label ?>:</label>
                                             <input type="text" name="prev_med_school_name" class="form-control">
                                         </div>
                                     </div>
@@ -751,7 +760,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <h5 class="section-title">E. Motivation & Future Plans</h5>
                             <div class="info-group mb-4">
-                                <label class="form-label fw-bold d-block mb-3">What motivated you to pursue Medicine?
+                                <label class="form-label fw-bold d-block mb-3">What motivated you to pursue <?= $program_label ?>?
                                     <span class="fw-normal text-muted">(Check all that apply)</span></label>
                                 <div class="row g-2">
                                     <div class="col-md-4">
@@ -792,8 +801,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="info-group mb-4">
-                                <label class="form-label fw-bold d-block mb-3">Plans after graduation from Medical
-                                    School:</label>
+                                <label class="form-label fw-bold d-block mb-3">Plans after graduation from <?= $school_label ?>:</label>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <div class="form-check mb-2">
@@ -940,9 +948,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <h5 class="section-title">G. Medical School Preferences</h5>
+                            <h5 class="section-title"><?= $school_label ?> Preferences</h5>
                             <div class="info-group mb-4">
-                                <p class="small text-muted mb-3">List in order of preference other medical schools where
+                                <p class="small text-muted mb-3">List in order of preference other <?= strtolower($school_label) ?>s where
                                     you have applied/plan to apply:</p>
                                 <div class="row g-3">
                                     <div class="col-md-4">

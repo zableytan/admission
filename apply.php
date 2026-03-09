@@ -17,10 +17,20 @@ if (!isset($_GET['college']) && !isset($_POST['college'])) {
 }
 
 // Determine the college from the GET parameter (URL) or POST submission (hidden field)
-$college = isset($_GET['college']) ? $_GET['college'] : $_POST['college'];
+$college_input = isset($_GET['college']) ? $_GET['college'] : (isset($_POST['college']) ? $_POST['college'] : null);
+
+// If college is an array (from checkboxes), join it into a string
+if (is_array($college_input)) {
+    $college = implode(', ', $college_input);
+    $is_multiple = (count($college_input) > 1);
+} else {
+    $college = $college_input;
+    $is_multiple = false;
+}
 
 // Determine if this is a Medicine application (NMD or IMD)
-$is_medicine = (strpos($college, 'Medicine') !== false);
+// OR if multiple colleges are selected (per user request)
+$is_medicine = (strpos($college, 'Medicine') !== false) || $is_multiple;
 
 // Determine fields and logic based on College selection
 if ($is_medicine) {
@@ -64,6 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($score_val === false)
         $score_val = null;
 
+    // Collect Medicine-specific GWA if applicable
+    $gwa_val = $is_medicine ? filter_input(INPUT_POST, 'medicine_gwa', FILTER_VALIDATE_FLOAT) : null;
+    if ($gwa_val === false)
+        $gwa_val = null;
+
     // Default attachment path to NULL since we are skipping upload for now
     $target_file = null;
 
@@ -78,9 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Prepare the comprehensive INSERT statement.
         $sql = "INSERT INTO applications 
-            (family_name, given_name, middle_name, email, college, score_type, score_value, nmat_date, board_rating, 
+            (family_name, given_name, middle_name, email, college, score_type, score_value, gwa_value, nmat_date, board_rating, 
             mailing_address, mobile_no, tel_no_mailing, home_address, tel_no_home, social_media) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $pdo->prepare($sql);
 
@@ -94,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $posted_college,
                 $score_type,
                 $score_val,
+                $gwa_val,
                 $nmat_date,
                 $board_rating,
                 $mailing_address,
@@ -123,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step 1: Basic Application - <?= htmlspecialchars($college) ?></title>
+    <title>Step 1: Basic Application - <?= $is_multiple ? 'Multiple Colleges' : htmlspecialchars($college) ?></title>
     <link rel="icon" type="image/png" href="DMSF_Logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -280,8 +296,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
                                     <i class="bi bi-magic me-1"></i> Autofill Demo
                                 </button>
-                                <span class="badge bg-white text-primary px-3 py-2">College of
-                                    <?= htmlspecialchars($college) ?></span>
+                                <span class="badge bg-white text-primary px-3 py-2">
+                                    <?php if ($is_multiple): ?>
+                                        Multiple Colleges (Universal)
+                                    <?php else: ?>
+                                        College of <?= htmlspecialchars($college) ?>
+                                    <?php endif; ?>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -317,20 +338,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <h5 class="section-title mt-2">Academic Information</h5>
                             <div class="row g-4 mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label"><?= $score_label ?> *</label>
-                                    <input type="number" step="<?= $is_medicine ? '1' : '0.01' ?>"
-                                        name="<?= $score_field_name ?>" class="form-control" required
-                                        placeholder="<?= $score_placeholder ?>">
-                                    <div class="helper-text mt-2 mx-1">
-                                        <?= $is_medicine ? 'Medicine requires NMAT Percentile Rank.' : 'Other colleges require General Weighted Average.' ?>
-                                    </div>
-                                </div>
-
                                 <?php if ($is_medicine): ?>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <label class="form-label">NMAT Score *</label>
+                                        <input type="number" step="1" name="nmat_score" class="form-control" required
+                                            placeholder="Percentile Rank (e.g. 90)">
+                                        <div class="helper-text mt-2 mx-1">Required percentile rank.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">College GWA *</label>
+                                        <input type="number" step="0.01" name="medicine_gwa" class="form-control" required
+                                            placeholder="Enter GWA (e.g. 1.75)">
+                                        <div class="helper-text mt-2 mx-1">Your general weighted average.</div>
+                                    </div>
+                                    <div class="col-md-4">
                                         <label class="form-label">Date Taken (NMAT) *</label>
                                         <input type="date" name="nmat_date" class="form-control" required>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><?= $score_label ?> *</label>
+                                        <input type="number" step="0.01" name="gwa_score" class="form-control" required
+                                            placeholder="<?= $score_placeholder ?>">
+                                        <div class="helper-text mt-2 mx-1">
+                                            <?= ($college === 'All Colleges') ? 'Highest score between GWA or NMAT.' : 'General Weighted Average.' ?>
+                                        </div>
                                     </div>
                                 <?php endif; ?>
 

@@ -191,7 +191,7 @@ $html = "
                 <td class='row-label'>Mobile Number</td><td class='row-value'>" . $app_data['mobile_no'] . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Score Type/Value</td><td class='row-value'>" . $app_data['score_type'] . ": " . $app_data['score_value'] . "</td>
+                <td class='row-label'>Score Type/Value</td><td class='row-value'>" . $app_data['score_type'] . ": " . $app_data['score_value'] . ($app_data['gwa_value'] ? " (GWA: " . $app_data['gwa_value'] . ")" : "") . "</td>
                 <td class='row-label'>Submitted On</td><td class='row-value'>" . date('F d, Y h:i A', strtotime($app_data['created_at'])) . "</td>
             </tr>
             <tr>

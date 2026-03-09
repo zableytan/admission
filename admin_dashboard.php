@@ -101,8 +101,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                 $s_name = $s_given . ' ' . $s_family;
                 $app_college = $student_data['college'];
 
-                $admin_stmt = $pdo->prepare("SELECT email FROM admins WHERE college = ? OR is_super_admin = 1");
-                $admin_stmt->execute([$app_college]);
+                // Split the colleges (if multiple) and find corresponding admins
+                $colleges_array = explode(', ', $app_college);
+                $placeholders = implode(',', array_fill(0, count($colleges_array), '?'));
+                
+                // We also check for 'Medicine' if any 'Medicine (NMD/IMD)' is selected
+                $query_colleges = $colleges_array;
+                foreach($colleges_array as $c) {
+                    if (strpos($c, 'Medicine') !== false) {
+                        $query_colleges[] = 'Medicine';
+                    }
+                }
+                $query_colleges = array_unique($query_colleges);
+                $placeholders = implode(',', array_fill(0, count($query_colleges), '?'));
+
+                $admin_stmt = $pdo->prepare("SELECT email FROM admins WHERE college IN ($placeholders) OR is_super_admin = 1");
+                $admin_stmt->execute($query_colleges);
                 $admin_emails = $admin_stmt->fetchAll(PDO::FETCH_COLUMN);
 
                 // --- 2. SEND EMAIL WITH SIGNED DOCUMENT ---
@@ -203,11 +217,11 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD
     if ($college === 'Medicine') {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE 'Medicine %' OR college = 'Medicine' OR college = 'All Colleges') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
         $stmt->execute([]);
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE college = ? OR college = 'All Colleges' ORDER BY created_at DESC");
-        $stmt->execute([$college]);
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt->execute(["%$college%"]);
     }
     $applications = $stmt->fetchAll();
 }
@@ -489,8 +503,10 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                             <div class="mb-1 fw-semibold small <?= $app['college'] === 'All Colleges' ? 'text-danger fw-bold' : 'text-primary' ?>">
                                                 <?= $app['college'] ?>
                                             </div>
-                                            <span class="score-pill"><?= $app['score_value'] ?>
-                                                (<?= $app['score_type'] ?>)</span>
+                                            <span class="score-pill"><?= $app['score_value'] ?> (<?= $app['score_type'] ?>)</span>
+                                            <?php if (!empty($app['gwa_value'])): ?>
+                                                <div class="mt-1"><span class="score-pill"><?= $app['gwa_value'] ?> (GWA)</span></div>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <span class="status-badge status-<?= strtolower($app['status']) ?>">

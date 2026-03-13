@@ -192,7 +192,10 @@ $html = "
             </tr>
             <tr>
                 <td class='row-label'>Score Type/Value</td><td class='row-value'>" . $app_data['score_type'] . ": " . $app_data['score_value'] . ($app_data['gwa_value'] ? " (GWA: " . $app_data['gwa_value'] . ")" : "") . "</td>
-                <td class='row-label'>Submitted On</td><td class='row-value'>" . date('F d, Y h:i A', strtotime($app_data['created_at'])) . "</td>
+                <td class='row-label'>Social Media</td><td class='row-value'>" . htmlspecialchars($app_data['social_media'] ?: 'None') . "</td>
+            </tr>
+            <tr>
+                <td class='row-label'>Submitted On</td><td class='row-value' colspan='3'>" . date('F d, Y h:i A', strtotime($app_data['created_at'])) . "</td>
             </tr>
             <tr>
                 <td class='full-width-label'>Mailing Address</td><td class='full-width-value' colspan='3'>" . htmlspecialchars($app_data['mailing_address']) . "</td>
@@ -234,20 +237,28 @@ $html = "
         <div class='section-header'>FAMILY & FINANCIAL BACKGROUND</div>
         <table class='info-table'>
             <tr>
-                <td class='row-label'>Father's Name</td><td class='row-value'>" . htmlspecialchars($app_data['father_name']) . "</td>
-                <td class='row-label'>Father's Occupation</td><td class='row-value'>" . htmlspecialchars($app_data['father_occupation']) . "</td>
+                <td class='row-label'>Mother's Name</td>
+                <td class='row-value'>" . ($app_data['mother_deceased'] ? 'DECEASED' : htmlspecialchars($app_data['mother_first_name'] . ' ' . $app_data['mother_middle_name'] . ' ' . $app_data['mother_last_name'])) . " (" . ($app_data['mother_age'] ?: 'N/A') . ")</td>
+                <td class='row-label'>Mother's Occupation</td>
+                <td class='row-value'>" . ($app_data['mother_deceased'] ? 'N/A' : htmlspecialchars($app_data['mother_occupation'])) . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Mother's Name</td><td class='row-value'>" . htmlspecialchars($app_data['mother_name']) . "</td>
-                <td class='row-label'>Mother's Occupation</td><td class='row-value'>" . htmlspecialchars($app_data['mother_occupation']) . "</td>
+                <td class='row-label'>Father's Name</td>
+                <td class='row-value'>" . ($app_data['father_deceased'] ? 'DECEASED' : htmlspecialchars($app_data['father_first_name'] . ' ' . $app_data['father_middle_name'] . ' ' . $app_data['father_last_name'])) . " (" . ($app_data['father_age'] ?: 'N/A') . ")</td>
+                <td class='row-label'>Father's Occupation</td>
+                <td class='row-value'>" . ($app_data['father_deceased'] ? 'N/A' : htmlspecialchars($app_data['father_occupation'])) . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Family Income</td><td class='row-value'>PHP " . number_format($app_data['total_family_income'] ?? 0, 2) . "</td>
-                <td class='row-label'>Income Sources</td><td class='row-value'>" . getListText($app_data, 'income_', ['salaries' => 'Salaries', 'farm' => 'Farm', 'commissions' => 'Commissions', 'rentals' => 'Rentals', 'pension' => 'Pension', 'business' => 'Business']) . "</td>
+                <td class='row-label'>Family Income (Gross)</td>
+                <td class='row-value'>" . htmlspecialchars($app_data['total_family_income']) . "</td>
+                <td class='row-label'>DMSF Alumni Parent?</td>
+                <td class='row-value'>" . ($app_data['parent_dmsf_grad_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars(($app_data['parent_dmsf_course'] ?? '') . ' ' . ($app_data['parent_dmsf_year'] ?? '')) . ")</td>
             </tr>
             <tr>
-                <td class='row-label'>DMSF Alumni Parent?</td><td class='row-value'>" . ($app_data['parent_dmsf_grad_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['parent_dmsf_course_year'] ?? 'N/A') . ")</td>
-                <td class='row-label'>DMSF Faculty Parent?</td><td class='row-value'>" . ($app_data['parent_dmsf_teaching_flag'] ? 'YES' : 'NO') . " (" . ($app_data['parent_dmsf_teaching_years'] ?? 0) . " years)</td>
+                <td class='row-label'>DMSF Faculty Parent?</td>
+                <td class='row-value'>" . ($app_data['parent_dmsf_teaching_flag'] ? 'YES' : 'NO') . " (" . ($app_data['parent_dmsf_teaching_years'] ?? 0) . " years)</td>
+                <td class='row-label'>Income Sources</td>
+                <td class='row-value'>" . getListText($app_data, 'income_', ['salaries' => 'Salaries', 'farm' => 'Farm', 'commissions' => 'Commissions', 'rentals' => 'Rentals', 'pension' => 'Pension', 'business' => 'Business']) . "</td>
             </tr>
             <tr>
                 <td class='row-label'>Siblings</td><td class='row-value'>" . ($app_data['num_brothers'] ?? 0) . " Brothers / " . ($app_data['num_sisters'] ?? 0) . " Sisters</td>
@@ -290,10 +301,14 @@ $html = "
                 <td class='row-label'>Staying Place</td><td class='row-value'>" . htmlspecialchars($app_data['staying_place'] ?? 'N/A') . "</td>
             </tr>
             <tr>
-                <td class='full-width-label'>Motivations</td><td class='full-width-value' colspan='3'>" . getListText($app_data, 'motivation_', ['parents' => 'Parents', 'siblings' => 'Siblings', 'relatives' => 'Relatives', 'friends' => 'Friends', 'illness' => 'Personal Illness', 'prestige' => 'Prestige', 'health_awareness' => 'Health Awareness', 'community_needs' => 'Community Needs']) . "</td>
+                <td class='row-label'>Support Source</td>
+                <td class='row-value'>" . getListText($app_data, 'support_', ['parents' => 'Parents', 'veteran_benefit' => 'Veteran', 'scholarship_flag' => 'Scholarship']) . ($app_data['support_others'] ? ", " . htmlspecialchars($app_data['support_others']) : "") . "</td>
+                <td class='row-label'>Support Status</td>
+                <td class='row-value'>" . htmlspecialchars($app_data['support_status'] ?? 'N/A') . "</td>
             </tr>
             <tr>
-                <td class='full-width-label'>Info Source</td><td class='full-width-value' colspan='3'>" . getListText($app_data, 'info_', ['parents' => 'Parents', 'family_friends' => 'Family Friends', 'student_friends' => 'Student Friends', 'siblings' => 'Siblings', 'teachers' => 'Teachers', 'newspaper' => 'Newspaper', 'internet' => 'Internet']) . "</td>
+                <td class='full-width-label'>Personal Essay</td>
+                <td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['application_essay'] ?: 'None')) . "</td>
             </tr>
         </table>
 
@@ -310,10 +325,6 @@ $html = "
             </tr>
             <tr>
                 <td class='row-label'>GWA Certificate</td><td class='row-value'>" . (!empty($app_data['gwa_cert_path']) ? '✓ Provided' : '✗ Missing') . "</td>
-                <td class='row-label'>Entrance Exam</td><td class='row-value'>" . (!empty($app_data['entrance_exam_path']) ? '✓ Provided' : '✗ Missing') . "</td>
-            </tr>
-            <tr>
-                <td class='row-label'>Payment Receipt</td><td class='row-value'>" . (!empty($app_data['receipt_path']) ? '✓ Provided' : '✗ Missing') . "</td>
                 <td class='row-label'>Good Moral</td><td class='row-value'>" . (!empty($app_data['good_moral_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
         </table>
@@ -361,8 +372,6 @@ $file_fields = [
     'NMAT Result' => $app_data['nmat_path'],
     'Diploma' => $app_data['diploma_path'],
     'GWA Certificate' => $app_data['gwa_cert_path'],
-    'Entrance Exam Result' => $app_data['entrance_exam_path'],
-    'Application Fee Receipt' => $app_data['receipt_path'],
     'Good Moral Character' => $app_data['good_moral_path']
 ];
 

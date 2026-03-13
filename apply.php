@@ -60,7 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tel_no_mailing = filter_input(INPUT_POST, 'tel_no_mailing', FILTER_SANITIZE_SPECIAL_CHARS);
     $home_address = filter_input(INPUT_POST, 'home_address', FILTER_SANITIZE_SPECIAL_CHARS);
     $tel_no_home = filter_input(INPUT_POST, 'tel_no_home', FILTER_SANITIZE_SPECIAL_CHARS);
-    $social_media = filter_input(INPUT_POST, 'social_media', FILTER_SANITIZE_SPECIAL_CHARS);
+    
+    // Collect multiple social media selections
+    $socmed_array = isset($_POST['social_media']) ? $_POST['social_media'] : [];
+    $social_media = implode(', ', array_map(function($val) {
+        return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
+    }, $socmed_array));
 
     // Conditional data collection
     $nmat_date = $is_medicine ? filter_input(INPUT_POST, 'nmat_date', FILTER_SANITIZE_SPECIAL_CHARS) : null;
@@ -346,14 +351,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="helper-text mt-2 mx-1">Required percentile rank.</div>
                                     </div>
                                     <div class="col-md-4">
+                                        <label class="form-label">Date Taken (NMAT) *</label>
+                                        <input type="date" name="nmat_date" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4">
                                         <label class="form-label">College GWA *</label>
                                         <input type="number" step="0.01" name="medicine_gwa" class="form-control" required
                                             placeholder="Enter GWA (e.g. 1.75)">
                                         <div class="helper-text mt-2 mx-1">Your general weighted average.</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Date Taken (NMAT) *</label>
-                                        <input type="date" name="nmat_date" class="form-control" required>
                                     </div>
                                 <?php else: ?>
                                     <div class="col-md-6">
@@ -408,10 +413,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label class="form-label">Tel. No. (Home)</label>
                                     <input type="text" name="tel_no_home" class="form-control" placeholder="Optional">
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Social Media Accounts</label>
-                                    <input type="text" name="social_media" class="form-control"
-                                        placeholder="FB / LinkedIn / Twitter">
+                                <div class="col-12">
+                                    <label class="form-label d-block mb-3">Social Media Accounts (Select all that apply)</label>
+                                    <div class="row g-2">
+                                        <div class="col-md-3 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="Facebook" id="smFB">
+                                                <label class="form-check-label small" for="smFB">Facebook</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="Instagram" id="smIG">
+                                                <label class="form-check-label small" for="smIG">Instagram</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="Twitter (X)" id="smTW">
+                                                <label class="form-check-label small" for="smTW">Twitter (X)</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="LinkedIn" id="smLI">
+                                                <label class="form-check-label small" for="smLI">LinkedIn</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="TikTok" id="smTK">
+                                                <label class="form-check-label small" for="smTK">TikTok</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="YouTube" id="smYT">
+                                                <label class="form-check-label small" for="smYT">YouTube</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 col-12">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-light">Other</span>
+                                                <input type="text" name="social_media[]" class="form-control" placeholder="Specify platform...">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -436,25 +483,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/form-draft.js"></script>
 
     <script>
-        // Real-time validation for NMAT Score
+        // Real-time validation for NMAT Score and Expiry
         document.addEventListener('DOMContentLoaded', function () {
             // We only run this if the nmat_score input exists (i.e., College of Medicine)
             const nmatInput = document.querySelector('input[name="nmat_score"]');
+            const nmatDateInput = document.querySelector('input[name="nmat_date"]');
 
             if (nmatInput) {
-                // Create a warning element but hide it initially
+                // 1. NMAT Score Warning
                 const warningMsg = document.createElement('div');
-                warningMsg.style.color = '#dc3545'; // Bootstrap error color
+                warningMsg.style.color = '#dc3545';
                 warningMsg.style.fontSize = '0.875rem';
                 warningMsg.style.marginTop = '0.5rem';
                 warningMsg.style.fontWeight = '600';
                 warningMsg.innerText = 'Warning: Score is below the 40 percentile requirement.';
                 warningMsg.style.display = 'none';
 
-                // Insert after the helper text or the input
                 if (nmatInput.nextElementSibling) {
-                    // If the next sibling is the helper text div, insert after it
-                    // We check if next element is a DIV with class helper-text
                     let existingHelper = nmatInput.nextElementSibling;
                     if (existingHelper && existingHelper.classList.contains('helper-text')) {
                         existingHelper.parentNode.insertBefore(warningMsg, existingHelper.nextSibling);
@@ -467,14 +512,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 nmatInput.addEventListener('input', function () {
                     const val = parseFloat(this.value);
-
-                    // Check if value is entered and is less than 40
                     if (this.value && val < 40) {
                         warningMsg.style.display = 'block';
-                        this.style.borderColor = '#dc3545'; // Highlight input border
+                        this.style.borderColor = '#dc3545';
                     } else {
                         warningMsg.style.display = 'none';
-                        this.style.borderColor = ''; // Reset border
+                        this.style.borderColor = '';
+                    }
+                });
+            }
+
+            if (nmatDateInput) {
+                // 2. NMAT Expiry Warning
+                const expiryMsg = document.createElement('div');
+                expiryMsg.style.color = '#dc3545';
+                expiryMsg.style.fontSize = '0.875rem';
+                expiryMsg.style.marginTop = '0.5rem';
+                expiryMsg.style.fontWeight = '600';
+                expiryMsg.innerText = 'Warning: Your NMAT has expired or you need to retake it (valid for 2 years only).';
+                expiryMsg.style.display = 'none';
+                nmatDateInput.parentNode.appendChild(expiryMsg);
+
+                nmatDateInput.addEventListener('change', function () {
+                    if (this.value) {
+                        const takenDate = new Date(this.value);
+                        const today = new Date();
+                        const twoYearsAgo = new Date();
+                        twoYearsAgo.setFullYear(today.getFullYear() - 2);
+
+                        if (takenDate < twoYearsAgo) {
+                            expiryMsg.style.display = 'block';
+                            this.style.borderColor = '#dc3545';
+                        } else {
+                            expiryMsg.style.display = 'none';
+                            this.style.borderColor = '';
+                        }
                     }
                 });
             }
@@ -490,14 +562,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'mobile_no': '0912 345 6789',
                 'tel_no_mailing': '123-4567',
                 'home_address': 'Permanent Residence St., Davao City',
-                'tel_no_home': '765-4321',
-                'social_media': '@johndoe_md'
+                'tel_no_home': '765-4321'
             };
 
             for (const [name, value] of Object.entries(fields)) {
                 const input = document.querySelector(`input[name="${name}"]`);
                 if (input) input.value = value;
             }
+
+            // Select social media
+            const socmeds = ['smFB', 'smLI', 'smTW'];
+            socmeds.forEach(id => {
+                const cb = document.getElementById(id);
+                if (cb) cb.checked = true;
+            });
 
             // Handle score field separately because its name depends on the college
             const scoreInput = document.querySelector('input[name="nmat_score"], input[name="gwa_score"]');

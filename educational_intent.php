@@ -46,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $hs_honors_flag = (isset($_POST['hs_honors_flag']) && $_POST['hs_honors_flag'] == 'YES') ? 1 : 0;
     $hs_honor_type = $hs_honors_flag ? filter_input(INPUT_POST, 'hs_honor_type', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    if ($hs_honor_type == 'Others') {
+        $hs_honor_type = filter_input(INPUT_POST, 'hs_honor_type_other', FILTER_SANITIZE_SPECIAL_CHARS);
+    }
 
     $college_name_address = filter_input(INPUT_POST, 'college_name_address', FILTER_SANITIZE_SPECIAL_CHARS);
     $degree_obtained = filter_input(INPUT_POST, 'degree_obtained', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -114,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $support_veteran_benefit = isset($_POST['support_veteran_benefit']) ? 1 : 0;
     $support_scholarship_flag = isset($_POST['support_scholarship_flag']) ? 1 : 0;
     $support_scholarship_name = $support_scholarship_flag ? filter_input(INPUT_POST, 'support_scholarship_name', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $support_others = filter_input(INPUT_POST, 'support_others', FILTER_SANITIZE_SPECIAL_CHARS);
     $support_status = filter_input(INPUT_POST, 'support_status', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // --- Info Source & Staying Place ---
@@ -137,6 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pref_third_med_school = filter_input(INPUT_POST, 'pref_third_med_school', FILTER_SANITIZE_SPECIAL_CHARS);
     $pref_other_med_schools = filter_input(INPUT_POST, 'pref_other_med_schools', FILTER_SANITIZE_SPECIAL_CHARS);
 
+    $application_essay = filter_input(INPUT_POST, 'application_essay', FILTER_SANITIZE_SPECIAL_CHARS);
+
 
     // Prepare the massive UPDATE statement
     // (Due to the sheer number of fields, this SQL is split for readability, but must be run as one string)
@@ -151,11 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         prev_app_status=?, prev_med_school_name=?, motivation_parents=?, motivation_siblings=?, motivation_relatives=?, 
         motivation_friends=?, motivation_illness=?, motivation_prestige=?, motivation_health_awareness=?, 
         motivation_community_needs=?, motivation_others=?, future_plan=?, future_plan_other_postgrad=?, future_plan_others=?, 
-        support_parents=?, support_veteran_benefit=?, support_scholarship_flag=?, support_scholarship_name=?, 
+        support_parents=?, support_veteran_benefit=?, support_scholarship_flag=?, support_scholarship_name=?, support_others=?, 
         support_status=?, info_parents=?, info_family_friends=?, info_student_friends=?, info_siblings=?, info_teachers=?, 
         info_newspaper=?, info_convocation=?, info_internet=?, info_own_effort=?, info_others=?, staying_place=?, 
         staying_place_others=?, pref_first_med_school=?, pref_second_med_school=?, pref_third_med_school=?, 
-        pref_other_med_schools=?
+        pref_other_med_schools=?, application_essay=?
         WHERE id = ?";
 
     $stmt = $pdo->prepare($sql);
@@ -217,6 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $support_veteran_benefit,
             $support_scholarship_flag,
             $support_scholarship_name,
+            $support_others,
             $support_status,
             $info_parents,
             $info_family_friends,
@@ -234,6 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pref_second_med_school,
             $pref_third_med_school,
             $pref_other_med_schools,
+            $application_essay,
             $app_id
         ])
     ) {
@@ -499,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="hs_honors_flag" id="hsNo"
                                             value="NO" checked
-                                            onclick="document.getElementById('hsHonorType').style.display='none'">
+                                            onclick="document.getElementById('hsHonorType').style.display='none'; toggleHsOther(false)">
                                         <label class="form-check-label" for="hsNo">No, I haven't</label>
                                     </div>
                                 </div>
@@ -509,24 +517,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="d-flex flex-wrap gap-3">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="hs_honor_type"
-                                                value="Valedictorian"> Valedictorian
+                                                value="Valedictorian" onclick="toggleHsOther(false)"> Valedictorian
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="hs_honor_type"
-                                                value="Salutatorian"> Salutatorian
+                                                value="Salutatorian" onclick="toggleHsOther(false)"> Salutatorian
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="hs_honor_type"
-                                                value="First Honor"> First Honor
+                                                value="First Honor" onclick="toggleHsOther(false)"> First Honor
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="hs_honor_type"
-                                                value="Second Honor"> Second Honor
+                                                value="Second Honor" onclick="toggleHsOther(false)"> Second Honor
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="hs_honor_type"
-                                                value="Others"> Others
+                                                value="Others" onclick="toggleHsOther(true)"> Others
                                         </div>
+                                    </div>
+                                    <div id="hsOtherSpec" class="mt-3" style="display: none;">
+                                        <input type="text" name="hs_honor_type_other" class="form-control" placeholder="Please specify...">
                                     </div>
                                 </div>
                             </div>
@@ -867,6 +878,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 class="form-control form-control-sm"
                                                 placeholder="Name of scholarship...">
                                         </div>
+                                        <div class="mt-2">
+                                            <input type="text" name="support_others"
+                                                class="form-control form-control-sm" placeholder="Others (specify)...">
+                                        </div>
                                         <div class="mt-3">
                                             <label class="form-label small">Support Status:</label>
                                             <select name="support_status" class="form-select form-select-sm">
@@ -948,6 +963,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
+                            <h5 class="section-title">G. Personal Essay</h5>
+                            <div class="info-group mb-4">
+                                <label class="form-label fw-bold d-block mb-3">Why did you choose this course or college? <span class="text-danger">*</span></label>
+                                <textarea name="application_essay" class="form-control" rows="6" required
+                                    placeholder="Please share your reasons for choosing DMSF and your specific program..."></textarea>
+                                <div class="text-muted small mt-2">Maximum of 500 words.</div>
+                            </div>
+
                             <h5 class="section-title"><?= $school_label ?> Preferences</h5>
                             <div class="info-group mb-4">
                                 <p class="small text-muted mb-3">List in order of preference other <?= strtolower($school_label) ?>s where
@@ -988,6 +1011,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        function toggleHsOther(show) {
+            document.getElementById('hsOtherSpec').style.display = show ? 'block' : 'none';
+        }
+
         function toggleGapDetails(type) {
             document.getElementById('courseInput').style.display = (type === 'course') ? 'block' : 'none';
             document.getElementById('employeeDetails').style.display = (type === 'employee') ? 'block' : 'none';
@@ -1037,7 +1064,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'other_skills_work_exp': 'Volunteer at Red Cross, Proficient in basic life support.',
                 'pref_first_med_school': 'Davao Medical School Foundation',
                 'pref_second_med_school': 'UP College of Medicine',
-                'pref_third_med_school': 'UST Faculty of Medicine and Surgery'
+                'pref_third_med_school': 'UST Faculty of Medicine and Surgery',
+                'application_essay': 'I chose DMSF because of its excellent reputation in medical education and its commitment to community health. Having grown up in Davao, I have seen first-hand the impact DMSF graduates have on the local healthcare system. I am passionate about becoming a physician who serves the underserved, and I believe DMSF provides the perfect environment and training to help me achieve this goal.'
             };
 
             for (const [name, value] of Object.entries(textFields)) {
@@ -1046,7 +1074,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Radio buttons
-            document.getElementById('hsNo').checked = true;
+            document.getElementById('hsYes').checked = true;
+            document.getElementById('hsHonorType').style.display = 'block';
+            document.querySelector('input[name="hs_honor_type"][value="Valedictorian"]').checked = true;
+            
             document.getElementById('collegeNo').checked = true;
             document.getElementById('mdFirstYes').checked = true;
             document.getElementById('actNone').checked = true;

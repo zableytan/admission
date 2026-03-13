@@ -28,10 +28,20 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 // 2. POST LOGIC: Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Collect Family Info ---
-    $father_name = filter_input(INPUT_POST, 'father_name', FILTER_SANITIZE_SPECIAL_CHARS);
-    $mother_name = filter_input(INPUT_POST, 'mother_name', FILTER_SANITIZE_SPECIAL_CHARS);
-    $father_occupation = filter_input(INPUT_POST, 'father_occupation', FILTER_SANITIZE_SPECIAL_CHARS);
-    $mother_occupation = filter_input(INPUT_POST, 'mother_occupation', FILTER_SANITIZE_SPECIAL_CHARS);
+    $father_first_name = filter_input(INPUT_POST, 'father_first_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $father_middle_name = filter_input(INPUT_POST, 'father_middle_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $father_last_name = filter_input(INPUT_POST, 'father_last_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $father_age = filter_input(INPUT_POST, 'father_age', FILTER_VALIDATE_INT) ?: null;
+    $father_deceased = isset($_POST['father_deceased']) ? 1 : 0;
+
+    $mother_first_name = filter_input(INPUT_POST, 'mother_first_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $mother_middle_name = filter_input(INPUT_POST, 'mother_middle_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $mother_last_name = filter_input(INPUT_POST, 'mother_last_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $mother_age = filter_input(INPUT_POST, 'mother_age', FILTER_VALIDATE_INT) ?: null;
+    $mother_deceased = isset($_POST['mother_deceased']) ? 1 : 0;
+
+    $father_occupation = !$father_deceased ? filter_input(INPUT_POST, 'father_occupation', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $mother_occupation = !$mother_deceased ? filter_input(INPUT_POST, 'mother_occupation', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $family_address = filter_input(INPUT_POST, 'family_address', FILTER_SANITIZE_SPECIAL_CHARS);
     $family_contact_no = filter_input(INPUT_POST, 'family_contact_no', FILTER_SANITIZE_SPECIAL_CHARS);
 
@@ -44,15 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $income_business = isset($_POST['income_business']) ? 1 : 0;
     $income_others = filter_input(INPUT_POST, 'income_others', FILTER_SANITIZE_SPECIAL_CHARS);
 
-    $total_family_income = filter_input(INPUT_POST, 'total_family_income', FILTER_VALIDATE_FLOAT);
-    if ($total_family_income === false)
-        $total_family_income = null;
+    $total_family_income = filter_input(INPUT_POST, 'total_family_income', FILTER_SANITIZE_SPECIAL_CHARS);
 
     $family_assets = filter_input(INPUT_POST, 'family_assets', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // --- DMSF Affiliation ---
     $parent_dmsf_grad_flag = (isset($_POST['parent_dmsf_grad_flag']) && $_POST['parent_dmsf_grad_flag'] == 'YES') ? 1 : 0;
-    $parent_dmsf_course_year = filter_input(INPUT_POST, 'parent_dmsf_course_year', FILTER_SANITIZE_SPECIAL_CHARS);
+    $parent_dmsf_course = filter_input(INPUT_POST, 'parent_dmsf_course', FILTER_SANITIZE_SPECIAL_CHARS);
+    $parent_dmsf_year = filter_input(INPUT_POST, 'parent_dmsf_year', FILTER_SANITIZE_SPECIAL_CHARS);
     $parent_dmsf_teaching_flag = (isset($_POST['parent_dmsf_teaching_flag']) && $_POST['parent_dmsf_teaching_flag'] == 'YES') ? 1 : 0;
     $parent_dmsf_teaching_years = filter_input(INPUT_POST, 'parent_dmsf_teaching_years', FILTER_VALIDATE_INT);
     if ($parent_dmsf_teaching_years === false)
@@ -95,9 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Prepare the comprehensive UPDATE statement
     $sql = "UPDATE applications SET 
-            father_name=?, mother_name=?, father_occupation=?, mother_occupation=?, family_address=?, family_contact_no=?, 
+            father_first_name=?, father_middle_name=?, father_last_name=?, father_age=?, father_deceased=?,
+            mother_first_name=?, mother_middle_name=?, mother_last_name=?, mother_age=?, mother_deceased=?,
+            father_occupation=?, mother_occupation=?, family_address=?, family_contact_no=?, 
             income_salaries=?, income_farm=?, income_commissions=?, income_rentals=?, income_pension=?, income_business=?, 
-            income_others=?, total_family_income=?, family_assets=?, parent_dmsf_grad_flag=?, parent_dmsf_course_year=?, 
+            income_others=?, total_family_income=?, family_assets=?, parent_dmsf_grad_flag=?, parent_dmsf_course=?, parent_dmsf_year=?, 
             parent_dmsf_teaching_flag=?, parent_dmsf_teaching_years=?, num_brothers=?, num_sisters=?, brothers_hs=?, 
             sisters_hs=?, brothers_college=?, sisters_college=?, brothers_courses=?, sisters_courses=?, siblings_middle_school=?,
             sibling_dmsf_flag=?, sibling_dmsf_details=? 
@@ -108,8 +119,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Execute the update
     if (
         $stmt->execute([
-            $father_name,
-            $mother_name,
+            $father_first_name,
+            $father_middle_name,
+            $father_last_name,
+            $father_age,
+            $father_deceased,
+            $mother_first_name,
+            $mother_middle_name,
+            $mother_last_name,
+            $mother_age,
+            $mother_deceased,
             $father_occupation,
             $mother_occupation,
             $family_address,
@@ -124,7 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $total_family_income,
             $family_assets,
             $parent_dmsf_grad_flag,
-            $parent_dmsf_course_year,
+            $parent_dmsf_course,
+            $parent_dmsf_year,
             $parent_dmsf_teaching_flag,
             $parent_dmsf_teaching_years,
             $num_brothers,
@@ -347,26 +367,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h5 class="section-title">A. Parent Information</h5>
 
                             <div class="row g-4 mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label">Father's Name</label>
-                                    <input type="text" name="father_name" class="form-control" placeholder="Full Name">
+                                <!-- Father's Info -->
+                                <div class="col-12">
+                                    <div class="p-3 border rounded bg-light">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="fw-bold mb-0 text-primary">FATHER'S INFORMATION</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="father_deceased" id="fatherDeceased" onchange="toggleParentFields('father')">
+                                                <label class="form-check-label small fw-bold text-danger" for="fatherDeceased">DECEASED</label>
+                                            </div>
+                                        </div>
+                                        <div id="fatherFields">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label class="form-label">First Name</label>
+                                                    <input type="text" name="father_first_name" class="form-control" placeholder="First Name">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Middle Name</label>
+                                                    <input type="text" name="father_middle_name" class="form-control" placeholder="Middle Name">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Last Name</label>
+                                                    <input type="text" name="father_last_name" class="form-control" placeholder="Last Name">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Age</label>
+                                                    <input type="number" name="father_age" class="form-control" placeholder="Age">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label">Occupation</label>
+                                                    <input type="text" name="father_occupation" class="form-control" placeholder="Occupation">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Mother's Name</label>
-                                    <input type="text" name="mother_name" class="form-control" placeholder="Full Name">
-                                </div>
-                            </div>
 
-                            <div class="row g-4 mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label">Father's Occupation</label>
-                                    <input type="text" name="father_occupation" class="form-control"
-                                        placeholder="Occupation">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Mother's Occupation</label>
-                                    <input type="text" name="mother_occupation" class="form-control"
-                                        placeholder="Occupation">
+                                <!-- Mother's Info -->
+                                <div class="col-12">
+                                    <div class="p-3 border rounded bg-light">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="fw-bold mb-0 text-primary">MOTHER'S INFORMATION</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="mother_deceased" id="motherDeceased" onchange="toggleParentFields('mother')">
+                                                <label class="form-check-label small fw-bold text-danger" for="motherDeceased">DECEASED</label>
+                                            </div>
+                                        </div>
+                                        <div id="motherFields">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <label class="form-label">First Name</label>
+                                                    <input type="text" name="mother_first_name" class="form-control" placeholder="First Name">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Middle Name</label>
+                                                    <input type="text" name="mother_middle_name" class="form-control" placeholder="Middle Name">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Last Name</label>
+                                                    <input type="text" name="mother_last_name" class="form-control" placeholder="Last Name">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Age</label>
+                                                    <input type="number" name="mother_age" class="form-control" placeholder="Age">
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label">Occupation</label>
+                                                    <input type="text" name="mother_occupation" class="form-control" placeholder="Occupation">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -419,11 +491,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label">Approximate total income of the Family</label>
-                                <input type="number" step="0.01" name="total_family_income" class="form-control"
-                                    placeholder="Combined annual income">
-                                <div class="text-muted small mt-2">Include parents, unmarried siblings, and family
-                                    enterprises.</div>
+                                <label class="form-label">Total Family Income (Gross)</label>
+                                <select name="total_family_income" class="form-select">
+                                    <option value="">Select income range...</option>
+                                    <option value="Below ₱100,000">Below ₱100,000</option>
+                                    <option value="₱100,000 - ₱250,000">₱100,000 - ₱250,000</option>
+                                    <option value="₱250,001 - ₱500,000">₱250,001 - ₱500,000</option>
+                                    <option value="₱500,001 - ₱1,000,000">₱500,001 - ₱1,000,000</option>
+                                    <option value="Above ₱1,000,000">Above ₱1,000,000</option>
+                                </select>
+                                <div class="text-muted small mt-2">Combined annual income including parents, unmarried
+                                    siblings, and family enterprises.</div>
                             </div>
 
                             <div class="mb-4">
@@ -449,9 +527,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         onclick="document.getElementById('parentGradDetails').style.display='none'">
                                     <label class="form-check-label" for="parentGradNo">NO</label>
                                 </div>
-                                <div class="mt-3" id="parentGradDetails" style="display: none;">
-                                    <input type="text" name="parent_dmsf_course_year" class="form-control"
-                                        placeholder="What course and year graduated?">
+                                <div id="parentGradDetails" style="display: none;">
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-md-8">
+                                            <label class="form-label">Course</label>
+                                            <input type="text" name="parent_dmsf_course" class="form-control"
+                                                placeholder="e.g. BS Biology / MD">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Year Graduated</label>
+                                            <input type="text" name="parent_dmsf_year" class="form-control"
+                                                placeholder="YYYY">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -561,15 +649,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
     <script>
+        function toggleParentFields(parent) {
+            const isDeceased = document.getElementById(parent + 'Deceased').checked;
+            const fieldsContainer = document.getElementById(parent + 'Fields');
+            const inputs = fieldsContainer.querySelectorAll('input');
+            
+            if (isDeceased) {
+                fieldsContainer.style.opacity = '0.5';
+                inputs.forEach(input => {
+                    input.value = '';
+                    input.disabled = true;
+                });
+            } else {
+                fieldsContainer.style.opacity = '1';
+                inputs.forEach(input => {
+                    input.disabled = false;
+                });
+            }
+        }
+
         function autofillDemo() {
             const textFields = {
-                'father_name': 'Robert Doe',
-                'mother_name': 'Jane Doe',
+                'father_first_name': 'Robert',
+                'father_middle_name': 'Middle',
+                'father_last_name': 'Doe',
+                'father_age': '50',
+                'mother_first_name': 'Jane',
+                'mother_middle_name': 'Smith',
+                'mother_last_name': 'Doe',
+                'mother_age': '48',
                 'father_occupation': 'Civil Engineer',
                 'mother_occupation': 'Registered Nurse',
                 'family_address': '456 Residence Way, Davao City',
                 'family_contact_no': '0922 444 5555',
-                'total_family_income': '1200000',
+                'total_family_income': '₱100,000 - ₱250,000',
                 'family_assets': 'Residential house and lot, family vehicle (SUV)',
                 'num_brothers': '1',
                 'num_sisters': '1',

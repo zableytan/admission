@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS applications (
     college VARCHAR(100) NOT NULL,
     score_type ENUM('NMAT', 'GWA') NOT NULL,
     score_value DECIMAL(5,2),
+    gwa_value DECIMAL(5,2),
     nmat_date VARCHAR(50),
     board_rating DECIMAL(5,2),
     mailing_address TEXT,
@@ -175,6 +176,7 @@ CREATE TABLE IF NOT EXISTS applications (
     
     -- STEP 5: Processing & Administration
     tor_path VARCHAR(255) NULL,
+    photo_path VARCHAR(255) NULL,
     form137_path VARCHAR(255) NULL,
     birth_cert_path VARCHAR(255) NULL,
     nmat_path VARCHAR(255) NULL,

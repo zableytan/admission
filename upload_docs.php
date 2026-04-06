@@ -82,8 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nmat_path = handleUpload('nmat_file', $upload_dir, $app_id);
     $diploma_path = handleUpload('diploma_file', $upload_dir, $app_id); // Optional
     $gwa_path = handleUpload('gwa_file', $upload_dir, $app_id);
-    $entrance_path = handleUpload('entrance_exam_file', $upload_dir, $app_id);
-    $receipt_path = handleUpload('receipt_file', $upload_dir, $app_id);
     $good_moral_path = handleUpload('good_moral_file', $upload_dir, $app_id);
     $passport_path = $is_imd ? handleUpload('passport_file', $upload_dir, $app_id) : null;
 
@@ -107,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $sql = "UPDATE applications SET
             photo_path=?, tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
-            entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?, passport_path=?
+            entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -118,8 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nmat_path,
             $diploma_path,
             $gwa_path,
-            $entrance_path,
-            $receipt_path,
             $good_moral_path,
             $other_docs_paths,
             $passport_path,
@@ -269,7 +265,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
                 <tr>
                     <td class='row-label'>Score Type/Value</td><td class='row-value'>" . $app_data['score_type'] . ": " . $app_data['score_value'] . "</td>
-                    <td class='row-label'>Submitted On</td><td class='row-value'>" . date('F d, Y h:i A') . "</td>
+                    <td class='row-label'>Social Media</td><td class='row-value'>" . htmlspecialchars($app_data['social_media'] ?: 'None') . "</td>
+                </tr>
+                <tr>
+                    <td class='row-label'>Submitted On</td><td class='row-value' colspan='3'>" . date('F d, Y h:i A') . "</td>
                 </tr>
                 <tr>
                     <td class='full-width-label'>Mailing Address</td><td class='full-width-value' colspan='3'>" . htmlspecialchars($app_data['mailing_address']) . "</td>
@@ -311,16 +310,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class='section-header'>FAMILY & FINANCIAL BACKGROUND</div>
             <table class='info-table'>
                 <tr>
-                    <td class='row-label'>Father's Name</td><td class='row-value'>" . htmlspecialchars($app_data['father_name']) . "</td>
-                    <td class='row-label'>Father's Occupation</td><td class='row-value'>" . htmlspecialchars($app_data['father_occupation']) . "</td>
+                    <td class='row-label'>Father's Name</td>
+                    <td class='row-value'>" . ($app_data['father_deceased'] ? 'DECEASED' : htmlspecialchars($app_data['father_first_name'] . ' ' . $app_data['father_middle_name'] . ' ' . $app_data['father_last_name'])) . "</td>
+                    <td class='row-label'>Father's Occupation</td>
+                    <td class='row-value'>" . ($app_data['father_deceased'] ? 'N/A' : htmlspecialchars($app_data['father_occupation'])) . "</td>
                 </tr>
                 <tr>
-                    <td class='row-label'>Mother's Name</td><td class='row-value'>" . htmlspecialchars($app_data['mother_name']) . "</td>
-                    <td class='row-label'>Mother's Occupation</td><td class='row-value'>" . htmlspecialchars($app_data['mother_occupation']) . "</td>
+                    <td class='row-label'>Mother's Name</td>
+                    <td class='row-value'>" . ($app_data['mother_deceased'] ? 'DECEASED' : htmlspecialchars($app_data['mother_first_name'] . ' ' . $app_data['mother_middle_name'] . ' ' . $app_data['mother_last_name'])) . "</td>
+                    <td class='row-label'>Mother's Occupation</td>
+                    <td class='row-value'>" . ($app_data['mother_deceased'] ? 'N/A' : htmlspecialchars($app_data['mother_occupation'])) . "</td>
                 </tr>
                 <tr>
-                    <td class='row-label'>Family Income</td><td class='row-value'>PHP " . number_format($app_data['total_family_income'] ?? 0, 2) . "</td>
-                    <td class='row-label'>Income Sources</td><td class='row-value'>" . getListText($app_data, 'income_', ['salaries' => 'Salaries', 'farm' => 'Farm', 'commissions' => 'Commissions', 'rentals' => 'Rentals', 'pension' => 'Pension', 'business' => 'Business']) . "</td>
+                    <td class='row-label'>Family Income (Gross)</td>
+                    <td class='row-value'>" . htmlspecialchars($app_data['total_family_income']) . "</td>
+                    <td class='row-label'>Income Sources</td>
+                    <td class='row-value'>" . getListText($app_data, 'income_', ['salaries' => 'Salaries', 'farm' => 'Farm', 'commissions' => 'Commissions', 'rentals' => 'Rentals', 'pension' => 'Pension', 'business' => 'Business']) . "</td>
                 </tr>
                 <tr>
                     <td class='row-label'>DMSF Alumni Parent?</td><td class='row-value'>" . getBoolText($app_data['parent_dmsf_grad_flag'] ?? 0) . " (" . htmlspecialchars($app_data['parent_dmsf_course_year'] ?? 'N/A') . ")</td>
@@ -372,6 +377,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr>
                     <td class='full-width-label'>Info Source</td><td class='full-width-value' colspan='3'>" . getListText($app_data, 'info_', ['parents' => 'Parents', 'family_friends' => 'Family Friends', 'student_friends' => 'Student Friends', 'siblings' => 'Siblings', 'teachers' => 'Teachers', 'newspaper' => 'Newspaper', 'internet' => 'Internet']) . "</td>
                 </tr>
+                <tr>
+                    <td class='full-width-label'>Personal Essay</td>
+                    <td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['application_essay'] ?: 'None')) . "</td>
+                </tr>
             </table>
 
             <!-- VI. ATTACHED DOCUMENTS CHECKLIST -->
@@ -388,10 +397,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr>
                     <td class='row-label'>Diploma</td><td class='row-value'>" . ($diploma_path ? '✓ Provided' : '✗ Missing') . "</td>
                     <td class='row-label'>GWA Certificate</td><td class='row-value'>" . ($gwa_path ? '✓ Provided' : '✗ Missing') . "</td>
-                </tr>
-                <tr>
-                    <td class='row-label'>Entrance Exam</td><td class='row-value'>" . ($entrance_path ? '✓ Provided' : '✗ Missing') . "</td>
-                    <td class='row-label'>Payment Receipt</td><td class='row-value'>" . ($receipt_path ? '✓ Provided' : '✗ Missing') . "</td>
                 </tr>
                 <tr>
                     <td class='row-label'>Good Moral</td><td class='row-value'>" . ($good_moral_path ? '✓ Provided' : '✗ Missing') . "</td>
@@ -488,8 +493,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'GWA Cert' => $gwa_path,
             'Entrance Exam' => $entrance_path,
             'Receipt' => $receipt_path,
-            'Good Moral' => $good_moral_path,
-            'Passport Copy' => $passport_path
+            'Good Moral' => $good_moral_path
         ];
 
         foreach ($file_map as $label => $path) {
@@ -832,7 +836,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-text upload-icon"></i>
-                                    <label class="form-label mb-0">1. Transcript of Records (TOR) <span
+                                    <label class="form-label mb-0">2. Transcript of Records (TOR) <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="tor_file" class="form-control" required>
@@ -842,7 +846,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-spreadsheet upload-icon"></i>
-                                    <label class="form-label mb-0">2. Form 137 <span
+                                    <label class="form-label mb-0">3. Form 137 <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="form137_file" class="form-control" required>
@@ -852,7 +856,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-person-badge upload-icon"></i>
-                                    <label class="form-label mb-0">3. Birth Certificate (PSA) <span
+                                    <label class="form-label mb-0">4. Birth Certificate (PSA) <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="birth_cert_file" class="form-control" required>
@@ -863,7 +867,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="file-upload-wrapper">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-journal-check upload-icon"></i>
-                                        <label class="form-label mb-0">4. Copy of NMAT Result <span
+                                        <label class="form-label mb-0">5. Copy of NMAT Result <span
                                                 class="required-badge">Required</span></label>
                                     </div>
                                     <input type="file" name="nmat_file" class="form-control" required>
@@ -874,7 +878,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-award upload-icon"></i>
-                                    <label class="form-label mb-0">5. Copy of Diploma <span
+                                    <label class="form-label mb-0">6. Copy of Diploma <span
                                             class="text-muted small fw-normal ms-2">(If available)</span></label>
                                 </div>
                                 <input type="file" name="diploma_file" class="form-control">
@@ -884,37 +888,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-calculator upload-icon"></i>
-                                    <label class="form-label mb-0">6. General Weighted Average in College <span
+                                    <label class="form-label mb-0">7. General Weighted Average in College <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="gwa_file" class="form-control" required>
-                            </div>
-
-                            <!-- Document 5: Entrance Exam -->
-                            <div class="file-upload-wrapper">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-pencil-square upload-icon"></i>
-                                    <label class="form-label mb-0">7. Result of Entrance Exam <span
-                                            class="required-badge">Required</span></label>
-                                </div>
-                                <input type="file" name="entrance_exam_file" class="form-control" required>
-                            </div>
-
-                            <!-- Document 6: Receipt -->
-                            <div class="file-upload-wrapper">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-receipt upload-icon"></i>
-                                    <label class="form-label mb-0">8. Receipt of Application Fee <span
-                                            class="required-badge">Required</span></label>
-                                </div>
-                                <input type="file" name="receipt_file" class="form-control" required>
                             </div>
 
                             <!-- Document: Good Moral -->
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-shield-check upload-icon"></i>
-                                    <label class="form-label mb-0">9. Certificate of Good Moral Character <span
+                                    <label class="form-label mb-0">8. Certificate of Good Moral Character <span
                                             class="required-badge">Required</span></label>
                                 </div>
                                 <input type="file" name="good_moral_file" class="form-control" required>

@@ -199,22 +199,6 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
 
                     <div class="doc-item">
                         <div>
-                            <div class="fw-bold text-dark">Entrance Exam Result</div>
-                            <div class="small text-muted">DMSF Entrance Exam</div>
-                        </div>
-                        <?= getFileLink($app['entrance_exam_path'], 'Exam Result') ?>
-                    </div>
-
-                    <div class="doc-item">
-                        <div>
-                            <div class="fw-bold text-dark">Application Fee Receipt</div>
-                            <div class="small text-muted">Proof of payment</div>
-                        </div>
-                        <?= getFileLink($app['receipt_path'], 'Receipt') ?>
-                    </div>
-
-                    <div class="doc-item">
-                        <div>
                             <div class="fw-bold text-dark">Good Moral Character</div>
                             <div class="small text-muted">Certificate of Good Moral</div>
                         </div>

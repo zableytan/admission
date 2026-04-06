@@ -523,8 +523,6 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                                     'nmat_path' => 'journal-check',
                                                     'diploma_path' => 'award',
                                                     'gwa_cert_path' => 'calculator',
-                                                    'entrance_exam_path' => 'pencil-square',
-                                                    'receipt_path' => 'receipt',
                                                     'good_moral_path' => 'shield-check'
                                                 ];
                                                 foreach($doc_icons as $field => $icon):

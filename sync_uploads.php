@@ -23,8 +23,6 @@ $mapping = [
     'nmat_file'          => 'nmat_path',
     'diploma_file'       => 'diploma_path',
     'gwa_file'           => 'gwa_cert_path',
-    'entrance_exam_file' => 'entrance_exam_path',
-    'receipt_file'       => 'receipt_path',
     'good_moral_file'    => 'good_moral_path'
 ];
 

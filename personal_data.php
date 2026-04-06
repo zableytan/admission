@@ -373,7 +373,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h5 class="section-title mt-2">B. Medical History</h5>
 
                             <div class="mb-4">
-                                <label class="form-label">Medical History (last 5 years)</label>
+                                <label class="form-label">Medical History</label>
                                 <textarea name="medical_history" class="form-control" rows="3"
                                     placeholder="List any physical or mental illnesses..."></textarea>
                             </div>

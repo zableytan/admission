@@ -47,6 +47,9 @@ if (!$application) {
 }
 
 $student_name = htmlspecialchars($application['given_name'] . ' ' . $application['family_name']);
+$college_applied = trim($application['college'] ?? '');
+// Check for legacy (IMD) or new (Foreign) designation
+$is_imd = (strpos($college_applied, '(IMD)') !== false) || (strpos($college_applied, '(Foreign)') !== false);
 
 // 2. POST LOGIC: Process file uploads
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -82,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $entrance_path = handleUpload('entrance_exam_file', $upload_dir, $app_id);
     $receipt_path = handleUpload('receipt_file', $upload_dir, $app_id);
     $good_moral_path = handleUpload('good_moral_file', $upload_dir, $app_id);
+    $passport_path = $is_imd ? handleUpload('passport_file', $upload_dir, $app_id) : null;
 
     // Handle multiple "other" docs
     if (isset($_FILES['other_docs'])) {
@@ -103,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $sql = "UPDATE applications SET
             photo_path=?, tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
-            entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
+            entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?, passport_path=?
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -118,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $receipt_path,
             $good_moral_path,
             $other_docs_paths,
+            $passport_path,
             $app_id
         ]);
     } catch (PDOException $e) {
@@ -390,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
                 <tr>
                     <td class='row-label'>Good Moral</td><td class='row-value'>" . ($good_moral_path ? '✓ Provided' : '✗ Missing') . "</td>
-                    <td class='row-label'></td><td class='row-value'></td>
+                    " . ($is_imd ? "<td class='row-label'>Passport Copy</td><td class='row-value'>" . ($passport_path ? '✓ Provided' : '✗ Missing') . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
                 </tr>
             </table>
 
@@ -483,7 +488,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'GWA Cert' => $gwa_path,
             'Entrance Exam' => $entrance_path,
             'Receipt' => $receipt_path,
-            'Good Moral' => $good_moral_path
+            'Good Moral' => $good_moral_path,
+            'Passport Copy' => $passport_path
         ];
 
         foreach ($file_map as $label => $path) {
@@ -913,6 +919,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                                 <input type="file" name="good_moral_file" class="form-control" required>
                             </div>
+
+                            <!-- Document: Passport Copy (Foreign Applicants ONLY) -->
+                            <?php if ($is_imd): ?>
+                            <div class="file-upload-wrapper">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-passport upload-icon"></i>
+                                    <label class="form-label mb-0">10. Passport Copy <span
+                                            class="required-badge">Required</span></label>
+                                </div>
+                                <input type="file" name="passport_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                <div class="helper-text mt-2 small text-muted">Required for Foreign applicants.</div>
+                            </div>
+                            <?php endif; ?>
 
                             <div class="mt-5 text-center">
                                 <button type="button" class="btn btn-primary btn-submit w-100 shadow-sm text-white py-3"

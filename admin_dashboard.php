@@ -421,8 +421,8 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                             onchange="this.form.submit()">
                             <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All</option>
                             <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Medicine (ALL)</option>
-                            <option value="Medicine (NMD)" <?= $college === 'Medicine (NMD)' ? 'selected' : '' ?>>Medicine (NMD)</option>
-                            <option value="Medicine (IMD)" <?= $college === 'Medicine (IMD)' ? 'selected' : '' ?>>Medicine (IMD)</option>
+                            <option value="Medicine (Filipino)" <?= $college === 'Medicine (Filipino)' ? 'selected' : '' ?>>Medicine (Filipino)</option>
+                            <option value="Medicine (Foreign)" <?= $college === 'Medicine (Foreign)' ? 'selected' : '' ?>>Medicine (Foreign)</option>
                             <option value="Nursing" <?= $college === 'Nursing' ? 'selected' : '' ?>>Nursing</option>
                             <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Dentistry</option>
                             <option value="Midwifery" <?= $college === 'Midwifery' ? 'selected' : '' ?>>Midwifery</option>

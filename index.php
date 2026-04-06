@@ -146,8 +146,22 @@
             font-size: 1.2rem;
             transition: color 0.2s;
         }
-        .admin-link:hover {
+        .medicine-type-container {
+            margin-top: 10px;
+            margin-left: 35px;
+            padding: 10px 15px;
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+        .medicine-type-label {
+            font-size: 0.8rem;
+            font-weight: 700;
             color: var(--primary-color);
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -170,13 +184,23 @@
             <label class="form-label">Select Your Desired College(s)</label>
             <div class="college-selection-grid">
                 <div class="form-check custom-check">
-                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Medicine (NMD)" id="medNmd">
-                    <label class="form-check-label" for="medNmd">College of Medicine (NMD)</label>
+                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Medicine" id="medCollege">
+                    <label class="form-check-label" for="medCollege">College of Medicine</label>
                 </div>
-                <div class="form-check custom-check">
-                    <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Medicine (IMD)" id="medImd">
-                    <label class="form-check-label" for="medImd">College of Medicine (IMD)</label>
+                
+                <!-- Medicine Type Selection (Filipino or Foreign) -->
+                <div class="medicine-type-container" id="medTypeContainer">
+                    <span class="medicine-type-label">Applicant Type</span>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="medicine_type" id="typeFilipino" value="Filipino" checked>
+                        <label class="form-check-label small" for="typeFilipino">Filipino</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="medicine_type" id="typeForeign" value="Foreign">
+                        <label class="form-check-label small" for="typeForeign">Foreign</label>
+                    </div>
                 </div>
+
                 <div class="form-check custom-check">
                     <input class="form-check-input college-checkbox" type="checkbox" name="college[]" value="Nursing" id="nursing">
                     <label class="form-check-label" for="nursing">College of Nursing</label>
@@ -216,10 +240,20 @@
         const selectAll = document.getElementById('selectAllColleges');
         const checkboxes = document.querySelectorAll('.college-checkbox');
         const submitBtn = document.getElementById('submitBtn');
+        const medCollege = document.getElementById('medCollege');
+        const medTypeContainer = document.getElementById('medTypeContainer');
 
         function updateSubmitButton() {
             const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
             submitBtn.disabled = !anyChecked;
+        }
+
+        function toggleMedicineType() {
+            if (medCollege.checked) {
+                medTypeContainer.style.display = 'block';
+            } else {
+                medTypeContainer.style.display = 'none';
+            }
         }
 
         selectAll.addEventListener('change', function() {
@@ -227,6 +261,7 @@
                 cb.checked = this.checked;
             });
             updateSubmitButton();
+            toggleMedicineType();
         });
 
         checkboxes.forEach(cb => {
@@ -234,6 +269,7 @@
                 const allChecked = Array.from(checkboxes).every(cb => cb.checked);
                 selectAll.checked = allChecked;
                 updateSubmitButton();
+                if (this === medCollege) toggleMedicineType();
             });
         });
     });

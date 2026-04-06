@@ -199,7 +199,9 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-uppercase">Department/College</label>
                                 <select name="college" class="form-select" required>
-                                    <option value="Medicine">Medicine</option>
+                                    <option value="Medicine">Medicine (ALL)</option>
+                                    <option value="Medicine (Filipino)">Medicine (Filipino)</option>
+                                    <option value="Medicine (Foreign)">Medicine (Foreign)</option>
                                     <option value="Nursing">Nursing</option>
                                     <option value="Dentistry">Dentistry</option>
                                     <option value="Midwifery">Midwifery</option>
@@ -317,7 +319,9 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-uppercase">Department/College</label>
                             <select name="college" id="editCollege" class="form-select" required>
-                                <option value="Medicine">Medicine</option>
+                                <option value="Medicine">Medicine (ALL)</option>
+                                <option value="Medicine (Filipino)">Medicine (Filipino)</option>
+                                <option value="Medicine (Foreign)">Medicine (Foreign)</option>
                                 <option value="Nursing">Nursing</option>
                                 <option value="Dentistry">Dentistry</option>
                                 <option value="Midwifery">Midwifery</option>

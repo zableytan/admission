@@ -18,13 +18,27 @@ if (!isset($_GET['college']) && !isset($_POST['college'])) {
 
 // Determine the college from the GET parameter (URL) or POST submission (hidden field)
 $college_input = isset($_GET['college']) ? $_GET['college'] : (isset($_POST['college']) ? $_POST['college'] : null);
+$med_type = isset($_GET['medicine_type']) ? $_GET['medicine_type'] : (isset($_POST['medicine_type']) ? $_POST['medicine_type'] : null);
 
 // If college is an array (from checkboxes), join it into a string
 if (is_array($college_input)) {
-    $college = implode(', ', $college_input);
+    // If Medicine is one of the choices, append the type
+    $processed_colleges = [];
+    foreach ($college_input as $c) {
+        if ($c === 'Medicine' && $med_type) {
+            $processed_colleges[] = "Medicine ($med_type)";
+        } else {
+            $processed_colleges[] = $c;
+        }
+    }
+    $college = implode(', ', $processed_colleges);
     $is_multiple = (count($college_input) > 1);
 } else {
-    $college = $college_input;
+    if ($college_input === 'Medicine' && $med_type) {
+        $college = "Medicine ($med_type)";
+    } else {
+        $college = $college_input;
+    }
     $is_multiple = false;
 }
 
@@ -79,17 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($gwa_val === false)
         $gwa_val = null;
 
-    // Default attachment path to NULL since we are skipping upload for now
-    $target_file = null;
-
     // Check if the required email validation passed
     if (!$email) {
         $message = "Invalid email format.";
     } elseif ($is_medicine && $score_val < 40) {
         $message = "Warning: NMAT Score is below the 40 percentile requirement. Please ensure you meet the admission criteria.";
     } else {
-
-        // --- FILE UPLOAD LOGIC REMOVED ---
 
         // Prepare the comprehensive INSERT statement.
         $sql = "INSERT INTO applications 
@@ -316,6 +325,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <form method="POST">
                             <input type="hidden" name="college" value="<?= htmlspecialchars($college) ?>">
+                            <?php if ($med_type): ?>
+                                <input type="hidden" name="medicine_type" value="<?= htmlspecialchars($med_type) ?>">
+                            <?php endif; ?>
 
                             <h5 class="section-title">Personal Information</h5>
                             <div class="row g-4 mb-4">

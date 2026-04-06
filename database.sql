@@ -188,6 +188,7 @@ CREATE TABLE IF NOT EXISTS applications (
     other_docs_paths TEXT NULL,
     record_pdf_path VARCHAR(255) NULL,
     signed_document_path VARCHAR(255) NULL,
+    passport_path VARCHAR(255) NULL,
     status ENUM('Pending', 'Accepted', 'Declined') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

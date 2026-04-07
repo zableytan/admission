@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mother_occupation = !$mother_deceased ? filter_input(INPUT_POST, 'mother_occupation', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $family_address = filter_input(INPUT_POST, 'family_address', FILTER_SANITIZE_SPECIAL_CHARS);
     $family_contact_no = filter_input(INPUT_POST, 'family_contact_no', FILTER_SANITIZE_SPECIAL_CHARS);
+    $parents_marriage_status = filter_input(INPUT_POST, 'parents_marriage_status', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // --- Income Sources (Convert checkbox state to boolean) ---
     $income_salaries = isset($_POST['income_salaries']) ? 1 : 0;
@@ -106,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql = "UPDATE applications SET 
             father_first_name=?, father_middle_name=?, father_last_name=?, father_age=?, father_deceased=?,
             mother_first_name=?, mother_middle_name=?, mother_last_name=?, mother_age=?, mother_deceased=?,
-            father_occupation=?, mother_occupation=?, family_address=?, family_contact_no=?, 
+            father_occupation=?, mother_occupation=?, family_address=?, family_contact_no=?, parents_marriage_status=?, 
             income_salaries=?, income_farm=?, income_commissions=?, income_rentals=?, income_pension=?, income_business=?, 
             income_others=?, total_family_income=?, family_assets=?, parent_dmsf_grad_flag=?, parent_dmsf_course=?, parent_dmsf_year=?, 
             parent_dmsf_teaching_flag=?, parent_dmsf_teaching_years=?, num_brothers=?, num_sisters=?, brothers_hs=?, 
@@ -133,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mother_occupation,
             $family_address,
             $family_contact_no,
+            $parents_marriage_status,
             $income_salaries,
             $income_farm,
             $income_commissions,
@@ -443,15 +445,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="row g-4 mb-4">
-                                <div class="col-md-8">
+                                <div class="col-md-6">
                                     <label class="form-label">Family Address</label>
                                     <input type="text" name="family_address" class="form-control"
                                         placeholder="Current Residence">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label">Contact No.</label>
                                     <input type="text" name="family_contact_no" class="form-control"
                                         placeholder="Tel / Cellphone">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Marriage Status of Parents</label>
+                                    <select name="parents_marriage_status" class="form-select">
+                                        <option value="">Select Status...</option>
+                                        <option value="Married">Married</option>
+                                        <option value="Separated">Separated</option>
+                                        <option value="Divorced/Annulled">Divorced/Annulled</option>
+                                        <option value="Widowed">Widowed</option>
+                                        <option value="Common Law">Common Law</option>
+                                        <option value="Single Parent">Single Parent</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -494,11 +508,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">Total Family Income (Gross)</label>
                                 <select name="total_family_income" class="form-select">
                                     <option value="">Select income range...</option>
-                                    <option value="Below ₱100,000">Below ₱100,000</option>
-                                    <option value="₱100,000 - ₱250,000">₱100,000 - ₱250,000</option>
-                                    <option value="₱250,001 - ₱500,000">₱250,001 - ₱500,000</option>
-                                    <option value="₱500,001 - ₱1,000,000">₱500,001 - ₱1,000,000</option>
-                                    <option value="Above ₱1,000,000">Above ₱1,000,000</option>
+                                    <option value="Less than 30k">Less than 30k</option>
+                                    <option value="31-50k">31-50k</option>
+                                    <option value="51-100k">51-100k</option>
+                                    <option value="More than 100k">More than 100k</option>
                                 </select>
                                 <div class="text-muted small mt-2">Combined annual income including parents, unmarried
                                     siblings, and family enterprises.</div>
@@ -682,7 +695,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'mother_occupation': 'Registered Nurse',
                 'family_address': '456 Residence Way, Davao City',
                 'family_contact_no': '0922 444 5555',
-                'total_family_income': '₱100,000 - ₱250,000',
+                'parents_marriage_status': 'Married',
+                'total_family_income': '51-100k',
                 'family_assets': 'Residential house and lot, family vehicle (SUV)',
                 'num_brothers': '1',
                 'num_sisters': '1',
@@ -696,7 +710,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             };
 
             for (const [name, value] of Object.entries(textFields)) {
-                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"]`);
+                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"], select[name="${name}"]`);
                 if (input) input.value = value;
             }
 

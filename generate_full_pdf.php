@@ -228,8 +228,18 @@ $html = "
                 <td class='full-width-label'>Medical History</td><td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['medical_history'] ?: 'None declared')) . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Disability?</td><td class='row-value'>" . ($app_data['physical_disability_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['physical_disability_details'] ?: 'N/A') . ")</td>
-                <td class='row-label'>Criminal Record?</td><td class='row-value'>" . ($app_data['convicted_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['convicted_explanation'] ?: 'N/A') . ")</td>
+                <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . ($app_data['physical_disability_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['physical_disability_details'] ?: 'N/A') . ")</td>
+            </tr>
+            <tr>
+                <td class='full-width-label'>Legal Case Involvement (Section E)</td>
+                <td class='full-width-value' colspan='3'>
+                    <strong>Involved/Charged?</strong> " . htmlspecialchars($app_data['legal_involved'] ?: 'No') . "<br>
+                    " . ($app_data['legal_involved'] === 'Yes' ? "
+                    <strong>Current Status:</strong> " . htmlspecialchars($app_data['legal_status'] ?: 'N/A') . "<br>
+                    <strong>Nature of Case:</strong> " . htmlspecialchars($app_data['legal_nature'] ?: 'N/A') . "<br>
+                    <strong>Support Requested:</strong> " . htmlspecialchars($app_data['legal_support'] ?: 'N/A') . "<br>
+                    <strong>Additional Info:</strong> " . nl2br(htmlspecialchars($app_data['legal_additional'] ?: 'None declared')) : "") . "
+                </td>
             </tr>
         </table>
 
@@ -251,14 +261,18 @@ $html = "
             <tr>
                 <td class='row-label'>Family Income (Gross)</td>
                 <td class='row-value'>" . htmlspecialchars($app_data['total_family_income']) . "</td>
-                <td class='row-label'>DMSF Alumni Parent?</td>
-                <td class='row-value'>" . ($app_data['parent_dmsf_grad_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars(($app_data['parent_dmsf_course'] ?? '') . ' ' . ($app_data['parent_dmsf_year'] ?? '')) . ")</td>
+                <td class='row-label'>Parents' Marriage Status</td>
+                <td class='row-value'>" . htmlspecialchars($app_data['parents_marriage_status'] ?: 'N/A') . "</td>
             </tr>
             <tr>
+                <td class='row-label'>DMSF Alumni Parent?</td>
+                <td class='row-value'>" . ($app_data['parent_dmsf_grad_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars(($app_data['parent_dmsf_course'] ?? '') . ' ' . ($app_data['parent_dmsf_year'] ?? '')) . ")</td>
                 <td class='row-label'>DMSF Faculty Parent?</td>
                 <td class='row-value'>" . ($app_data['parent_dmsf_teaching_flag'] ? 'YES' : 'NO') . " (" . ($app_data['parent_dmsf_teaching_years'] ?? 0) . " years)</td>
+            </tr>
+            <tr>
                 <td class='row-label'>Income Sources</td>
-                <td class='row-value'>" . getListText($app_data, 'income_', ['salaries' => 'Salaries', 'farm' => 'Farm', 'commissions' => 'Commissions', 'rentals' => 'Rentals', 'pension' => 'Pension', 'business' => 'Business']) . "</td>
+                <td class='row-value' colspan='3'>" . getListText($app_data, 'income_', ['salaries' => 'Salaries', 'farm' => 'Farm', 'commissions' => 'Commissions', 'rentals' => 'Rentals', 'pension' => 'Pension', 'business' => 'Business']) . "</td>
             </tr>
             <tr>
                 <td class='row-label'>Siblings</td><td class='row-value'>" . ($app_data['num_brothers'] ?? 0) . " Brothers / " . ($app_data['num_sisters'] ?? 0) . " Sisters</td>

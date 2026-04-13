@@ -375,31 +375,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <h6 class="fw-bold mb-0 text-primary">FATHER'S INFORMATION</h6>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="father_deceased" id="fatherDeceased" onchange="toggleParentFields('father')">
-                                                <label class="form-check-label small fw-bold text-danger" for="fatherDeceased">DECEASED</label>
+                                                <input class="form-check-input" type="checkbox" name="father_deceased"
+                                                    id="fatherDeceased" onchange="toggleParentFields('father')">
+                                                <label class="form-check-label small fw-bold text-danger"
+                                                    for="fatherDeceased">DECEASED</label>
                                             </div>
                                         </div>
                                         <div id="fatherFields">
                                             <div class="row g-3">
                                                 <div class="col-md-3">
                                                     <label class="form-label">First Name</label>
-                                                    <input type="text" name="father_first_name" class="form-control" placeholder="First Name">
+                                                    <input type="text" name="father_first_name" class="form-control"
+                                                        placeholder="First Name">
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Middle Name</label>
-                                                    <input type="text" name="father_middle_name" class="form-control" placeholder="Middle Name">
+                                                    <input type="text" name="father_middle_name" class="form-control"
+                                                        placeholder="Middle Name">
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Last Name</label>
-                                                    <input type="text" name="father_last_name" class="form-control" placeholder="Last Name">
+                                                    <input type="text" name="father_last_name" class="form-control"
+                                                        placeholder="Last Name">
                                                 </div>
                                                 <div class="col-md-2">
                                                     <label class="form-label">Age</label>
-                                                    <input type="number" name="father_age" class="form-control" placeholder="Age">
+                                                    <input type="number" name="father_age" class="form-control"
+                                                        placeholder="Age">
                                                 </div>
                                                 <div class="col-md-12">
                                                     <label class="form-label">Occupation</label>
-                                                    <input type="text" name="father_occupation" class="form-control" placeholder="Occupation">
+                                                    <input type="text" name="father_occupation" class="form-control"
+                                                        placeholder="Occupation">
                                                 </div>
                                             </div>
                                         </div>
@@ -412,31 +419,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <h6 class="fw-bold mb-0 text-primary">MOTHER'S INFORMATION</h6>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="mother_deceased" id="motherDeceased" onchange="toggleParentFields('mother')">
-                                                <label class="form-check-label small fw-bold text-danger" for="motherDeceased">DECEASED</label>
+                                                <input class="form-check-input" type="checkbox" name="mother_deceased"
+                                                    id="motherDeceased" onchange="toggleParentFields('mother')">
+                                                <label class="form-check-label small fw-bold text-danger"
+                                                    for="motherDeceased">DECEASED</label>
                                             </div>
                                         </div>
                                         <div id="motherFields">
                                             <div class="row g-3">
                                                 <div class="col-md-3">
                                                     <label class="form-label">First Name</label>
-                                                    <input type="text" name="mother_first_name" class="form-control" placeholder="First Name">
+                                                    <input type="text" name="mother_first_name" class="form-control"
+                                                        placeholder="First Name">
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Middle Name</label>
-                                                    <input type="text" name="mother_middle_name" class="form-control" placeholder="Middle Name">
+                                                    <input type="text" name="mother_middle_name" class="form-control"
+                                                        placeholder="Middle Name">
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Last Name</label>
-                                                    <input type="text" name="mother_last_name" class="form-control" placeholder="Last Name">
+                                                    <input type="text" name="mother_last_name" class="form-control"
+                                                        placeholder="Last Name">
                                                 </div>
                                                 <div class="col-md-2">
                                                     <label class="form-label">Age</label>
-                                                    <input type="number" name="mother_age" class="form-control" placeholder="Age">
+                                                    <input type="number" name="mother_age" class="form-control"
+                                                        placeholder="Age">
                                                 </div>
                                                 <div class="col-md-12">
                                                     <label class="form-label">Occupation</label>
-                                                    <input type="text" name="mother_occupation" class="form-control" placeholder="Occupation">
+                                                    <input type="text" name="mother_occupation" class="form-control"
+                                                        placeholder="Occupation">
                                                 </div>
                                             </div>
                                         </div>
@@ -557,7 +571,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="mb-4 border-0 bg-light p-4 rounded-3 text-secondary">
-                                <label class="form-label fw-bold d-block mb-3 text-dark">Is your parent teaching in
+                                <label class="form-label fw-bold d-block mb-3 text-dark">Is your parent affiliated in
                                     DMSF?</label>
                                 <div class="form-check form-check-inline me-4">
                                     <input class="form-check-input" type="radio" name="parent_dmsf_teaching_flag"
@@ -666,7 +680,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const isDeceased = document.getElementById(parent + 'Deceased').checked;
             const fieldsContainer = document.getElementById(parent + 'Fields');
             const inputs = fieldsContainer.querySelectorAll('input');
-            
+
             if (isDeceased) {
                 fieldsContainer.style.opacity = '0.5';
                 inputs.forEach(input => {

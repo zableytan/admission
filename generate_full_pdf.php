@@ -256,7 +256,7 @@ $html = "
             <tr>
                 <td class='row-label'>DMSF Alumni Parent?</td>
                 <td class='row-value'>" . ($app_data['parent_dmsf_grad_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars(($app_data['parent_dmsf_course'] ?? '') . ' ' . ($app_data['parent_dmsf_year'] ?? '')) . ")</td>
-                <td class='row-label'>DMSF Faculty Parent?</td>
+                <td class='row-label'>DMSF Affiliated Parent?</td>
                 <td class='row-value'>" . ($app_data['parent_dmsf_teaching_flag'] ? 'YES' : 'NO') . " (" . ($app_data['parent_dmsf_teaching_years'] ?? 0) . " years)</td>
             </tr>
             <tr>

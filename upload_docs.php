@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
                 <tr>
                     <td class='row-label'>DMSF Alumni Parent?</td><td class='row-value'>" . getBoolText($app_data['parent_dmsf_grad_flag'] ?? 0) . " (" . htmlspecialchars($app_data['parent_dmsf_course_year'] ?? 'N/A') . ")</td>
-                    <td class='row-label'>DMSF Faculty Parent?</td><td class='row-value'>" . getBoolText($app_data['parent_dmsf_teaching_flag'] ?? 0) . " (" . ($app_data['parent_dmsf_teaching_years'] ?? 0) . " years)</td>
+                    <td class='row-label'>DMSF Affiliated Parent?</td><td class='row-value'>" . getBoolText($app_data['parent_dmsf_teaching_flag'] ?? 0) . " (" . ($app_data['parent_dmsf_teaching_years'] ?? 0) . " years)</td>
                 </tr>
                 <tr>
                     <td class='row-label'>Income Sources</td>

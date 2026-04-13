@@ -66,27 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $disability_flag = (isset($_POST['disability_flag']) && $_POST['disability_flag'] == 'YES') ? 1 : 0;
     $disability_details = filter_input(INPUT_POST, 'physical_disability_details', FILTER_SANITIZE_SPECIAL_CHARS);
 
-    // New Legal Case Involvement (Section E)
-    $legal_involved = filter_input(INPUT_POST, 'legal_involved', FILTER_SANITIZE_SPECIAL_CHARS);
-    
-    // Multiple selection fields
-    $legal_status_arr = isset($_POST['legal_status']) ? $_POST['legal_status'] : [];
-    $legal_status = implode(', ', array_map('htmlspecialchars', $legal_status_arr));
-
-    $legal_nature_arr = isset($_POST['legal_nature']) ? $_POST['legal_nature'] : [];
-    $legal_nature = implode(', ', array_map('htmlspecialchars', $legal_nature_arr));
-
-    $legal_support_arr = isset($_POST['legal_support']) ? $_POST['legal_support'] : [];
-    $legal_support = implode(', ', array_map('htmlspecialchars', $legal_support_arr));
-
-    $legal_additional = filter_input(INPUT_POST, 'legal_additional', FILTER_SANITIZE_SPECIAL_CHARS);
+    // Legal Case Involvement (Section E) removed
 
     // Prepare the UPDATE statement
     $sql = "UPDATE applications SET 
             age=?, date_of_birth=?, place_of_birth=?, sex=?, civil_status=?, religion=?, citizenship=?, 
             height_ft=?, height_in=?, weight_kilos_initial=?, weight_kilos_now=?, medical_history=?, 
-            physical_disability_flag=?, physical_disability_details=?, 
-            legal_involved=?, legal_status=?, legal_nature=?, legal_support=?, legal_additional=?
+            physical_disability_flag=?, physical_disability_details=?
             WHERE id = ?";
 
     $stmt = $pdo->prepare($sql);
@@ -108,11 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $med_history,
             $disability_flag,
             $disability_details,
-            $legal_involved,
-            $legal_status,
-            $legal_nature,
-            $legal_support,
-            $legal_additional,
             $app_id
         ])
     ) {
@@ -414,214 +395,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <h5 class="section-title mt-2">SECTION E – LEGAL CASE INVOLVEMENT (Optional — Sensitive Data)</h5>
-                            <div class="mb-4 border-0 bg-light p-4 rounded-3">
-                                <p class="small text-muted mb-3">
-                                    <strong>Purpose & Confidentiality:</strong> The institution recognizes that
-                                    students may sometimes be involved in legal matters for various reasons, including
-                                    those entirely unrelated to their academic performance or character. This
-                                    information is collected strictly to provide appropriate guidance, legal aid
-                                    referrals, or academic accommodations where needed. Responses are accessible only to
-                                    the Office of Student Affairs and the Dean.
-                                </p>
-                                <ul class="small text-muted mb-4">
-                                    <li>Disclosing a legal case WILL NOT automatically result in disciplinary action or
-                                        affect your grades.</li>
-                                    <li>Non-disclosure will not be held against you.</li>
-                                    <li>Minor traffic violations (e.g., overspeeding, no helmet) need NOT be declared.
-                                    </li>
-                                </ul>
 
-                                <div class="mb-3">
-                                    <label class="form-label d-block mb-3 fw-bold">E1. Are you currently involved in, or
-                                        have you previously been charged with, any civil or criminal legal case?
-                                        (Excluding minor traffic violations)</label>
-                                    <div class="form-check form-check-inline me-4">
-                                        <input class="form-check-input" type="radio" name="legal_involved"
-                                            id="legalYes" value="Yes" onchange="toggleLegalDetails()">
-                                        <label class="form-check-label" for="legalYes">Yes</label>
-                                    </div>
-                                    <div class="form-check form-check-inline me-4">
-                                        <input class="form-check-input" type="radio" name="legal_involved"
-                                            id="legalNo" value="No" checked onchange="toggleLegalDetails()">
-                                        <label class="form-check-label" for="legalNo">No</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="legal_involved"
-                                            id="legalPrefer" value="Prefer not to answer"
-                                            onchange="toggleLegalDetails()">
-                                        <label class="form-check-label" for="legalPrefer">Prefer not to answer</label>
-                                    </div>
-                                </div>
-
-                                <div id="legalDetailsContainer" style="display: none;">
-                                    <div class="mt-4 mb-4">
-                                        <label class="form-label fw-bold d-block mb-3">E2. If YES, what is the current
-                                            status of the case? (Check all that apply)</label>
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_status[]"
-                                                        value="Pending / under investigation" id="status1">
-                                                    <label class="form-check-label small" for="status1">Pending / under
-                                                        investigation</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_status[]"
-                                                        value="Filed in court / ongoing trial" id="status2">
-                                                    <label class="form-check-label small" for="status2">Filed in court /
-                                                        ongoing trial</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_status[]"
-                                                        value="Resolved / dismissed / acquitted" id="status3">
-                                                    <label class="form-check-label small" for="status3">Resolved /
-                                                        dismissed / acquitted</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_status[]"
-                                                        value="Convicted with final judgment" id="status4">
-                                                    <label class="form-check-label small" for="status4">Convicted with
-                                                        final judgment</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_status[]"
-                                                        value="On probation / parole" id="status5">
-                                                    <label class="form-check-label small" for="status5">On probation /
-                                                        parole</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_status[]"
-                                                        value="Prefer not to specify" id="status6">
-                                                    <label class="form-check-label small" for="status6">Prefer not to
-                                                        specify</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold d-block mb-3">E3. Nature of the case: (Check all
-                                            that apply — general category only)</label>
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_nature[]"
-                                                        value="Civil (e.g., property, contractual dispute)"
-                                                        id="nature1">
-                                                    <label class="form-check-label small" for="nature1">Civil (e.g.,
-                                                        property, contractual dispute)</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_nature[]"
-                                                        value="Criminal" id="nature2">
-                                                    <label class="form-check-label small" for="nature2">Criminal</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_nature[]"
-                                                        value="Administrative (e.g., professional/school-related)"
-                                                        id="nature3">
-                                                    <label class="form-check-label small" for="nature3">Administrative
-                                                        (e.g., professional/school-related)</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_nature[]"
-                                                        value="Family/domestic" id="nature4">
-                                                    <label class="form-check-label small" for="nature4">Family/domestic</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="legal_nature[]"
-                                                        value="Prefer not to specify" id="nature5">
-                                                    <label class="form-check-label small" for="nature5">Prefer not to specify</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold d-block mb-3">E4. Do you wish the institution to
-                                            provide any form of support related to this legal matter?</label>
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        name="legal_support[]" value="Legal aid referral" id="support1">
-                                                    <label class="form-check-label small" for="support1">Legal aid
-                                                        referral</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        name="legal_support[]"
-                                                        value="Academic accommodation (e.g., re-scheduling of exams/requirements)"
-                                                        id="support2">
-                                                    <label class="form-check-label small" for="support2">Academic
-                                                        accommodation (e.g., re-scheduling of
-                                                        exams/requirements)</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        name="legal_support[]" value="Counseling or psychosocial support"
-                                                        id="support3">
-                                                    <label class="form-check-label small" for="support3">Counseling or
-                                                        psychosocial support</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        name="legal_support[]" value="No support needed at this time"
-                                                        id="support4">
-                                                    <label class="form-check-label small" for="support4">No support needed
-                                                        at this time</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        name="legal_support[]" value="Prefer not to answer"
-                                                        id="support5">
-                                                    <label class="form-check-label small" for="support5">Prefer not to
-                                                        answer</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <label class="form-label fw-bold">E5. Additional information you wish to share with
-                                            the Office of Student Affairs (optional):</label>
-                                        <textarea name="legal_additional" class="form-control" rows="3"
-                                            placeholder="State any other details here..."></textarea>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-5">
-                                <button type="submit" class="btn btn-step w-100 shadow-sm">
-                                    Proceed to Step 3: Family Background <i class="bi bi-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </form>
                     </div>
+
+                    <div class="mt-5">
+                        <button type="submit" class="btn btn-step w-100 shadow-sm">
+                            Proceed to Step 3: Family Background <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
     <script>
-        function toggleLegalDetails() {
-            const legalYes = document.getElementById('legalYes');
-            const legalDetailsContainer = document.getElementById('legalDetailsContainer');
-            if (legalYes.checked) {
-                legalDetailsContainer.style.display = 'block';
-            } else {
-                legalDetailsContainer.style.display = 'none';
-            }
-        }
+
 
         function autofillDemo() {
             const textFields = {
@@ -635,8 +427,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'weight_kilos_initial': '65',
                 'weight_kilos_now': '68',
                 'medical_history': 'No significant medical history. Regular check-ups with clear results.',
-                'physical_disability_details': '',
-                'legal_additional': ''
+                'physical_disability_details': ''
             };
 
             for (const [name, value] of Object.entries(textFields)) {
@@ -658,9 +449,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Radio buttons
             document.getElementById('disabilityNo').checked = true;
             document.getElementById('disabilityDetails').style.display = 'none';
-
-            document.getElementById('legalNo').checked = true;
-            toggleLegalDetails();
         }
     </script>
 </body>

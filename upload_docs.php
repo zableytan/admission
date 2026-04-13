@@ -303,17 +303,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr>
                     <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . getBoolText($app_data['physical_disability_flag']) . " (" . htmlspecialchars($app_data['physical_disability_details'] ?: 'N/A') . ")</td>
                 </tr>
-                <tr>
-                    <td class='full-width-label'>Legal Case Involvement (Section E)</td>
-                    <td class='full-width-value' colspan='3'>
-                        <strong>Involved/Charged?</strong> " . htmlspecialchars($app_data['legal_involved'] ?: 'No') . "<br>
-                        " . ($app_data['legal_involved'] === 'Yes' ? "
-                        <strong>Current Status:</strong> " . htmlspecialchars($app_data['legal_status'] ?: 'N/A') . "<br>
-                        <strong>Nature of Case:</strong> " . htmlspecialchars($app_data['legal_nature'] ?: 'N/A') . "<br>
-                        <strong>Support Requested:</strong> " . htmlspecialchars($app_data['legal_support'] ?: 'N/A') . "<br>
-                        <strong>Additional Info:</strong> " . nl2br(htmlspecialchars($app_data['legal_additional'] ?: 'None declared')) : "") . "
-                    </td>
-                </tr>
             </table>
 
             <!-- III. FAMILY & FINANCIAL BACKGROUND -->
@@ -920,15 +909,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <!-- Document: Passport Copy (Foreign Applicants ONLY) -->
                             <?php if ($is_imd): ?>
-                            <div class="file-upload-wrapper">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-passport upload-icon"></i>
-                                    <label class="form-label mb-0">10. Passport Copy <span
-                                            class="required-badge">Required</span></label>
+                                <div class="file-upload-wrapper">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-passport upload-icon"></i>
+                                        <label class="form-label mb-0">10. Passport Copy <span
+                                                class="required-badge">Required</span></label>
+                                    </div>
+                                    <input type="file" name="passport_file" class="form-control"
+                                        accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <div class="helper-text mt-2 small text-muted">Required for Foreign applicants.</div>
                                 </div>
-                                <input type="file" name="passport_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                                <div class="helper-text mt-2 small text-muted">Required for Foreign applicants.</div>
-                            </div>
                             <?php endif; ?>
 
                             <div class="mt-5 text-center">

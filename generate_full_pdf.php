@@ -230,17 +230,6 @@ $html = "
             <tr>
                 <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . ($app_data['physical_disability_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['physical_disability_details'] ?: 'N/A') . ")</td>
             </tr>
-            <tr>
-                <td class='full-width-label'>Legal Case Involvement (Section E)</td>
-                <td class='full-width-value' colspan='3'>
-                    <strong>Involved/Charged?</strong> " . htmlspecialchars($app_data['legal_involved'] ?: 'No') . "<br>
-                    " . ($app_data['legal_involved'] === 'Yes' ? "
-                    <strong>Current Status:</strong> " . htmlspecialchars($app_data['legal_status'] ?: 'N/A') . "<br>
-                    <strong>Nature of Case:</strong> " . htmlspecialchars($app_data['legal_nature'] ?: 'N/A') . "<br>
-                    <strong>Support Requested:</strong> " . htmlspecialchars($app_data['legal_support'] ?: 'N/A') . "<br>
-                    <strong>Additional Info:</strong> " . nl2br(htmlspecialchars($app_data['legal_additional'] ?: 'None declared')) : "") . "
-                </td>
-            </tr>
         </table>
 
         <!-- III. FAMILY & FINANCIAL BACKGROUND -->

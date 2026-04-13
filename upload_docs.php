@@ -569,8 +569,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --primary-color: #6610f2;
-            /* Indigo for Step 5 */
+            --primary-color: #196199;
             --secondary-color: #6c757d;
             --success-color: #198754;
             --accent-color: #f8f9fa;
@@ -642,7 +641,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .file-upload-wrapper:hover {
             border-color: var(--primary-color);
-            background: #f8f5ff;
+            background: #f4f7fe;
         }
 
         .form-control {
@@ -654,7 +653,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .applicant-info {
-            background: #f5f0ff;
+            background: #f4f7fe;
             padding: 15px 25px;
             border-radius: 12px;
             margin-bottom: 30px;
@@ -674,8 +673,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 16, 242, 0.2);
-            background: #520dc2;
+            box-shadow: 0 10px 20px rgba(25, 97, 153, 0.2);
+            background: #124873;
         }
 
         .logo-container {
@@ -922,7 +921,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endif; ?>
 
                             <div class="mt-5 text-center">
-                                <button type="button" class="btn btn-primary btn-submit w-100 shadow-sm text-white py-3"
+                                <button type="button" class="btn btn-submit w-100 shadow-sm text-white py-3"
                                     onclick="showPrivacyModal()">
                                     <i class="bi bi-check2-circle me-2"></i> Complete Final Submission
                                 </button>

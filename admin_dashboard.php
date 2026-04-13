@@ -513,6 +513,15 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                                 <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
                                                 <?= $app['status'] ?>
                                             </span>
+                                            <?php if ($app['status'] == 'Accepted'): ?>
+                                                <div class="mt-2">
+                                                    <?php if (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']): ?>
+                                                        <span class="badge bg-success rounded-pill px-2"><i class="bi bi-check2-circle"></i> With Registrar</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-secondary rounded-pill px-2"><i class="bi bi-hourglass"></i> Not at Registrar</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="d-flex flex-wrap gap-1 mb-2">

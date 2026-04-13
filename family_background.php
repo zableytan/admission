@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --primary-color: #198754;
+            --primary-color: #196199;
             --secondary-color: #6c757d;
             --success-color: #198754;
             --accent-color: #f8f9fa;
@@ -262,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-control:focus,
         .form-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(25, 97, 153, 0.25);
         }
 
         .btn-step {
@@ -280,16 +280,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-step:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            background-color: #157347;
+            background-color: #124873;
             color: white;
         }
 
         .applicant-info {
-            background: #e8f5e9;
+            background: #f4f7fe;
             padding: 15px 25px;
             border-radius: 12px;
             margin-bottom: 30px;
-            border-left: 5px solid #198754;
+            border-left: 5px solid var(--primary-color);
         }
 
         .income-checkbox-group {

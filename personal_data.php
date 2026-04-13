@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --primary-color: #ffc107;
+            --primary-color: #196199;
             --secondary-color: #6c757d;
             --success-color: #198754;
             --accent-color: #f8f9fa;
@@ -146,8 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .card-header-custom {
             background-color: var(--primary-color) !important;
             padding: 30px;
-            color: #212529;
-            /* Dark text for yellow bg */
+            color: white;
             border: none;
         }
 
@@ -156,8 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .section-title {
-            color: #d39e00;
-            /* Darker yellow for text visibility */
+            color: var(--primary-color);
             font-weight: 700;
             text-transform: uppercase;
             font-size: 0.9rem;
@@ -198,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-control:focus,
         .form-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(25, 97, 153, 0.25);
         }
 
         .btn-step {
@@ -209,22 +207,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             letter-spacing: 1px;
             transition: all 0.3s;
             background-color: var(--primary-color);
-            color: #212529;
+            color: white;
             border: none;
         }
 
         .btn-step:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            background-color: #ffcd39;
+            background-color: #124873;
+            color: white;
         }
 
         .applicant-info {
-            background: #fff8e1;
+            background: #f4f7fe;
             padding: 15px 25px;
             border-radius: 12px;
             margin-bottom: 30px;
-            border-left: 5px solid #ffc107;
+            border-left: 5px solid var(--primary-color);
         }
 
         .logo-container {

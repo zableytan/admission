@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #0d6efd;
+            --primary-color: #196199;
             --secondary-color: #6c757d;
             --success-color: #198754;
             --accent-color: #f8f9fa;
@@ -292,15 +292,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .card-header-custom {
-            background: #dc3545;
-            /* Red for Step 4 */
+            background: var(--primary-color);
             padding: 30px;
             color: white;
             border: none;
         }
 
         .section-title {
-            color: #dc3545;
+            color: var(--primary-color);
             font-weight: 700;
             text-transform: uppercase;
             font-size: 0.9rem;
@@ -339,16 +338,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .form-control:focus {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(25, 97, 153, 0.25);
         }
 
         .applicant-info {
-            background: #fff5f5;
+            background: #f4f7fe;
             padding: 15px 25px;
             border-radius: 12px;
             margin-bottom: 30px;
-            border-left: 5px solid #dc3545;
+            border-left: 5px solid var(--primary-color);
         }
 
         .btn-step {
@@ -358,11 +357,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-transform: uppercase;
             letter-spacing: 1px;
             transition: all 0.3s;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
         }
 
         .btn-step:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background-color: #124873;
+            color: white;
         }
 
         .info-group {
@@ -387,8 +391,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .form-check-input:checked {
-            background-color: #dc3545;
-            border-color: #dc3545;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
         }
 
         .logo-container {
@@ -997,7 +1001,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="mt-5">
-                                <button type="submit" class="btn btn-danger btn-step w-100 shadow-sm">
+                                <button type="submit" class="btn btn-step w-100 shadow-sm">
                                     Proceed to Step 5: Upload Documents
                                 </button>
                                 <p class="text-center mt-3 small text-muted">Please review all information before

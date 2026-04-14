@@ -105,7 +105,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
 
             <!-- Application Details -->
             <div class="detail-card card mb-4">
-                <div class="card-header">Application Overview</div>
+                <div class="card-header">1. Application Overview</div>
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-6">
@@ -114,7 +114,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <div class="col-md-6">
                             <div class="label">College Applied</div>
-                            <div class="value text-primary"><?= $app['college'] ?></div>
+                            <div class="value text-primary font-bold"><?= $app['college'] ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Email Address</div>
@@ -124,24 +124,226 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="label">Mobile Number</div>
                             <div class="value"><?= $app['mobile_no'] ?></div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="label">Score (<?= $app['score_type'] ?>)</div>
-                            <div class="value"><?= $app['score_value'] ?></div>
+                            <div class="value badge bg-light text-dark fs-6"><?= $app['score_value'] ?></div>
                         </div>
-                        <!-- NMAT (Only for Medicine) -->
                         <?php if(strpos($app['college'], 'Medicine') !== false): ?>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="label">NMAT Percentile</div>
-                            <div class="value"><?= $app['score_value'] ?></div>
+                            <div class="value text-danger fs-5"><?= $app['score_value'] ?></div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="label">Date Taken</div>
+                        <div class="col-md-4">
+                            <div class="label">NMAT Date</div>
                             <div class="value"><?= $app['nmat_date'] ?></div>
                         </div>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
+
+            <!-- Detailed Personal Data -->
+            <div class="detail-card card mb-4">
+                <div class="card-header">2. Personal & Medical Data</div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="label">Age</div>
+                            <div class="value"><?= $app['age'] ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Sex</div>
+                            <div class="value"><?= $app['sex'] ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Civil Status</div>
+                            <div class="value"><?= $app['civil_status'] ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Religion</div>
+                            <div class="value"><?= $app['religion'] ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Date of Birth</div>
+                            <div class="value"><?= date('F d, Y', strtotime($app['date_of_birth'])) ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Place of Birth</div>
+                            <div class="value"><?= $app['place_of_birth'] ?></div>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <div class="label">Medical History</div>
+                            <div class="value border-start border-danger ps-3 py-1 bg-light rounded small"><?= nl2br(htmlspecialchars($app['medical_history'])) ?></div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="label">Vaccination Status</div>
+                            <div class="value small">
+                                <strong><?= $app['vax_status'] ?></strong>
+                                <?php if($app['vax_status'] == 'Yes'): ?>
+                                    <ul class="mb-0 x-small text-muted mt-1">
+                                        <li>1st Dose: <?= $app['vax_dose1'] ?></li>
+                                        <li>2nd Dose: <?= $app['vax_dose2'] ?></li>
+                                        <li>Booster: <?= $app['vax_booster'] ?></li>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="label">Chronic Medical Condition</div>
+                            <div class="value small">
+                                <strong><?= $app['chronic_condition_flag'] ? 'Yes' : 'No' ?></strong>
+                                <?php if($app['chronic_condition_flag']): ?>
+                                    <div class="x-small text-muted mt-1"><?= $app['chronic_condition_details'] ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="label">Counselling History</div>
+                            <div class="value small"><?= $app['counselling_history'] ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Future Plans & Support -->
+            <div class="detail-card card mb-4">
+                <div class="card-header">3. Future Plans & Support</div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <div class="label mb-2">Motivations / Influences</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php 
+                            $motivations = [];
+                            if($app['motivation_parents']) $motivations[] = 'Parents';
+                            if($app['motivation_siblings']) $motivations[] = 'Siblings';
+                            if($app['motivation_relatives']) $motivations[] = 'Other Relatives';
+                            if($app['motivation_friends']) $motivations[] = 'Friends';
+                            if($app['motivation_illness']) $motivations[] = 'Illness in family';
+                            if($app['motivation_prestige']) $motivations[] = 'Prestige/Status';
+                            if($app['motivation_health_awareness']) $motivations[] = 'Health Awareness';
+                            if($app['motivation_community_needs']) $motivations[] = 'Community Needs';
+                            
+                            foreach($motivations as $m): ?>
+                                <span class="badge bg-outline-primary border border-primary text-primary px-2 py-1"><?= $m ?></span>
+                            <?php endforeach; ?>
+                            <?php if($app['motivation_others']): ?>
+                                <span class="badge bg-light text-dark border px-2 py-1">Others: <?= $app['motivation_others'] ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="label">Financial Support</div>
+                            <div class="value small">
+                                <?php if($app['support_scholarship_flag']): ?>
+                                    <div class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Scholarship: <?= $app['support_scholarship_name'] ?></div>
+                                    <div class="text-muted small ps-4">Status: <?= $app['support_status'] ?></div>
+                                <?php endif; ?>
+                                <?php if($app['support_parents']) echo '<div>Parents/Family</div>'; ?>
+                                <?php if($app['support_veteran_benefit']) echo '<div>Phil Veteran Benefit</div>'; ?>
+                                <?php if($app['support_others']) echo '<div>' . $app['support_others'] . '</div>'; ?>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Stay in Davao</div>
+                            <div class="value"><?= $app['staying_place'] == 'Others' ? $app['staying_place_others'] : $app['staying_place'] ?></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="label">Source of Information about DMSF</div>
+                        <div class="small text-muted">
+                            <?php 
+                            $sources = [];
+                            if($app['info_parents']) $sources[] = 'Parents';
+                            if($app['info_family_friends']) $sources[] = 'Family Friends';
+                            if($app['info_student_friends']) $sources[] = 'DMSF Students';
+                            if($app['info_siblings']) $sources[] = 'Brother/Sister';
+                            if($app['info_teachers']) $sources[] = 'College Teachers';
+                            if($app['info_newspaper']) $sources[] = 'Newspaper';
+                            if($app['info_convocation']) $sources[] = 'Convocation';
+                            if($app['info_internet']) $sources[] = 'Internet';
+                            if($app['info_own_effort']) $sources[] = 'Own Effort';
+                            
+                            echo implode(', ', $sources);
+                            if($app['info_others']) echo ', Others: ' . $app['info_others'];
+                            ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campus Engagement & Learning Profile -->
+            <div class="detail-card card mb-4">
+                <div class="card-header">4. Campus Engagement & Learning Profile</div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="label">Learning Style Preference</div>
+                            <div class="value small"><?= $app['learning_style'] ?></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="label">Extracurricular Involvement</div>
+                            <div class="value small"><?= $app['extracurricular_involvement'] ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Student Stress Profile</div>
+                            <div class="value small">
+                                <div>Level: <strong><?= $app['stress_level'] ?> / 5</strong></div>
+                                <div class="x-small text-muted mt-1">Source: <?= $app['stress_source'] ?></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Coping Style</div>
+                            <div class="value small"><?= $app['coping_style'] ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tertiary Background (Medicine Only) -->
+            <?php if(isset($app['tertiary_name']) && $app['tertiary_name']): ?>
+            <div class="detail-card card mb-4">
+                <div class="card-header d-flex justify-content-between">
+                    <span>5. Tertiary Academic Background</span>
+                    <?php if(isset($app['self_rating'])): ?>
+                        <span class="badge bg-info text-white">Self-Rating: <?= $app['self_rating'] ?>/5</span>
+                    <?php endif; ?>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="label">School & Degree</div>
+                            <div class="value"><?= $app['tertiary_name'] ?> (<?= $app['tertiary_degree'] ?>)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Region & Address</div>
+                            <div class="value text-muted small"><?= $app['tertiary_region'] ?>, <?= $app['tertiary_address'] ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">School Type</div>
+                            <div class="value"><?= $app['tertiary_school_type'] ?></div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="label">Course Type</div>
+                            <div class="value"><?= $app['tertiary_course_type'] ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">General Weighted Average (GWA)</div>
+                            <div class="value fw-bold text-success"><?= $app['tertiary_gwa'] ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="label">Academic Honors</div>
+                            <div class="value"><?= $app['tertiary_honors'] ?: 'None' ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Uploaded Credentials (Bottom) -->
             <div class="detail-card card">

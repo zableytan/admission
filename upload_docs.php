@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $sql = "UPDATE applications SET
             photo_path=?, tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
-            entrance_exam_path=?, receipt_path=?, good_moral_path=?, other_docs_paths=?
+            entrance_exam_path=?, receipt_path=?, good_moral_path=?, passport_path=?, other_docs_paths=?
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -116,9 +116,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nmat_path,
             $diploma_path,
             $gwa_path,
+            null,
+            null,
             $good_moral_path,
-            $other_docs_paths,
             $passport_path,
+            $other_docs_paths,
             $app_id
         ]);
     } catch (PDOException $e) {
@@ -349,6 +351,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr>
                     <td class='full-width-label'>Secondary School</td><td class='full-width-value' colspan='3'>" . htmlspecialchars($app_data['secondary_school'] ?? '') . " (" . htmlspecialchars($app_data['secondary_dates'] ?? '') . ")</td>
                 </tr>
+                " . (!empty($app_data['tertiary_name']) ? "
+                <tr>
+                    <td class='full-width-label'>Tertiary Background</td><td class='full-width-value' colspan='3'>
+                        <strong>" . htmlspecialchars($app_data['tertiary_name']) . "</strong> (" . htmlspecialchars($app_data['tertiary_region'] ?: 'N/A') . ")<br>
+                        Address: " . htmlspecialchars($app_data['tertiary_address'] ?: 'N/A') . " | Type: " . $app_data['tertiary_school_type'] . "<br>
+                        Course: " . htmlspecialchars($app_data['tertiary_degree'] ?: $app_data['tertiary_course_type']) . " | GWA: " . $app_data['tertiary_gwa'] . "<br>
+                        Honors: " . htmlspecialchars($app_data['tertiary_honors'] ?: 'None') . " | <strong>Self-Rating: " . ($app_data['self_rating'] ?: 'N/A') . "/5</strong>
+                    </td>
+                </tr>
+                " : "") . "
                 <tr>
                     <td class='row-label'>High School Honors</td><td class='row-value' colspan='3'>" . getBoolText($app_data['hs_honors_flag'] ?? 0) . " (" . htmlspecialchars($app_data['hs_honor_type'] ?? 'N/A') . ")</td>
                 </tr>
@@ -689,22 +701,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
 
-        .btn-demo {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-demo:hover {
-            background-color: #ffca2c;
-            transform: translateY(-1px);
-        }
-
         .privacy-statement {
             background-color: #f8f9fa;
             border-left: 5px solid #0d6efd;
@@ -788,6 +784,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
+<!-- Contact Button & Modal -->
+<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
+    <i class="bi bi-chat-dots-fill fs-3"></i>
+</button>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header text-white" style="background-color: #196199;">
+        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Medicine</strong>
+                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Nursing</strong>
+                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Dentistry</strong>
+                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Midwifery</strong>
+                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
+                <strong>Biology</strong>
+                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
     <div class="container py-5">
         <div class="logo-container">
             <img src="DMSF_Logo.png" alt="DMSF Logo" class="logo-img">
@@ -804,9 +841,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p class="mb-0 opacity-75">Upload Credentials & Documents</p>
                             </div>
                             <div class="d-flex gap-2 align-items-center">
-                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
-                                    <i class="bi bi-magic me-1"></i> Autofill Demo
-                                </button>
                                 <i class="bi bi-cloud-arrow-up-fill display-6"></i>
                             </div>
                         </div>
@@ -1016,25 +1050,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // If modal IS showing, let the finalSubmitApplication handle it or let it pass
             document.getElementById('loadingOverlay').style.display = 'flex';
         });
-
-        function autofillDemo() {
-            // Since we cannot programmatically set file input values for security reasons,
-            // we will remove the 'required' attribute from the file inputs for demo purposes
-            // to allow the user to test the submission process without actually uploading files.
-
-            const fileInputs = document.querySelectorAll('input[type="file"]');
-            fileInputs.forEach(input => {
-                input.required = false;
-                // Add a visual indicator
-                const wrapper = input.closest('.file-upload-wrapper');
-                if (wrapper) {
-                    wrapper.style.borderColor = '#ffc107';
-                    wrapper.style.backgroundColor = '#fff8e1';
-                }
-            });
-
-            alert("Demo Mode: 'Required' attributes removed from file inputs. You can now submit without uploading files.");
-        }
     </script>
 </body>
 

@@ -44,6 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $secondary_location = filter_input(INPUT_POST, 'secondary_location', FILTER_SANITIZE_SPECIAL_CHARS);
     $secondary_dates = filter_input(INPUT_POST, 'secondary_dates', FILTER_SANITIZE_SPECIAL_CHARS);
 
+    // --- Tertiary Background (New) ---
+    $tertiary_name = filter_input(INPUT_POST, 'tertiary_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_region = filter_input(INPUT_POST, 'tertiary_region', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_address = filter_input(INPUT_POST, 'tertiary_address', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_school_type = filter_input(INPUT_POST, 'tertiary_school_type', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_course_type = filter_input(INPUT_POST, 'tertiary_course_type', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_degree = filter_input(INPUT_POST, 'tertiary_degree', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_gwa = filter_input(INPUT_POST, 'tertiary_gwa', FILTER_SANITIZE_SPECIAL_CHARS);
+    $tertiary_honors = filter_input(INPUT_POST, 'tertiary_honors', FILTER_SANITIZE_SPECIAL_CHARS);
+    $self_rating = filter_input(INPUT_POST, 'self_rating', FILTER_VALIDATE_INT);
+    if ($self_rating === false) $self_rating = null;
+
     $hs_honors_flag = (isset($_POST['hs_honors_flag']) && $_POST['hs_honors_flag'] == 'YES') ? 1 : 0;
     $hs_honor_type = $hs_honors_flag ? filter_input(INPUT_POST, 'hs_honor_type', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     if ($hs_honor_type == 'Others') {
@@ -92,48 +104,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $interest_others = filter_input(INPUT_POST, 'interest_others', FILTER_SANITIZE_SPECIAL_CHARS);
     $other_skills_work_exp = filter_input(INPUT_POST, 'other_skills_work_exp', FILTER_SANITIZE_SPECIAL_CHARS);
 
+    // --- Learning & Behavior ---
+    $learning_style = filter_input(INPUT_POST, 'learning_style', FILTER_SANITIZE_SPECIAL_CHARS);
+    $stress_level = filter_input(INPUT_POST, 'stress_level', FILTER_VALIDATE_INT);
+    $stress_source = filter_input(INPUT_POST, 'stress_source', FILTER_SANITIZE_SPECIAL_CHARS);
+    $coping_style = filter_input(INPUT_POST, 'coping_style', FILTER_SANITIZE_SPECIAL_CHARS);
+    $extracurricular_involvement = filter_input(INPUT_POST, 'extracurricular_involvement', FILTER_SANITIZE_SPECIAL_CHARS);
+
     // --- Admission History ---
     $first_time_md_flag = (isset($_POST['first_time_md_flag']) && $_POST['first_time_md_flag'] == 'YES') ? 1 : 0;
     $prev_app_status = !$first_time_md_flag ? filter_input(INPUT_POST, 'prev_app_status', FILTER_SANITIZE_SPECIAL_CHARS) : null;
     $prev_med_school_name = ($prev_app_status == 'Accepted and enrolled at' || $prev_app_status == 'Accepted but did not enroll at') ? filter_input(INPUT_POST, 'prev_med_school_name', FILTER_SANITIZE_SPECIAL_CHARS) : null;
 
-    // --- Motivation ---
-    $motivation_parents = isset($_POST['motivation_parents']) ? 1 : 0;
-    $motivation_siblings = isset($_POST['motivation_siblings']) ? 1 : 0;
-    $motivation_relatives = isset($_POST['motivation_relatives']) ? 1 : 0;
-    $motivation_friends = isset($_POST['motivation_friends']) ? 1 : 0;
-    $motivation_illness = isset($_POST['motivation_illness']) ? 1 : 0;
-    $motivation_prestige = isset($_POST['motivation_prestige']) ? 1 : 0;
-    $motivation_health_awareness = isset($_POST['motivation_health_awareness']) ? 1 : 0;
-    $motivation_community_needs = isset($_POST['motivation_community_needs']) ? 1 : 0;
-    $motivation_others = filter_input(INPUT_POST, 'motivation_others', FILTER_SANITIZE_SPECIAL_CHARS);
-
-    // --- Future Plan & Support ---
-    $future_plan = filter_input(INPUT_POST, 'future_plan', FILTER_SANITIZE_SPECIAL_CHARS);
-    $future_plan_other_postgrad = ($future_plan == 'Pursue another Post-graduate course') ? filter_input(INPUT_POST, 'future_plan_other_postgrad', FILTER_SANITIZE_SPECIAL_CHARS) : null;
-    $future_plan_others = ($future_plan == 'Others') ? filter_input(INPUT_POST, 'future_plan_others', FILTER_SANITIZE_SPECIAL_CHARS) : null;
-
-    $support_parents = isset($_POST['support_parents']) ? 1 : 0;
-    $support_veteran_benefit = isset($_POST['support_veteran_benefit']) ? 1 : 0;
-    $support_scholarship_flag = isset($_POST['support_scholarship_flag']) ? 1 : 0;
-    $support_scholarship_name = $support_scholarship_flag ? filter_input(INPUT_POST, 'support_scholarship_name', FILTER_SANITIZE_SPECIAL_CHARS) : null;
-    $support_others = filter_input(INPUT_POST, 'support_others', FILTER_SANITIZE_SPECIAL_CHARS);
-    $support_status = filter_input(INPUT_POST, 'support_status', FILTER_SANITIZE_SPECIAL_CHARS);
-
-    // --- Info Source & Staying Place ---
-    $info_parents = isset($_POST['info_parents']) ? 1 : 0;
-    $info_family_friends = isset($_POST['info_family_friends']) ? 1 : 0;
-    $info_student_friends = isset($_POST['info_student_friends']) ? 1 : 0;
-    $info_siblings = isset($_POST['info_siblings']) ? 1 : 0;
-    $info_teachers = isset($_POST['info_teachers']) ? 1 : 0;
-    $info_newspaper = isset($_POST['info_newspaper']) ? 1 : 0;
-    $info_convocation = isset($_POST['info_convocation']) ? 1 : 0;
-    $info_internet = isset($_POST['info_internet']) ? 1 : 0;
-    $info_own_effort = isset($_POST['info_own_effort']) ? 1 : 0;
-    $info_others = filter_input(INPUT_POST, 'info_others', FILTER_SANITIZE_SPECIAL_CHARS);
-
-    $staying_place = filter_input(INPUT_POST, 'staying_place', FILTER_SANITIZE_SPECIAL_CHARS);
-    $staying_place_others = ($staying_place == 'Others') ? filter_input(INPUT_POST, 'staying_place_others', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $staying_place_others = null; // Moved to personal_data.php
 
     // --- Preferences ---
     $pref_first_med_school = filter_input(INPUT_POST, 'pref_first_med_school', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -148,19 +131,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // (Due to the sheer number of fields, this SQL is split for readability, but must be run as one string)
     $sql = "UPDATE applications SET 
         primary_school=?, primary_location=?, primary_dates=?, secondary_school=?, secondary_location=?, secondary_dates=?, 
+        tertiary_name=?, tertiary_region=?, tertiary_address=?, tertiary_school_type=?, tertiary_course_type=?, tertiary_degree=?, tertiary_gwa=?, tertiary_honors=?, self_rating=?,
         hs_honors_flag=?, hs_honor_type=?, college_name_address=?, degree_obtained=?, date_of_graduation=?, 
         college_honors_flag=?, college_honors_list=?, board_profession=?, board_exam_date=?, board_rating=?, 
         post_grad_course=?, post_grad_school=?, post_grad_date=?, post_grad_activity=?, activity_took_another_course=?, 
         employee_work=?, employee_position=?, employee_years=?, trainings_seminars=?, interest_school_orgs=?, 
         interest_religious=?, interest_sociocivic=?, interest_sports=?, interest_music_vocal=?, interest_dance=?, 
-        interest_creative_writing=?, interest_philately=?, interest_others=?, other_skills_work_exp=?, first_time_md_flag=?, 
-        prev_app_status=?, prev_med_school_name=?, motivation_parents=?, motivation_siblings=?, motivation_relatives=?, 
-        motivation_friends=?, motivation_illness=?, motivation_prestige=?, motivation_health_awareness=?, 
-        motivation_community_needs=?, motivation_others=?, future_plan=?, future_plan_other_postgrad=?, future_plan_others=?, 
-        support_parents=?, support_veteran_benefit=?, support_scholarship_flag=?, support_scholarship_name=?, support_others=?, 
-        support_status=?, info_parents=?, info_family_friends=?, info_student_friends=?, info_siblings=?, info_teachers=?, 
-        info_newspaper=?, info_convocation=?, info_internet=?, info_own_effort=?, info_others=?, staying_place=?, 
-        staying_place_others=?, pref_first_med_school=?, pref_second_med_school=?, pref_third_med_school=?, 
+        interest_creative_writing=?, interest_philately=?, interest_others=?, other_skills_work_exp=?, 
+        learning_style=?, stress_level=?, stress_source=?, coping_style=?, extracurricular_involvement=?,
+        first_time_md_flag=?, 
+        prev_app_status=?, prev_med_school_name=?, 
+        pref_first_med_school=?, pref_second_med_school=?, pref_third_med_school=?, 
         pref_other_med_schools=?, application_essay=?
         WHERE id = ?";
 
@@ -175,6 +156,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $secondary_school,
             $secondary_location,
             $secondary_dates,
+            $tertiary_name,
+            $tertiary_region,
+            $tertiary_address,
+            $tertiary_school_type,
+            $tertiary_course_type,
+            $tertiary_degree,
+            $tertiary_gwa,
+            $tertiary_honors,
+            $self_rating,
             $hs_honors_flag,
             $hs_honor_type,
             $college_name_address,
@@ -204,39 +194,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $interest_philately,
             $interest_others,
             $other_skills_work_exp,
+            $learning_style,
+            $stress_level,
+            $stress_source,
+            $coping_style,
+            $extracurricular_involvement,
             $first_time_md_flag,
             $prev_app_status,
             $prev_med_school_name,
-            $motivation_parents,
-            $motivation_siblings,
-            $motivation_relatives,
-            $motivation_friends,
-            $motivation_illness,
-            $motivation_prestige,
-            $motivation_health_awareness,
-            $motivation_community_needs,
-            $motivation_others,
-            $future_plan,
-            $future_plan_other_postgrad,
-            $future_plan_others,
-            $support_parents,
-            $support_veteran_benefit,
-            $support_scholarship_flag,
-            $support_scholarship_name,
-            $support_others,
-            $support_status,
-            $info_parents,
-            $info_family_friends,
-            $info_student_friends,
-            $info_siblings,
-            $info_teachers,
-            $info_newspaper,
-            $info_convocation,
-            $info_internet,
-            $info_own_effort,
-            $info_others,
-            $staying_place,
-            $staying_place_others,
             $pref_first_med_school,
             $pref_second_med_school,
             $pref_third_med_school,
@@ -406,26 +371,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 15px;
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
-
-        .btn-demo {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-demo:hover {
-            background-color: #ffca2c;
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 
 <body>
+
+<!-- Contact Button & Modal -->
+<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
+    <i class="bi bi-chat-dots-fill fs-3"></i>
+</button>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header text-white" style="background-color: #196199;">
+        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Medicine</strong>
+                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Nursing</strong>
+                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Dentistry</strong>
+                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Midwifery</strong>
+                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
+                <strong>Biology</strong>
+                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="container py-5">
         <div class="logo-container">
@@ -440,9 +430,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 4 of 5: Educational Background & Intent</h3>
                             <div class="d-flex gap-2 align-items-center">
-                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
-                                    <i class="bi bi-magic me-1"></i> Autofill Demo
-                                </button>
                                 <span class="badge bg-white text-danger px-3 py-2">Admission Process</span>
                             </div>
                         </div>
@@ -497,6 +484,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tbody>
                                 </table>
                             </div>
+
+                            <?php if ($is_medicine): ?>
+                                <h5 class="section-title mt-4">Tertiary Background</h5>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-12">
+                                        <label class="form-label">Previous College Name</label>
+                                        <input type="text" name="tertiary_name" class="form-control" placeholder="Enter Full School Name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Previous College Region</label>
+                                        <input type="text" name="tertiary_region" class="form-control" placeholder="Region">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Previous College Address</label>
+                                        <input type="text" name="tertiary_address" class="form-control" placeholder="Complete Address">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Previous School Type</label>
+                                        <select name="tertiary_school_type" class="form-select">
+                                            <option value="">Select Type...</option>
+                                            <option value="Government">Government</option>
+                                            <option value="Private">Private</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Type of Course</label>
+                                        <select name="tertiary_course_type" class="form-select">
+                                            <option value="">Select Category...</option>
+                                            <option value="Medical">Medical</option>
+                                            <option value="Non-medical">Non-medical</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Course/Degree Taken</label>
+                                        <input type="text" name="tertiary_degree" class="form-control" placeholder="e.g. BS Biology">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">General Weighted Average (GWA)</label>
+                                        <input type="text" name="tertiary_gwa" class="form-control" placeholder="e.g. 1.75">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Academic Honors (College)</label>
+                                        <input type="text" name="tertiary_honors" class="form-control" placeholder="Honors received">
+                                    </div>
+                                </div>
+
+                                <h5 class="section-title mt-4">Self-Assessment</h5>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold">Self-Rating of Academic Performance</label>
+                                        <p class="small text-muted mb-2">How would you rate your overall academic performance so far? (1 = Poor, 5 = Excellent)</p>
+                                        <div class="d-flex justify-content-between px-2" style="max-width: 400px;">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <div class="form-check form-check-inline text-center">
+                                                    <input class="form-check-input d-block mx-auto mb-1" type="radio" name="self_rating" id="rating<?= $i ?>" value="<?= $i ?>" required>
+                                                    <label class="form-check-label small" for="rating<?= $i ?>"><?= $i ?></label>
+                                                </div>
+                                            <?php endfor; ?>
+                                        </div>
+                                        <div class="d-flex justify-content-between px-2 mt-1" style="max-width: 400px;">
+                                            <span class="small text-muted italic">Poor</span>
+                                            <span class="small text-muted italic">Excellent</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
 
                             <div class="info-group mb-4">
                                 <label class="form-label fw-bold d-block mb-3">Have you earned academic honors in high
@@ -733,7 +786,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <h5 class="section-title">D. Admission History</h5>
+                            <h5 class="section-title">D. Campus Engagement & Learning Profile</h5>
+                            <div class="row g-4 mb-5">
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Learning Style Preference</label>
+                                        <div class="row g-2">
+                                            <?php 
+                                            $styles = ['Visual', 'Auditory', 'Kinesthetic', 'Reading/Writing', 'Mixed'];
+                                            foreach($styles as $style): ?>
+                                            <div class="col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="learning_style" id="style<?= $style ?>" value="<?= $style ?>">
+                                                    <label class="form-check-label x-small" for="style<?= $style ?>"><?= $style ?></label>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Extracurricular Involvement</label>
+                                        <div class="mb-3">
+                                            <?php 
+                                            $levels = ['High (Leadership Role)', 'Moderate', 'Low', 'None'];
+                                            foreach($levels as $level): ?>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="extracurricular_involvement" id="level<?= str_replace(' ', '', $level) ?>" value="<?= $level ?>">
+                                                <label class="form-check-label x-small" for="level<?= str_replace(' ', '', $level) ?>"><?= $level ?></label>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-4 mb-5">
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Student Stress Profile</label>
+                                        <div class="mb-4">
+                                            <label class="form-label x-small mb-3">Overall Stress Level (1-5):</label>
+                                            <div class="d-flex justify-content-between px-2">
+                                                <?php for($i=1; $i<=5; $i++): ?>
+                                                <div class="text-center">
+                                                    <input class="form-check-input d-block mx-auto mb-1" type="radio" name="stress_level" value="<?= $i ?>" id="stress<?= $i ?>">
+                                                    <label class="x-small text-muted" for="stress<?= $i ?>"><?= $i ?></label>
+                                                </div>
+                                                <?php endfor; ?>
+                                            </div>
+                                            <div class="d-flex justify-content-between x-small text-muted mt-1">
+                                                <span>Minimal</span>
+                                                <span>Extremely High</span>
+                                            </div>
+                                        </div>
+                                        <div class="border-top pt-3">
+                                            <label class="form-label x-small mb-2">Primary Source of Academic Stress:</label>
+                                            <select name="stress_source" class="form-select form-select-sm">
+                                                <option value="">Select source...</option>
+                                                <option value="Time Management/Procrastination">Time Management/Procrastination</option>
+                                                <option value="Exam Anxiety">Exam Anxiety</option>
+                                                <option value="Financial Worries">Financial Worries</option>
+                                                <option value="Course Load / Difficulty">Course Load / Difficulty</option>
+                                                <option value="Family Issues">Family Issues</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Learning & Behaviour (Coping style)</label>
+                                        <div class="mb-4">
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="radio" name="coping_style" id="copingProblem" value="Problem-Focused Coping">
+                                                <label class="form-check-label small d-block" for="copingProblem">
+                                                    <strong>Problem-Focused Coping</strong>
+                                                    <span class="d-block x-small text-muted">Making a plan, Seeking solutions, Time management, Taking action.</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="coping_style" id="copingEmotion" value="Emotion-Focused Coping">
+                                                <label class="form-check-label small d-block" for="copingEmotion">
+                                                    <strong>Emotion-Focused Coping</strong>
+                                                    <span class="d-block x-small text-muted">Talking to someone, Practicing relaxation, Journaling, Acceptance.</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 class="section-title">E. Admission History</h5>
                             <div class="info-group mb-4">
                                 <label class="form-label fw-bold d-block mb-3">Is this your first time applying for a
                                     <?= $degree_label ?>?</label>
@@ -773,48 +917,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <h5 class="section-title">E. Motivation & Future Plans</h5>
-                            <div class="info-group mb-4">
-                                <label class="form-label fw-bold d-block mb-3">What motivated you to pursue <?= $program_label ?>?
-                                    <span class="fw-normal text-muted">(Check all that apply)</span></label>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="motivation_parents"> <label
-                                                class="form-check-label small">Parents</label></div>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="motivation_siblings"> <label
-                                                class="form-check-label small">Siblings</label></div>
-                                        <div class="form-check"><input class="form-check-input" type="checkbox"
-                                                name="motivation_relatives"> <label class="form-check-label small">Other
-                                                Relatives</label></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="motivation_friends"> <label
-                                                class="form-check-label small">Friends</label></div>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="motivation_illness"> <label class="form-check-label small">Illness
-                                                in family</label></div>
-                                        <div class="form-check"><input class="form-check-input" type="checkbox"
-                                                name="motivation_prestige"> <label
-                                                class="form-check-label small">Prestige/Social Standing</label></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="motivation_health_awareness"> <label
-                                                class="form-check-label small">Health Awareness</label></div>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="motivation_community_needs"> <label
-                                                class="form-check-label small">Community Needs</label></div>
-                                        <div class="mt-2">
-                                            <input type="text" name="motivation_others"
-                                                class="form-control form-control-sm" placeholder="Others (specify)...">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                            <h5 class="section-title">F. Post-Graduation Plans</h5>
                             <div class="info-group mb-4">
                                 <label class="form-label fw-bold d-block mb-3">Plans after graduation from <?= $school_label ?>:</label>
                                 <div class="row g-3">
@@ -854,114 +957,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div id="planOtherInput" class="ms-4 mt-2" style="display: none;">
                                             <input type="text" name="future_plan_others"
                                                 class="form-control form-control-sm" placeholder="Specify plans...">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h5 class="section-title">F. Support & Information</h5>
-                            <div class="row g-4 mb-4">
-                                <div class="col-md-6">
-                                    <div class="info-group h-100">
-                                        <label class="form-label fw-bold mb-3">Who will support your medical
-                                            education?</label>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="support_parents"> <label
-                                                class="form-check-label small">Parents/Family</label></div>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                                name="support_veteran_benefit"> <label
-                                                class="form-check-label small">Veteran Benefit</label></div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                name="support_scholarship_flag" id="scholarshipCheck"
-                                                onclick="document.getElementById('scholarshipInput').style.display=this.checked?'block':'none'">
-                                            <label class="form-check-label small">Scholarship</label>
-                                        </div>
-                                        <div id="scholarshipInput" class="ms-4 mb-3" style="display: none;">
-                                            <input type="text" name="support_scholarship_name"
-                                                class="form-control form-control-sm"
-                                                placeholder="Name of scholarship...">
-                                        </div>
-                                        <div class="mt-2">
-                                            <input type="text" name="support_others"
-                                                class="form-control form-control-sm" placeholder="Others (specify)...">
-                                        </div>
-                                        <div class="mt-3">
-                                            <label class="form-label small">Support Status:</label>
-                                            <select name="support_status" class="form-select form-select-sm">
-                                                <option value="Assured">Assured</option>
-                                                <option value="Probable">Probable</option>
-                                                <option value="To be applied for">To be applied for</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="info-group h-100">
-                                        <label class="form-label fw-bold mb-3">Where did you learn about DMSF?</label>
-                                        <div class="row g-1">
-                                            <div class="col-6">
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_parents"> <label
-                                                        class="form-check-label x-small">Parents</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_family_friends"> <label
-                                                        class="form-check-label x-small">Family Friends</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_student_friends"> <label
-                                                        class="form-check-label x-small">Student Friends</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_siblings"> <label
-                                                        class="form-check-label x-small">Siblings</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_teachers"> <label
-                                                        class="form-check-label x-small">Teachers</label></div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_newspaper"> <label
-                                                        class="form-check-label x-small">Newspaper</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_convocation"> <label
-                                                        class="form-check-label x-small">Convocation</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_internet"> <label
-                                                        class="form-check-label x-small">Internet/Web</label></div>
-                                                <div class="form-check mb-1"><input class="form-check-input"
-                                                        type="checkbox" name="info_own_effort"> <label
-                                                        class="form-check-label x-small">Own Effort</label></div>
-                                                <input type="text" name="info_others"
-                                                    class="form-control form-control-sm mt-1" placeholder="Others...">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="info-group mb-4">
-                                <label class="form-label fw-bold d-block mb-3">While in Davao, where do you plan to
-                                    stay?</label>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <div class="form-check"><input class="form-check-input" type="radio"
-                                                name="staying_place" value="Parents/Guardians Home" checked
-                                                onclick="document.getElementById('stayingOther').style.display='none'">
-                                            <label class="form-check-label small">Parents/Guardians Home</label></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-check"><input class="form-check-input" type="radio"
-                                                name="staying_place" value="Dormitory/Boarding House"
-                                                onclick="document.getElementById('stayingOther').style.display='none'">
-                                            <label class="form-check-label small">Dormitory/Boarding House</label></div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-2"><input class="form-check-input" type="radio"
-                                                name="staying_place" value="Others"
-                                                onclick="document.getElementById('stayingOther').style.display='block'">
-                                            <label class="form-check-label small">Others</label></div>
-                                        <div id="stayingOther" style="display: none;">
-                                            <input type="text" name="staying_place_others"
-                                                class="form-control form-control-sm" placeholder="Specify place...">
                                         </div>
                                     </div>
                                 </div>
@@ -1051,54 +1046,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
-    <script>
-        function autofillDemo() {
-            const textFields = {
-                'primary_school': 'Davao Central Elementary School',
-                'primary_location': 'Davao City',
-                'primary_dates': '2010-2016',
-                'secondary_school': 'Davao City National High School',
-                'secondary_location': 'Davao City',
-                'secondary_dates': '2016-2022',
-                'college_name_address': 'Ateneo de Davao University',
-                'degree_obtained': 'BS Biology',
-                'date_of_graduation': '2026-04-15',
-                'college_honors_list': 'Dean\'s Lister (2022-2026)',
-                'board_profession': 'None',
-                'other_skills_work_exp': 'Volunteer at Red Cross, Proficient in basic life support.',
-                'pref_first_med_school': 'Davao Medical School Foundation',
-                'pref_second_med_school': 'UP College of Medicine',
-                'pref_third_med_school': 'UST Faculty of Medicine and Surgery',
-                'application_essay': 'I chose DMSF because of its excellent reputation in medical education and its commitment to community health. Having grown up in Davao, I have seen first-hand the impact DMSF graduates have on the local healthcare system. I am passionate about becoming a physician who serves the underserved, and I believe DMSF provides the perfect environment and training to help me achieve this goal.'
-            };
-
-            for (const [name, value] of Object.entries(textFields)) {
-                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"]`);
-                if (input) input.value = value;
-            }
-
-            // Radio buttons
-            document.getElementById('hsYes').checked = true;
-            document.getElementById('hsHonorType').style.display = 'block';
-            document.querySelector('input[name="hs_honor_type"][value="Valedictorian"]').checked = true;
-            
-            document.getElementById('collegeNo').checked = true;
-            document.getElementById('mdFirstYes').checked = true;
-            document.getElementById('actNone').checked = true;
-            document.getElementById('planPractice').checked = true;
-
-            // Checkboxes
-            document.querySelector('input[name="interest_sports"]').checked = true;
-            document.querySelector('input[name="interest_music_vocal"]').checked = true;
-            document.querySelector('input[name="motivation_parents"]').checked = true;
-            document.querySelector('input[name="motivation_health_awareness"]').checked = true;
-            document.querySelector('input[name="info_internet"]').checked = true;
-
-            // Trigger conditional displays
-            toggleGapDetails('none');
-            togglePlanDetails('none');
-        }
-    </script>
 </body>
 
 </html>

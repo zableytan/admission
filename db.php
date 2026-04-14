@@ -1,9 +1,9 @@
 <?php
 // db.php
 $host = 'localhost';
-$db   = 'admission_system';
-$user = 'root'; // Change to your DB username
-$pass = '';     // Change to your DB password
+$db   = 'aqa_admission_db';
+$user = 'aqa_admindb'; // Change to your DB username
+$pass = 'DMSFI-AQA2026_admindb';     // Change to your DB password
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

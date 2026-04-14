@@ -208,6 +208,28 @@ if (isset($_SESSION['flash_msg'])) {
     unset($_SESSION['flash_msg']);
 }
 
+// Handle bulk delete for super admins
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'bulk_delete' && isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
+    if (!empty($_POST['selected_apps']) && is_array($_POST['selected_apps'])) {
+        $ids = array_map('intval', $_POST['selected_apps']);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        
+        try {
+            $sql = "DELETE FROM applications WHERE id IN ($placeholders)";
+            $stmt = $pdo->prepare($sql);
+            if ($stmt->execute($ids)) {
+                $_SESSION['flash_msg'] = "Successfully deleted " . count($ids) . " applications.";
+            } else {
+                $_SESSION['flash_msg'] = "Error deleting applications.";
+            }
+        } catch (PDOException $e) {
+             $_SESSION['flash_msg'] = "Error: " . $e->getMessage();
+        }
+        header("Location: admin_dashboard.php");
+        exit;
+    }
+}
+
 // Fetch Applications
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
     // Super Admin viewing all departments
@@ -420,13 +442,17 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                         <select name="college" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
                             onchange="this.form.submit()">
                             <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All</option>
-                            <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Medicine (ALL)</option>
-                            <option value="Medicine (Filipino)" <?= $college === 'Medicine (Filipino)' ? 'selected' : '' ?>>Medicine (Filipino)</option>
-                            <option value="Medicine (Foreign)" <?= $college === 'Medicine (Foreign)' ? 'selected' : '' ?>>Medicine (Foreign)</option>
-                            <option value="Nursing" <?= $college === 'Nursing' ? 'selected' : '' ?>>Nursing</option>
-                            <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Dentistry</option>
-                            <option value="Midwifery" <?= $college === 'Midwifery' ? 'selected' : '' ?>>Midwifery</option>
-                            <option value="Biology" <?= $college === 'Biology' ? 'selected' : '' ?>>Biology</option>
+                            <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Doctor of Medicine (ALL)</option>
+                            <option value="Medicine (Filipino)" <?= $college === 'Medicine (Filipino)' ? 'selected' : '' ?>>Doctor of Medicine (Filipino)</option>
+                            <option value="Medicine (Foreign)" <?= $college === 'Medicine (Foreign)' ? 'selected' : '' ?>>Doctor of Medicine (Foreign)</option>
+                            <option value="Nursing" <?= $college === 'Nursing' ? 'selected' : '' ?>>BS in Nursing</option>
+                            <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Doctor of Dental Medicine</option>
+                            <option value="Midwifery" <?= $college === 'Midwifery' ? 'selected' : '' ?>>BS in Midwifery</option>
+                            <option value="Biology" <?= $college === 'Biology' ? 'selected' : '' ?>>BS in Biology</option>
+                            <option value="Master in Community Health" <?= $college === 'Master in Community Health' ? 'selected' : '' ?>>Master in Community Health</option>
+                            <option value="Master in Health Professions Education" <?= $college === 'Master in Health Professions Education' ? 'selected' : '' ?>>Master in Health Professions Education</option>
+                            <option value="Master in Participatory Development" <?= $college === 'Master in Participatory Development' ? 'selected' : '' ?>>Master in Participatory Development</option>
+                            <option value="Accelerated Pathway for Medicine" <?= $college === 'Accelerated Pathway for Medicine' ? 'selected' : '' ?>>Accelerated Pathway for Medicine</option>
                         </select>
                     </form>
                     <a href="admin_manage.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-3">
@@ -468,7 +494,12 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                         <div class="col">
                             <h5 class="mb-0 fw-bold">Recent Applications</h5>
                         </div>
-                        <div class="col-auto">
+                        <div class="col-auto d-flex align-items-center">
+                            <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
+                                <button type="button" class="btn btn-danger btn-sm me-2" id="btnDeleteSelected" style="display:none;" onclick="submitBulkDelete()">
+                                    <i class="bi bi-trash me-1"></i> Delete Selected
+                                </button>
+                            <?php endif; ?>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
                                 <input type="text" class="form-control bg-light border-start-0"
@@ -482,7 +513,12 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                         <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th class="ps-4">Applicant</th>
+                                    <th class="ps-4">
+                                        <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
+                                            <input class="form-check-input me-2" type="checkbox" id="selectAllApps">
+                                        <?php endif; ?>
+                                        Applicant
+                                    </th>
                                     <th>College/Score</th>
                                     <th>Status</th>
                                     <th>Documents</th>
@@ -493,11 +529,16 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                 <?php foreach ($applications as $app): ?>
                                     <tr>
                                         <td class="ps-4">
-                                            <span
-                                                class="applicant-name"><?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?></span>
-                                            <span class="applicant-email"><?= $app['email'] ?></span>
-                                            <div class="mt-1 small text-muted">ID:
-                                                #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></div>
+                                            <div class="d-flex align-items-center">
+                                                <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
+                                                    <input class="form-check-input me-3 app-checkbox" type="checkbox" value="<?= $app['id'] ?>">
+                                                <?php endif; ?>
+                                                <div>
+                                                    <span class="applicant-name"><?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?></span>
+                                                    <span class="applicant-email"><?= $app['email'] ?></span>
+                                                    <div class="mt-1 small text-muted">ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <div class="mb-1 fw-semibold small <?= $app['college'] === 'All Colleges' ? 'text-danger fw-bold' : 'text-primary' ?>">
@@ -612,8 +653,63 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
         <p class="text-muted small mt-2">Sending notification emails, please wait.</p>
     </div>
 
+    <!-- Bulk Delete Form -->
+    <form method="POST" id="bulkDeleteForm" style="display:none;">
+        <input type="hidden" name="action" value="bulk_delete">
+    </form>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
+            const selectAllApps = document.getElementById('selectAllApps');
+            const appCheckboxes = document.querySelectorAll('.app-checkbox');
+            const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+            const bulkDeleteBtn = document.getElementById('btnDeleteSelected');
+
+            function updateDeleteBtn() {
+                if (!appCheckboxes) return;
+                const checkedCount = document.querySelectorAll('.app-checkbox:checked').length;
+                if (checkedCount > 0) {
+                    bulkDeleteBtn.style.display = 'inline-block';
+                    bulkDeleteBtn.innerHTML = `<i class="bi bi-trash me-1"></i> Delete Selected (${checkedCount})`;
+                } else {
+                    bulkDeleteBtn.style.display = 'none';
+                }
+            }
+
+            if (selectAllApps) {
+                selectAllApps.addEventListener('change', function() {
+                    appCheckboxes.forEach(cb => cb.checked = this.checked);
+                    updateDeleteBtn();
+                });
+            }
+
+            if (appCheckboxes) {
+                appCheckboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const allChecked = document.querySelectorAll('.app-checkbox:checked').length === appCheckboxes.length;
+                        if (selectAllApps) selectAllApps.checked = allChecked;
+                        updateDeleteBtn();
+                    });
+                });
+            }
+
+            function submitBulkDelete() {
+                if (!confirm('Are you sure you want to delete the selected applications? This action cannot be undone.')) {
+                    return;
+                }
+                const selected = document.querySelectorAll('.app-checkbox:checked');
+                selected.forEach(cb => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'selected_apps[]';
+                    input.value = cb.value;
+                    bulkDeleteForm.appendChild(input);
+                });
+                bulkDeleteForm.submit();
+            }
+        <?php endif; ?>
+
         // Use event delegation for the multiple possible action forms
         document.body.addEventListener('submit', function (e) {
             if (e.target.classList.contains('action-form')) {

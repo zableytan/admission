@@ -310,26 +310,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 15px;
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
-
-        .btn-demo {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-demo:hover {
-            background-color: #ffca2c;
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 
 <body>
+
+<!-- Contact Button & Modal -->
+<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
+    <i class="bi bi-chat-dots-fill fs-3"></i>
+</button>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header text-white" style="background-color: #196199;">
+        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Medicine</strong>
+                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Nursing</strong>
+                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Dentistry</strong>
+                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Midwifery</strong>
+                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
+                <strong>Biology</strong>
+                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="container py-5">
         <div class="logo-container">
@@ -344,9 +369,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 3 of 5: Family Background</h3>
                             <div class="d-flex gap-2 align-items-center">
-                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
-                                    <i class="bi bi-magic me-1"></i> Autofill Demo
-                                </button>
                                 <span class="badge bg-white text-success px-3 py-2">Admission Process</span>
                             </div>
                         </div>
@@ -693,56 +715,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     input.disabled = false;
                 });
             }
-        }
-
-        function autofillDemo() {
-            const textFields = {
-                'father_first_name': 'Robert',
-                'father_middle_name': 'Middle',
-                'father_last_name': 'Doe',
-                'father_age': '50',
-                'mother_first_name': 'Jane',
-                'mother_middle_name': 'Smith',
-                'mother_last_name': 'Doe',
-                'mother_age': '48',
-                'father_occupation': 'Civil Engineer',
-                'mother_occupation': 'Registered Nurse',
-                'family_address': '456 Residence Way, Davao City',
-                'family_contact_no': '0922 444 5555',
-                'parents_marriage_status': 'Married',
-                'total_family_income': '51-100k',
-                'family_assets': 'Residential house and lot, family vehicle (SUV)',
-                'num_brothers': '1',
-                'num_sisters': '1',
-                'siblings_middle_school': '0',
-                'brothers_hs': '1',
-                'sisters_hs': '0',
-                'brothers_college': '0',
-                'sisters_college': '1',
-                'brothers_courses': 'Ongoing High School',
-                'sisters_courses': 'BS Architecture'
-            };
-
-            for (const [name, value] of Object.entries(textFields)) {
-                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"], select[name="${name}"]`);
-                if (input) input.value = value;
-            }
-
-            // Checkboxes
-            document.querySelector('input[name="income_salaries"]').checked = true;
-            document.querySelector('input[name="income_business"]').checked = true;
-
-            // Radios
-            document.getElementById('parentGradNo').checked = true;
-            document.getElementById('parentTeachNo').checked = true;
-            document.getElementById('siblingDmsfNo').checked = true;
-
-            // Hide details
-            document.getElementById('parentGradDetails').style.display = 'none';
-            document.getElementById('parentTeachDetails').style.display = 'none';
-            document.getElementById('siblingDmsfDetails').style.display = 'none';
-        }
-    </script>
+        }</script>
 </body>
 
 </html>

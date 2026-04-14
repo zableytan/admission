@@ -199,13 +199,17 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-uppercase">Department/College</label>
                                 <select name="college" class="form-select" required>
-                                    <option value="Medicine">Medicine (ALL)</option>
-                                    <option value="Medicine (Filipino)">Medicine (Filipino)</option>
-                                    <option value="Medicine (Foreign)">Medicine (Foreign)</option>
-                                    <option value="Nursing">Nursing</option>
-                                    <option value="Dentistry">Dentistry</option>
-                                    <option value="Midwifery">Midwifery</option>
-                                    <option value="Biology">Biology</option>
+                                    <option value="Medicine">Doctor of Medicine (ALL)</option>
+                                    <option value="Medicine (Filipino)">Doctor of Medicine (Filipino)</option>
+                                    <option value="Medicine (Foreign)">Doctor of Medicine (Foreign)</option>
+                                    <option value="Nursing">BS in Nursing</option>
+                                    <option value="Dentistry">Doctor of Dental Medicine</option>
+                                    <option value="Midwifery">BS in Midwifery</option>
+                                    <option value="Biology">BS in Biology</option>
+                                    <option value="Master in Community Health">Master in Community Health</option>
+                                    <option value="Master in Health Professions Education">Master in Health Professions Education</option>
+                                    <option value="Master in Participatory Development">Master in Participatory Development</option>
+                                    <option value="Accelerated Pathway for Medicine">Accelerated Pathway for Medicine</option>
                                     <option value="All Colleges">All Colleges (Universal)</option>
                                     <option value="All">All (Super Admin)</option>
                                 </select>
@@ -319,13 +323,17 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-uppercase">Department/College</label>
                             <select name="college" id="editCollege" class="form-select" required>
-                                <option value="Medicine">Medicine (ALL)</option>
-                                <option value="Medicine (Filipino)">Medicine (Filipino)</option>
-                                <option value="Medicine (Foreign)">Medicine (Foreign)</option>
-                                <option value="Nursing">Nursing</option>
-                                <option value="Dentistry">Dentistry</option>
-                                <option value="Midwifery">Midwifery</option>
-                                <option value="Biology">Biology</option>
+                                <option value="Medicine">Doctor of Medicine (ALL)</option>
+                                <option value="Medicine (Filipino)">Doctor of Medicine (Filipino)</option>
+                                <option value="Medicine (Foreign)">Doctor of Medicine (Foreign)</option>
+                                <option value="Nursing">BS in Nursing</option>
+                                <option value="Dentistry">Doctor of Dental Medicine</option>
+                                <option value="Midwifery">BS in Midwifery</option>
+                                <option value="Biology">BS in Biology</option>
+                                <option value="Master in Community Health">Master in Community Health</option>
+                                <option value="Master in Health Professions Education">Master in Health Professions Education</option>
+                                <option value="Master in Participatory Development">Master in Participatory Development</option>
+                                <option value="Accelerated Pathway for Medicine">Accelerated Pathway for Medicine</option>
                                 <option value="All">All (Super Admin)</option>
                             </select>
                         </div>

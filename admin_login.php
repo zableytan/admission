@@ -146,13 +146,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 rounded-start-10"><i class="bi bi-building text-muted"></i></span>
                     <select name="college" class="form-select border-start-0 rounded-end-10 mb-0" required>
-                        <option value="Medicine" selected>College of Medicine (ALL)</option>
-                        <option value="Medicine (Filipino)">College of Medicine (Filipino)</option>
-                        <option value="Medicine (Foreign)">College of Medicine (Foreign)</option>
-                        <option value="Nursing">College of Nursing</option>
-                        <option value="Dentistry">College of Dentistry</option>
-                        <option value="Midwifery">College of Midwifery</option>
-                        <option value="Biology">College of Biology</option>
+                        <option value="Medicine" selected>Doctor of Medicine (ALL)</option>
+                        <option value="Medicine (Filipino)">Doctor of Medicine (Filipino)</option>
+                        <option value="Medicine (Foreign)">Doctor of Medicine (Foreign)</option>
+                        <option value="Nursing">BS in Nursing</option>
+                        <option value="Dentistry">Doctor of Dental Medicine</option>
+                        <option value="Midwifery">BS in Midwifery</option>
+                        <option value="Biology">BS in Biology</option>
+                        <option value="Master in Community Health">Master in Community Health</option>
+                        <option value="Master in Health Professions Education">Master in Health Professions Education</option>
+                        <option value="Master in Participatory Development">Master in Participatory Development</option>
+                        <option value="Accelerated Pathway for Medicine">Accelerated Pathway for Medicine</option>
                     </select>
                 </div>
             </div>

@@ -66,13 +66,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $disability_flag = (isset($_POST['disability_flag']) && $_POST['disability_flag'] == 'YES') ? 1 : 0;
     $disability_details = filter_input(INPUT_POST, 'physical_disability_details', FILTER_SANITIZE_SPECIAL_CHARS);
 
+    // --- Vaccination Status ---
+    $vax_status = filter_input(INPUT_POST, 'vax_status', FILTER_SANITIZE_SPECIAL_CHARS);
+    $vax_dose1 = ($vax_status == 'Yes') ? filter_input(INPUT_POST, 'vax_dose1', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $vax_dose2 = ($vax_status == 'Yes') ? filter_input(INPUT_POST, 'vax_dose2', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $vax_booster = ($vax_status == 'Yes') ? filter_input(INPUT_POST, 'vax_booster', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+
+    // --- Health & Well-being ---
+    $chronic_condition_flag = (isset($_POST['chronic_condition_flag']) && $_POST['chronic_condition_flag'] == 'YES') ? 1 : 0;
+    $chronic_condition_details = filter_input(INPUT_POST, 'chronic_condition_details', FILTER_SANITIZE_SPECIAL_CHARS);
+    $counselling_history = filter_input(INPUT_POST, 'counselling_history', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    // --- Motivation ---
+    $motivation_parents = isset($_POST['motivation_parents']) ? 1 : 0;
+    $motivation_siblings = isset($_POST['motivation_siblings']) ? 1 : 0;
+    $motivation_relatives = isset($_POST['motivation_relatives']) ? 1 : 0;
+    $motivation_friends = isset($_POST['motivation_friends']) ? 1 : 0;
+    $motivation_illness = isset($_POST['motivation_illness']) ? 1 : 0;
+    $motivation_prestige = isset($_POST['motivation_prestige']) ? 1 : 0;
+    $motivation_health_awareness = isset($_POST['motivation_health_awareness']) ? 1 : 0;
+    $motivation_community_needs = isset($_POST['motivation_community_needs']) ? 1 : 0;
+    $motivation_others = filter_input(INPUT_POST, 'motivation_others', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    // --- Support ---
+    $support_parents = isset($_POST['support_parents']) ? 1 : 0;
+    $support_veteran_benefit = isset($_POST['support_veteran_benefit']) ? 1 : 0;
+    $support_scholarship_flag = isset($_POST['support_scholarship_flag']) ? 1 : 0;
+    $support_scholarship_name = $support_scholarship_flag ? filter_input(INPUT_POST, 'support_scholarship_name', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $support_others = filter_input(INPUT_POST, 'support_others', FILTER_SANITIZE_SPECIAL_CHARS);
+    $support_status = filter_input(INPUT_POST, 'support_status', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    // --- Information Source ---
+    $info_parents = isset($_POST['info_parents']) ? 1 : 0;
+    $info_family_friends = isset($_POST['info_family_friends']) ? 1 : 0;
+    $info_student_friends = isset($_POST['info_student_friends']) ? 1 : 0;
+    $info_siblings = isset($_POST['info_siblings']) ? 1 : 0;
+    $info_teachers = isset($_POST['info_teachers']) ? 1 : 0;
+    $info_newspaper = isset($_POST['info_newspaper']) ? 1 : 0;
+    $info_convocation = isset($_POST['info_convocation']) ? 1 : 0;
+    $info_internet = isset($_POST['info_internet']) ? 1 : 0;
+    $info_own_effort = isset($_POST['info_own_effort']) ? 1 : 0;
+    $info_others = filter_input(INPUT_POST, 'info_others', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    // --- Staying Place ---
+    $staying_place = filter_input(INPUT_POST, 'staying_place', FILTER_SANITIZE_SPECIAL_CHARS);
+    $staying_place_others = ($staying_place == 'Others') ? filter_input(INPUT_POST, 'staying_place_others', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+
     // Legal Case Involvement (Section E) removed
 
     // Prepare the UPDATE statement
     $sql = "UPDATE applications SET 
             age=?, date_of_birth=?, place_of_birth=?, sex=?, civil_status=?, religion=?, citizenship=?, 
             height_ft=?, height_in=?, weight_kilos_initial=?, weight_kilos_now=?, medical_history=?, 
-            physical_disability_flag=?, physical_disability_details=?
+            physical_disability_flag=?, physical_disability_details=?,
+            vax_status=?, vax_dose1=?, vax_dose2=?, vax_booster=?,
+            chronic_condition_flag=?, chronic_condition_details=?, counselling_history=?,
+            motivation_parents=?, motivation_siblings=?, motivation_relatives=?, motivation_friends=?, 
+            motivation_illness=?, motivation_prestige=?, motivation_health_awareness=?, motivation_community_needs=?, motivation_others=?,
+            support_parents=?, support_veteran_benefit=?, support_scholarship_flag=?, support_scholarship_name=?, support_others=?, support_status=?,
+            info_parents=?, info_family_friends=?, info_student_friends=?, info_siblings=?, info_teachers=?, 
+            info_newspaper=?, info_convocation=?, info_internet=?, info_own_effort=?, info_others=?,
+            staying_place=?, staying_place_others=?
             WHERE id = ?";
 
     $stmt = $pdo->prepare($sql);
@@ -94,6 +148,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $med_history,
             $disability_flag,
             $disability_details,
+            $vax_status,
+            $vax_dose1,
+            $vax_dose2,
+            $vax_booster,
+            $chronic_condition_flag,
+            $chronic_condition_details,
+            $counselling_history,
+            $motivation_parents, $motivation_siblings, $motivation_relatives, $motivation_friends,
+            $motivation_illness, $motivation_prestige, $motivation_health_awareness, $motivation_community_needs, $motivation_others,
+            $support_parents, $support_veteran_benefit, $support_scholarship_flag, $support_scholarship_name, $support_others, $support_status,
+            $info_parents, $info_family_friends, $info_student_friends, $info_siblings, $info_teachers,
+            $info_newspaper, $info_convocation, $info_internet, $info_own_effort, $info_others,
+            $staying_place, $staying_place_others,
             $app_id
         ])
     ) {
@@ -226,6 +293,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-left: 5px solid var(--primary-color);
         }
 
+        .x-small {
+            font-size: 0.75rem;
+            text-transform: none;
+        }
+
         .logo-container {
             text-align: center;
             margin-bottom: 30px;
@@ -237,26 +309,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 15px;
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
-
-        .btn-demo {
-            background-color: #212529;
-            color: #ffc107;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-demo:hover {
-            background-color: #343a40;
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 
 <body>
+
+<!-- Contact Button & Modal -->
+<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
+    <i class="bi bi-chat-dots-fill fs-3"></i>
+</button>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header text-white" style="background-color: #196199;">
+        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Medicine</strong>
+                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Nursing</strong>
+                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Dentistry</strong>
+                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Midwifery</strong>
+                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
+                <strong>Biology</strong>
+                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="container py-5">
         <div class="logo-container">
@@ -271,9 +368,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 2 of 5: Personal & Medical Data</h3>
                             <div class="d-flex gap-2 align-items-center">
-                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
-                                    <i class="bi bi-magic me-1"></i> Autofill Demo
-                                </button>
                                 <span class="badge bg-white text-dark px-3 py-2">Admission Process</span>
                             </div>
                         </div>
@@ -365,44 +459,220 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <h5 class="section-title mt-2">B. Medical History</h5>
+                            <h5 class="section-title mt-2">B. Health & Medical Profile</h5>
 
                             <div class="mb-4">
-                                <label class="form-label">Medical History</label>
+                                <label class="form-label">General Medical History</label>
                                 <textarea name="medical_history" class="form-control" rows="3"
-                                    placeholder="List any physical or mental illnesses..."></textarea>
+                                    placeholder="List any physical or mental illnesses, surgeries, or major health events..."></textarea>
                             </div>
 
-                            <div class="mb-4 border-0 bg-light p-4 rounded-3 text-secondary">
-                                <label class="form-label fw-bold d-block mb-3 text-dark">Do you have any physical
-                                    disability which might interfere with the practice of medicine?</label>
-                                <div class="form-check form-check-inline me-4">
-                                    <input class="form-check-input" type="radio" name="disability_flag"
-                                        id="disabilityYes" value="YES"
-                                        onclick="document.getElementById('disabilityDetails').style.display='block'">
-                                    <label class="form-check-label" for="disabilityYes">YES</label>
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Vaccination Status <span class="fw-normal text-muted small">(COVID-19 or Hepatitis)</span></label>
+                                        <div class="d-flex gap-4 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="vax_status" id="vaxYes" value="Yes" onclick="document.getElementById('vaxDetails').style.display='block'">
+                                                <label class="form-check-label px-2" for="vaxYes font-bold">YES</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="vax_status" id="vaxNo" value="No" checked onclick="document.getElementById('vaxDetails').style.display='none'">
+                                                <label class="form-check-label px-2" for="vaxNo font-bold">NO</label>
+                                            </div>
+                                        </div>
+                                        <div id="vaxDetails" style="display: none;" class="mt-3 border-top pt-3">
+                                            <div class="mb-2">
+                                                <label class="form-label x-small mb-1">1st Dose (Brand):</label>
+                                                <input type="text" name="vax_dose1" class="form-control form-control-sm" placeholder="Brand name...">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label x-small mb-1">2nd Dose (Brand / N/A):</label>
+                                                <input type="text" name="vax_dose2" class="form-control form-control-sm" placeholder="Brand name or N/A...">
+                                            </div>
+                                            <div>
+                                                <label class="form-label x-small mb-1">Booster (Brand / N/A):</label>
+                                                <input type="text" name="vax_booster" class="form-control form-control-sm" placeholder="Brand name or N/A...">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="disability_flag"
-                                        id="disabilityNo" value="NO" checked
-                                        onclick="document.getElementById('disabilityDetails').style.display='none'">
-                                    <label class="form-check-label" for="disabilityNo">NO</label>
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Chronic Medical Condition</label>
+                                        <div class="d-flex gap-4 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="chronic_condition_flag" id="chronicYes" value="YES" onclick="document.getElementById('chronicDetails').style.display='block'">
+                                                <label class="form-check-label px-2" for="chronicYes font-bold">YES</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="chronic_condition_flag" id="chronicNo" value="NO" checked onclick="document.getElementById('chronicDetails').style.display='none'">
+                                                <label class="form-check-label px-2" for="chronicNo font-bold">NO</label>
+                                            </div>
+                                        </div>
+                                        <div id="chronicDetails" style="display: none;" class="mt-2">
+                                            <textarea name="chronic_condition_details" class="form-control form-control-sm" rows="3" placeholder="Please state details..."></textarea>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="mt-3" id="disabilityDetails" style="display: none;">
-                                    <textarea name="physical_disability_details" class="form-control" rows="2"
-                                        placeholder="If YES, please state details."></textarea>
+                            </div>
+
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">Physical Disability</label>
+                                        <p class="x-small text-muted mb-3">Do you have any disability which might interfere with the practice of your chosen course?</p>
+                                        <div class="d-flex gap-4 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="disability_flag" id="disabilityYes" value="YES" onclick="document.getElementById('disabilityDetails').style.display='block'">
+                                                <label class="form-check-label px-2" for="disabilityYes font-bold">YES</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="disability_flag" id="disabilityNo" value="NO" checked onclick="document.getElementById('disabilityDetails').style.display='none'">
+                                                <label class="form-check-label px-2" for="disabilityNo font-bold">NO</label>
+                                            </div>
+                                        </div>
+                                        <div id="disabilityDetails" style="display: none;" class="mt-2 text-danger">
+                                            <textarea name="physical_disability_details" class="form-control form-control-sm" rows="2" placeholder="If YES, please state details."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-4 bg-light rounded-3 border h-100">
+                                        <label class="form-label fw-bold d-block mb-3">History of Professional Counselling</label>
+                                        <div class="mb-3">
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="counselling_history" id="counselYes" value="Yes">
+                                                <label class="form-check-label px-2" for="counselYes">Yes</label>
+                                            </div>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="counselling_history" id="counselNo" value="No" checked>
+                                                <label class="form-check-label px-2" for="counselNo">No</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="counselling_history" id="counselPrefer" value="Prefer not to say">
+                                                <label class="form-check-label px-2" for="counselPrefer">Prefer not to say</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 class="section-title mt-5 mb-4">C. Future Plans & Support</h5>
+
+                            <!-- Influence Group -->
+                            <div class="mb-5">
+                                <label class="form-label fw-bold d-block mb-3">What influence you greatly in taking up this course? <span class="fw-normal text-muted small">(Check all that apply)</span></label>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="motivation_parents"> <label class="form-check-label small">Parents</label></div>
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="motivation_siblings"> <label class="form-check-label small">Siblings</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="motivation_relatives"> <label class="form-check-label small">Other Relatives</label></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="motivation_friends"> <label class="form-check-label small">Friends</label></div>
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="motivation_illness"> <label class="form-check-label small">Illness in family</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="motivation_prestige"> <label class="form-check-label small">Prestige/Social Standing</label></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="motivation_health_awareness"> <label class="form-check-label small">Health Awareness</label></div>
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="motivation_community_needs"> <label class="form-check-label small">Community Needs</label></div>
+                                        <div class="mt-3">
+                                            <label class="form-label x-small text-muted mb-1">Others (specify):</label>
+                                            <input type="text" name="motivation_others" class="form-control form-control-sm" placeholder="Please specify...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Support Group -->
+                            <div class="mb-5">
+                                <label class="form-label fw-bold d-block mb-3">How will your education be supported?</label>
+                                <div class="row g-4">
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="support_parents"> <label class="form-check-label small">Parents/Family</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="support_veteran_benefit"> <label class="form-check-label small">Phil Veteran Benefit</label></div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="support_scholarship_flag" id="scholarshipCheck" onclick="document.getElementById('scholarshipDetail').style.display=this.checked?'block':'none'">
+                                            <label class="form-check-label small fw-semibold" for="scholarshipCheck">I have a Scholarship</label>
+                                        </div>
+                                        <div id="scholarshipDetail" class="ms-4 p-3 bg-light rounded-3 border" style="display: none;">
+                                            <div class="row g-2">
+                                                <div class="col-md-7">
+                                                    <label class="form-label x-small mb-1">Name of Scholarship:</label>
+                                                    <input type="text" name="support_scholarship_name" class="form-control form-control-sm">
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <label class="form-label x-small mb-1">Status:</label>
+                                                    <select name="support_status" class="form-select form-select-sm">
+                                                        <option value="">Select status...</option>
+                                                        <option value="Approved">Approved</option>
+                                                        <option value="Processing">Processing</option>
+                                                        <option value="Planning to apply">Planning to apply</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <label class="form-label x-small text-muted mb-1">Other Support:</label>
+                                            <input type="text" name="support_others" class="form-control form-control-sm" placeholder="Specify other financial support...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sources Group -->
+                            <div class="mb-5">
+                                <label class="form-label fw-bold d-block mb-3">What are your sources of information about DMSF?</label>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="info_parents"> <label class="form-check-label small">Parents</label></div>
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="info_family_friends"> <label class="form-check-label small">Family Friends</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="info_student_friends"> <label class="form-check-label small">DMSF Students</label></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="info_siblings"> <label class="form-check-label small">Brother/Sister</label></div>
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="info_teachers"> <label class="form-check-label small">College Teachers</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="info_newspaper"> <label class="form-check-label small">Newspaper ad</label></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="info_convocation"> <label class="form-check-label small">Convocation</label></div>
+                                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="info_internet"> <label class="form-check-label small">Internet</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="info_own_effort"> <label class="form-check-label small">Own Effort</label></div>
+                                        <div class="mt-3">
+                                            <label class="form-label x-small text-muted mb-1">Others (please specify):</label>
+                                            <input type="text" name="info_others" class="form-control form-control-sm" placeholder="Others...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Staying Place Group -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold d-block mb-2">If you will be studying here in Davao City, where will you most likely be staying?</label>
+                                <select name="staying_place" class="form-select" onchange="this.value=='Others'?document.getElementById('stayingOther').style.display='block':document.getElementById('stayingOther').style.display='none'">
+                                    <option value="">Select...</option>
+                                    <option value="With Parents">With Parents</option>
+                                    <option value="Boarding house/dormitory">Boarding house/dormitory</option>
+                                    <option value="Apartment with relatives">Apartment with relatives</option>
+                                    <option value="house of relatives">House of relatives</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                                <div id="stayingOther" class="mt-3 shadow-sm p-3 bg-white rounded-3 border" style="display: none;">
+                                    <label class="form-label x-small mb-1">Specify staying place:</label>
+                                    <input type="text" name="staying_place_others" class="form-control" placeholder="Please specify...">
                                 </div>
                             </div>
 
 
-                    </div>
-
-                    <div class="mt-5">
-                        <button type="submit" class="btn btn-step w-100 shadow-sm">
-                            Proceed to Step 3: Family Background <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                    </form>
+                            <div class="mt-5">
+                                <button type="submit" class="btn btn-step w-100 shadow-sm">
+                                    Proceed to Step 3: Family Background <i class="bi bi-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </form>
                 </div>
             </div>
         </div>
@@ -412,44 +682,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/form-draft.js"></script>
     <script>
-
-
-        function autofillDemo() {
-            const textFields = {
-                'age': '22',
-                'date_of_birth': '2003-05-20',
-                'place_of_birth': 'Davao City',
-                'religion': 'Roman Catholic',
-                'citizenship': 'Filipino',
-                'height_ft': '5',
-                'height_in': '7',
-                'weight_kilos_initial': '65',
-                'weight_kilos_now': '68',
-                'medical_history': 'No significant medical history. Regular check-ups with clear results.',
-                'physical_disability_details': ''
-            };
-
-            for (const [name, value] of Object.entries(textFields)) {
-                const input = document.querySelector(`input[name="${name}"], textarea[name="${name}"]`);
-                if (input) input.value = value;
-            }
-
-            // Select elements
-            const selects = {
-                'sex': 'Male',
-                'civil_status': 'Single'
-            };
-
-            for (const [name, value] of Object.entries(selects)) {
-                const select = document.querySelector(`select[name="${name}"]`);
-                if (select) select.value = value;
-            }
-
-            // Radio buttons
-            document.getElementById('disabilityNo').checked = true;
-            document.getElementById('disabilityDetails').style.display = 'none';
-        }
-    </script>
+</script>
 </body>
 
 </html>

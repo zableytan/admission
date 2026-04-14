@@ -18,15 +18,14 @@ if (!isset($_GET['college']) && !isset($_POST['college'])) {
 
 // Determine the college from the GET parameter (URL) or POST submission (hidden field)
 $college_input = isset($_GET['college']) ? $_GET['college'] : (isset($_POST['college']) ? $_POST['college'] : null);
-$med_type = isset($_GET['medicine_type']) ? $_GET['medicine_type'] : (isset($_POST['medicine_type']) ? $_POST['medicine_type'] : null);
+$applicant_type = isset($_GET['applicant_type']) ? $_GET['applicant_type'] : (isset($_POST['applicant_type']) ? $_POST['applicant_type'] : null);
 
 // If college is an array (from checkboxes), join it into a string
 if (is_array($college_input)) {
-    // If Medicine is one of the choices, append the type
     $processed_colleges = [];
     foreach ($college_input as $c) {
-        if ($c === 'Medicine' && $med_type) {
-            $processed_colleges[] = "Medicine ($med_type)";
+        if ($applicant_type) {
+            $processed_colleges[] = "$c ($applicant_type)";
         } else {
             $processed_colleges[] = $c;
         }
@@ -34,8 +33,9 @@ if (is_array($college_input)) {
     $college = implode(', ', $processed_colleges);
     $is_multiple = (count($college_input) > 1);
 } else {
-    if ($college_input === 'Medicine' && $med_type) {
-        $college = "Medicine ($med_type)";
+    // If it's a single string with an applicant_type available, append it (unless it already has it)
+    if ($applicant_type && strpos($college_input, '(') === false) {
+        $college = "$college_input ($applicant_type)";
     } else {
         $college = $college_input;
     }
@@ -273,26 +273,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 15px;
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
-
-        .btn-demo {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-demo:hover {
-            background-color: #ffca2c;
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 
 <body>
+
+<!-- Contact Button & Modal -->
+<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
+    <i class="bi bi-chat-dots-fill fs-3"></i>
+</button>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header text-white" style="background-color: #196199;">
+        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Medicine</strong>
+                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Nursing</strong>
+                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Dentistry</strong>
+                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <strong>Midwifery</strong>
+                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
+                <strong>Biology</strong>
+                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="container py-5">
         <div class="logo-container">
@@ -307,9 +332,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="mb-0 fw-bold">Step 1 of 5: Basic Application</h3>
                             <div class="d-flex gap-2 align-items-center">
-                                <button type="button" class="btn btn-demo shadow-sm" onclick="autofillDemo()">
-                                    <i class="bi bi-magic me-1"></i> Autofill Demo
-                                </button>
                                 <span class="badge bg-white text-primary px-3 py-2">
                                     <?php if ($is_multiple): ?>
                                         Multiple Colleges (Universal)
@@ -330,8 +352,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <form method="POST">
                             <input type="hidden" name="college" value="<?= htmlspecialchars($college) ?>">
-                            <?php if ($med_type): ?>
-                                <input type="hidden" name="medicine_type" value="<?= htmlspecialchars($med_type) ?>">
+                            <?php if ($applicant_type): ?>
+                                <input type="hidden" name="applicant_type" value="<?= htmlspecialchars($applicant_type) ?>">
                             <?php endif; ?>
 
                             <h5 class="section-title">Personal Information</h5>
@@ -563,48 +585,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
         });
-
-        function autofillDemo() {
-            const fields = {
-                'last_name': 'Doe',
-                'first_name': 'John',
-                'middle_initial': 'M',
-                'email': 'john.doe@example.com',
-                'mailing_address': '123 Medical Ave, Davao City, 8000',
-                'mobile_no': '0912 345 6789',
-                'tel_no_mailing': '123-4567',
-                'home_address': 'Permanent Residence St., Davao City',
-                'tel_no_home': '765-4321'
-            };
-
-            for (const [name, value] of Object.entries(fields)) {
-                const input = document.querySelector(`input[name="${name}"]`);
-                if (input) input.value = value;
-            }
-
-            // Select social media
-            const socmeds = ['smFB', 'smLI', 'smTW'];
-            socmeds.forEach(id => {
-                const cb = document.getElementById(id);
-                if (cb) cb.checked = true;
-            });
-
-            // Handle score field separately because its name depends on the college
-            const scoreInput = document.querySelector('input[name="nmat_score"], input[name="gwa_score"]');
-            if (scoreInput) {
-                scoreInput.value = scoreInput.name === 'nmat_score' ? '85' : '1.50';
-                // Trigger input event for the NMAT validation warning
-                scoreInput.dispatchEvent(new Event('input'));
-            }
-
-            const nmatDate = document.querySelector('input[name="nmat_date"]');
-            if (nmatDate) nmatDate.value = '2025-01-15';
-
-            const boardRating = document.querySelector('input[name="board_rating"]');
-            if (boardRating) boardRating.value = '88.50';
-        }
-    </script>
-
 </body>
 
 </html>

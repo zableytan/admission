@@ -60,11 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($weight_now === false)
         $weight_now = null;
 
-    $med_history = filter_input(INPUT_POST, 'medical_history', FILTER_SANITIZE_SPECIAL_CHARS);
+    $med_history = filter_input(INPUT_POST, 'medical_history', FILTER_DEFAULT);
 
     // Boolean fields (convert 'YES'/'NO' or checkbox presence)
     $disability_flag = (isset($_POST['disability_flag']) && $_POST['disability_flag'] == 'YES') ? 1 : 0;
-    $disability_details = filter_input(INPUT_POST, 'physical_disability_details', FILTER_SANITIZE_SPECIAL_CHARS);
+    $disability_details = filter_input(INPUT_POST, 'physical_disability_details', FILTER_DEFAULT);
 
     // --- Vaccination Status ---
     $vax_status = filter_input(INPUT_POST, 'vax_status', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -74,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // --- Health & Well-being ---
     $chronic_condition_flag = (isset($_POST['chronic_condition_flag']) && $_POST['chronic_condition_flag'] == 'YES') ? 1 : 0;
-    $chronic_condition_details = filter_input(INPUT_POST, 'chronic_condition_details', FILTER_SANITIZE_SPECIAL_CHARS);
-    $counselling_history = filter_input(INPUT_POST, 'counselling_history', FILTER_SANITIZE_SPECIAL_CHARS);
+    $chronic_condition_details = filter_input(INPUT_POST, 'chronic_condition_details', FILTER_DEFAULT);
+    $counselling_history = filter_input(INPUT_POST, 'counselling_history', FILTER_DEFAULT);
 
     // --- Motivation ---
     $motivation_parents = isset($_POST['motivation_parents']) ? 1 : 0;
@@ -314,46 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-<!-- Contact Button & Modal -->
-<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
-    <i class="bi bi-chat-dots-fill fs-3"></i>
-</button>
-
-<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header text-white" style="background-color: #196199;">
-        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-4">
-        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Medicine</strong>
-                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Nursing</strong>
-                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Dentistry</strong>
-                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Midwifery</strong>
-                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
-                <strong>Biology</strong>
-                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
-            </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
+<?php include 'contact_modal.php'; ?>
 
     <div class="container py-5">
         <div class="logo-container">

@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $degree_obtained = filter_input(INPUT_POST, 'degree_obtained', FILTER_SANITIZE_SPECIAL_CHARS);
     $date_of_graduation = filter_input(INPUT_POST, 'date_of_graduation', FILTER_SANITIZE_SPECIAL_CHARS);
     $college_honors_flag = (isset($_POST['college_honors_flag']) && $_POST['college_honors_flag'] == 'YES') ? 1 : 0;
-    $college_honors_list = $college_honors_flag ? filter_input(INPUT_POST, 'college_honors_list', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $college_honors_list = $college_honors_flag ? filter_input(INPUT_POST, 'college_honors_list', FILTER_DEFAULT) : null;
 
     // --- Board Exam ---
     $board_profession = filter_input(INPUT_POST, 'board_profession', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($employee_years === false)
         $employee_years = null;
 
-    $trainings_seminars = ($post_grad_activity == 'Worked as employee') ? filter_input(INPUT_POST, 'trainings_seminars', FILTER_SANITIZE_SPECIAL_CHARS) : null;
+    $trainings_seminars = ($post_grad_activity == 'Worked as employee') ? filter_input(INPUT_POST, 'trainings_seminars', FILTER_DEFAULT) : null;
 
     // --- Interests and Skills ---
     $interest_school_orgs = isset($_POST['interest_school_orgs']) ? 1 : 0;
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $interest_creative_writing = isset($_POST['interest_creative_writing']) ? 1 : 0;
     $interest_philately = isset($_POST['interest_philately']) ? 1 : 0;
     $interest_others = filter_input(INPUT_POST, 'interest_others', FILTER_SANITIZE_SPECIAL_CHARS);
-    $other_skills_work_exp = filter_input(INPUT_POST, 'other_skills_work_exp', FILTER_SANITIZE_SPECIAL_CHARS);
+    $other_skills_work_exp = filter_input(INPUT_POST, 'other_skills_work_exp', FILTER_DEFAULT);
 
     // --- Learning & Behavior ---
     $learning_style = filter_input(INPUT_POST, 'learning_style', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pref_third_med_school = filter_input(INPUT_POST, 'pref_third_med_school', FILTER_SANITIZE_SPECIAL_CHARS);
     $pref_other_med_schools = filter_input(INPUT_POST, 'pref_other_med_schools', FILTER_SANITIZE_SPECIAL_CHARS);
 
-    $application_essay = filter_input(INPUT_POST, 'application_essay', FILTER_SANITIZE_SPECIAL_CHARS);
+    $application_essay = filter_input(INPUT_POST, 'application_essay', FILTER_DEFAULT);
 
 
     // Prepare the massive UPDATE statement
@@ -376,46 +376,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-<!-- Contact Button & Modal -->
-<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
-    <i class="bi bi-chat-dots-fill fs-3"></i>
-</button>
-
-<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header text-white" style="background-color: #196199;">
-        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-4">
-        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Medicine</strong>
-                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Nursing</strong>
-                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Dentistry</strong>
-                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Midwifery</strong>
-                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
-                <strong>Biology</strong>
-                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
-            </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
+<?php include 'contact_modal.php'; ?>
 
     <div class="container py-5">
         <div class="logo-container">

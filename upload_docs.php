@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql = "UPDATE applications SET
             photo_path=?, tor_path=?, tbf_tor=?, form137_path=?, tbf_form137=?, birth_cert_path=?, nmat_path=?,
             diploma_path=?, tbf_diploma=?, gwa_cert_path=?, entrance_exam_path=?, receipt_path=?,
-            good_moral_path=?, tbf_good_moral=?, passport_path=?, other_docs_paths=?
+            good_moral_path=?, tbf_good_moral=?, passport_path=?, other_docs_paths=?, is_submitted=1
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -311,10 +311,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td class='row-label'>Weight (Now)</td><td class='row-value'>" . $app_data['weight_kilos_now'] . " kg</td>
                 </tr>
                 <tr>
-                    <td class='full-width-label'>Medical History</td><td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['medical_history'] ?: 'None declared')) . "</td>
+                    <td class='full-width-label'>Medical History</td><td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars(html_entity_decode($app_data['medical_history'] ?: 'None declared', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) . "</td>
                 </tr>
                 <tr>
-                    <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . getBoolText($app_data['physical_disability_flag']) . " (" . htmlspecialchars($app_data['physical_disability_details'] ?: 'N/A') . ")</td>
+                    <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . getBoolText($app_data['physical_disability_flag']) . " (" . htmlspecialchars(html_entity_decode($app_data['physical_disability_details'] ?: 'N/A', ENT_QUOTES | ENT_HTML5, 'UTF-8')) . ")</td>
                 </tr>
             </table>
 
@@ -368,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <strong>" . htmlspecialchars($app_data['tertiary_name']) . "</strong> (" . htmlspecialchars($app_data['tertiary_region'] ?: 'N/A') . ")<br>
                         Address: " . htmlspecialchars($app_data['tertiary_address'] ?: 'N/A') . " | Type: " . $app_data['tertiary_school_type'] . "<br>
                         Course: " . htmlspecialchars($app_data['tertiary_degree'] ?: $app_data['tertiary_course_type']) . " | GWA: " . $app_data['tertiary_gwa'] . "<br>
-                        Honors: " . htmlspecialchars($app_data['tertiary_honors'] ?: 'None') . " | <strong>Self-Rating: " . ($app_data['self_rating'] ?: 'N/A') . "/5</strong>
+                        Honors: " . htmlspecialchars(html_entity_decode($app_data['tertiary_honors'] ?: 'None', ENT_QUOTES | ENT_HTML5, 'UTF-8')) . " | <strong>Self-Rating: " . ($app_data['self_rating'] ?: 'N/A') . "/5</strong>
                     </td>
                 </tr>
                 " : "") . "
@@ -379,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td class='full-width-label'>College Degree</td><td class='full-width-value' colspan='3'>" . htmlspecialchars($app_data['degree_obtained'] ?? '') . " from " . htmlspecialchars($app_data['college_name_address'] ?? '') . " (Grad: " . ($app_data['date_of_graduation'] ?? 'N/A') . ")</td>
                 </tr>
                 <tr>
-                    <td class='row-label'>College Honors</td><td class='row-value'>" . getBoolText($app_data['college_honors_flag'] ?? 0) . " (" . htmlspecialchars($app_data['college_honors_list'] ?? 'N/A') . ")</td>
+                    <td class='row-label'>College Honors</td><td class='row-value'>" . getBoolText($app_data['college_honors_flag'] ?? 0) . " (" . htmlspecialchars(html_entity_decode($app_data['college_honors_list'] ?? 'N/A', ENT_QUOTES | ENT_HTML5, 'UTF-8')) . ")</td>
                     <td class='row-label'>Board Exam</td><td class='row-value'>" . htmlspecialchars($app_data['board_profession'] ?: 'None') . " (Rating: " . ($app_data['board_rating'] ?? 0) . "%)</td>
                 </tr>
             </table>
@@ -405,7 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
                 <tr>
                     <td class='full-width-label'>Personal Essay</td>
-                    <td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['application_essay'] ?: 'None')) . "</td>
+                    <td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars(html_entity_decode($app_data['application_essay'] ?: 'None', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) . "</td>
                 </tr>
             </table>
 
@@ -831,46 +831,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-<!-- Contact Button & Modal -->
-<button type="button" class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#contactModal" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1050; background-color: #196199; border: none; display: flex; align-items: center; justify-content: center;">
-    <i class="bi bi-chat-dots-fill fs-3"></i>
-</button>
-
-<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header text-white" style="background-color: #196199;">
-        <h5 class="modal-title fw-bold" id="contactModalLabel"><i class="bi bi-envelope-fill me-2"></i>Contact Admissions</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-4">
-        <p class="text-muted mb-4 small">If there are any concerns or need of improvement for this tool, please email us at the appropriate department below.</p>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Medicine</strong>
-                <a href="mailto:admission.med@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.med@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Nursing</strong>
-                <a href="mailto:admission.nursing@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.nursing@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Dentistry</strong>
-                <a href="mailto:admission.dentistry@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.dentistry@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <strong>Midwifery</strong>
-                <a href="mailto:admission.midwifery@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.midwifery@dmsf.edu.ph</a>
-            </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-bottom-0">
-                <strong>Biology</strong>
-                <a href="mailto:admission.biology@dmsf.edu.ph" class="text-decoration-none rounded px-2 py-1 bg-light small"><i class="bi bi-envelope me-1"></i> admission.biology@dmsf.edu.ph</a>
-            </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
+<?php include 'contact_modal.php'; ?>
 
     <div class="container py-5">
         <div class="logo-container">

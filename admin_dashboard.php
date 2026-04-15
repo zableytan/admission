@@ -421,6 +421,10 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
             font-size: 0.8rem;
             letter-spacing: 1px;
         }
+
+        .x-small {
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 
@@ -536,7 +540,20 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                                 <div>
                                                     <span class="applicant-name"><?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?></span>
                                                     <span class="applicant-email"><?= $app['email'] ?></span>
-                                                    <div class="mt-1 small text-muted">ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></div>
+                                                    <div class="mt-1 d-flex align-items-center gap-2">
+                                                        <span class="small text-muted">ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></span>
+                                                        <?php 
+                                                        $is_really_submitted = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
+                                                        if ($is_really_submitted): ?>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill x-small py-0">
+                                                                <i class="bi bi-check-circle-fill"></i> Submitted
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill x-small py-0">
+                                                                <i class="bi bi-pencil-square"></i> Draft
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

@@ -176,7 +176,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <div class="col-md-12 mb-3">
                             <div class="label">Medical History</div>
-                            <div class="value border-start border-danger ps-3 py-1 bg-light rounded small"><?= nl2br(htmlspecialchars($app['medical_history'])) ?></div>
+                            <div class="value border-start border-danger ps-3 py-1 bg-light rounded small"><?= nl2br(htmlspecialchars(html_entity_decode($app['medical_history'] ?: '', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) ?></div>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -198,14 +198,14 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="value small">
                                 <strong><?= $app['chronic_condition_flag'] ? 'Yes' : 'No' ?></strong>
                                 <?php if($app['chronic_condition_flag']): ?>
-                                    <div class="x-small text-muted mt-1"><?= $app['chronic_condition_details'] ?></div>
+                                    <div class="x-small text-muted mt-1"><?= nl2br(htmlspecialchars(html_entity_decode($app['chronic_condition_details'] ?: '', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) ?></div>
                                 <?php endif; ?>
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <div class="label">Counselling History</div>
-                            <div class="value small"><?= $app['counselling_history'] ?></div>
+                            <div class="value small"><?= nl2br(htmlspecialchars(html_entity_decode($app['counselling_history'] ?: '', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) ?></div>
                         </div>
                     </div>
                 </div>
@@ -341,7 +341,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <div class="col-md-6">
                             <div class="label">Academic Honors</div>
-                            <div class="value"><?= $app['tertiary_honors'] ?: 'None' ?></div>
+                            <div class="value"><?= nl2br(htmlspecialchars(html_entity_decode($app['tertiary_honors'] ?: 'None', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) ?></div>
                         </div>
                     </div>
                 </div>

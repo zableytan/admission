@@ -225,10 +225,10 @@ $html = "
                 <td class='row-label'>Weight (Now)</td><td class='row-value'>" . $app_data['weight_kilos_now'] . " kg</td>
             </tr>
             <tr>
-                <td class='full-width-label'>Medical History</td><td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['medical_history'] ?: 'None declared')) . "</td>
+                <td class='full-width-label'>Medical History</td><td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars(html_entity_decode($app_data['medical_history'] ?: 'None declared', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . ($app_data['physical_disability_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['physical_disability_details'] ?: 'N/A') . ")</td>
+                <td class='row-label'>Disability?</td><td class='row-value' colspan='3'>" . ($app_data['physical_disability_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars(html_entity_decode($app_data['physical_disability_details'] ?: 'N/A', ENT_QUOTES | ENT_HTML5, 'UTF-8')) . ")</td>
             </tr>
         </table>
 
@@ -285,7 +285,7 @@ $html = "
                 <td class='full-width-label'>College Degree</td><td class='full-width-value' colspan='3'>" . htmlspecialchars($app_data['degree_obtained'] ?? '') . " from " . htmlspecialchars($app_data['college_name_address'] ?? '') . " (Grad: " . ($app_data['date_of_graduation'] ?? 'N/A') . ")</td>
             </tr>
             <tr>
-                <td class='row-label'>College Honors</td><td class='row-value'>" . ($app_data['college_honors_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars($app_data['college_honors_list'] ?? 'N/A') . ")</td>
+                <td class='row-label'>College Honors</td><td class='row-value'>" . ($app_data['college_honors_flag'] ? 'YES' : 'NO') . " (" . htmlspecialchars(html_entity_decode($app_data['college_honors_list'] ?: 'N/A', ENT_QUOTES | ENT_HTML5, 'UTF-8')) . ")</td>
                 <td class='row-label'>Board Exam</td><td class='row-value'>" . htmlspecialchars($app_data['board_profession'] ?: 'None') . " (Rating: " . ($app_data['board_rating'] ?? 0) . "%)</td>
             </tr>
         </table>
@@ -311,7 +311,7 @@ $html = "
             </tr>
             <tr>
                 <td class='full-width-label'>Personal Essay</td>
-                <td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars($app_data['application_essay'] ?: 'None')) . "</td>
+                <td class='full-width-value' colspan='3'>" . nl2br(htmlspecialchars(html_entity_decode($app_data['application_essay'] ?: 'None', ENT_QUOTES | ENT_HTML5, 'UTF-8'))) . "</td>
             </tr>
         </table>
 

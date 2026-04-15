@@ -105,42 +105,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($is_medicine && $score_val < 40) {
         $message = "Warning: NMAT Score is below the 40 percentile requirement. Please ensure you meet the admission criteria.";
     } else {
+        // --- PREVENT DUPLICATE DRAFTS ---
+        // Check for existing un-submitted application for this email
+        // We look for is_submitted = 0. If it exists, we resume that record ID.
+        try {
+            // First check if 'is_submitted' column exists to avoid errors
+            $check_stmt = $pdo->prepare("SELECT id FROM applications WHERE email = ? AND (is_submitted = 0 OR is_submitted IS NULL) ORDER BY created_at DESC LIMIT 1");
+            $check_stmt->execute([$email]);
+            $existing_app = $check_stmt->fetch();
+        } catch (PDOException $e) {
+            // Fallback if column check fails (unlikely given our previous investigation)
+            $existing_app = null;
+        }
 
-        // Prepare the comprehensive INSERT statement.
-        $sql = "INSERT INTO applications 
-            (family_name, given_name, middle_name, email, college, score_type, score_value, gwa_value, nmat_date, board_rating, 
-            mailing_address, mobile_no, tel_no_mailing, home_address, tel_no_home, social_media) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        if ($existing_app) {
+            $app_id = $existing_app['id'];
+            // Update the existing draft
+            $sql = "UPDATE applications SET 
+                family_name = ?, given_name = ?, middle_name = ?, college = ?, score_type = ?, score_value = ?, gwa_value = ?, nmat_date = ?, board_rating = ?, 
+                mailing_address = ?, mobile_no = ?, tel_no_mailing = ?, home_address = ?, tel_no_home = ?, social_media = ?
+                WHERE id = ?";
+            
+            $stmt = $pdo->prepare($sql);
+            $success = $stmt->execute([
+                $family_name, $given_name, $middle_name, $posted_college, $score_type, $score_val, $gwa_val, $nmat_date, $board_rating,
+                $mailing_address, $mobile_no, $tel_no_mailing, $home_address, $tel_no_home, $social_media, $app_id
+            ]);
+        } else {
+            // Prepare the comprehensive INSERT statement for a new applicant.
+            $sql = "INSERT INTO applications 
+                (family_name, given_name, middle_name, email, college, score_type, score_value, gwa_value, nmat_date, board_rating, 
+                mailing_address, mobile_no, tel_no_mailing, home_address, tel_no_home, social_media) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        $stmt = $pdo->prepare($sql);
+            $stmt = $pdo->prepare($sql);
+            $success = $stmt->execute([
+                $family_name, $given_name, $middle_name, $email, $posted_college, $score_type, $score_val, $gwa_val, $nmat_date, $board_rating,
+                $mailing_address, $mobile_no, $tel_no_mailing, $home_address, $tel_no_home, $social_media
+            ]);
+            if ($success) {
+                $app_id = $pdo->lastInsertId();
+            }
+        }
 
-        // Execute the statement with the collected values
-        if (
-            $stmt->execute([
-                $family_name,
-                $given_name,
-                $middle_name,
-                $email,
-                $posted_college,
-                $score_type,
-                $score_val,
-                $gwa_val,
-                $nmat_date,
-                $board_rating,
-                $mailing_address,
-                $mobile_no,
-                $tel_no_mailing,
-                $home_address,
-                $tel_no_home,
-                $social_media
-            ])
-        ) {
-
-            // Get ID and Redirect to Step 2
-            $app_id = $pdo->lastInsertId();
+        if ($success) {
+            // Store current app_id in session for persistence across steps
+            $_SESSION['active_app_id'] = $app_id;
             header("Location: personal_data.php?app_id=$app_id");
             exit;
-
         } else {
             $message = "Database error: Could not save application data. Please check your data types and connection.";
         }
@@ -312,7 +324,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST" autocomplete="off">
+                        <form method="POST" autocomplete="off" id="admissionStep1">
                             <input type="hidden" name="college" value="<?= htmlspecialchars($college) ?>">
                             <?php if ($applicant_type): ?>
                                 <input type="hidden" name="applicant_type" value="<?= htmlspecialchars($applicant_type) ?>">
@@ -476,8 +488,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
+        // --- BROWSER AUTO-SAVE FEATURE ---
+        // This script saves form data to localStorage so it's not lost on refresh
+        const formId = 'admissionStep1';
+        const form = document.getElementById(formId);
+        
+        // 1. Restore data on page load
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem(formId);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const field = form.elements[key];
+                    if (field && field.type !== 'file' && field.type !== 'password') {
+                        if (field.type === 'checkbox') {
+                            field.checked = data[key] === field.value;
+                        } else {
+                            field.value = data[key];
+                        }
+                    }
+                });
+            }
+        });
+
+        // 2. Save data on input
+        form.addEventListener('input', () => {
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                if (!(value instanceof File)) {
+                    data[key] = value;
+                }
+            });
+            localStorage.setItem(formId, JSON.stringify(data));
+        });
+
+        // 3. Clear storage if user successfully moves to Step 2
+        <?php if(isset($_GET['clear_storage'])): ?>
+            localStorage.removeItem(formId);
+        <?php endif; ?>
+
         // Real-time validation for NMAT Score and Expiry
         document.addEventListener('DOMContentLoaded', function () {
             // We only run this if the nmat_score input exists (i.e., College of Medicine)

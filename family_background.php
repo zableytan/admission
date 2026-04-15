@@ -347,7 +347,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST" autocomplete="off">
+                        <form method="POST" autocomplete="off" id="admissionStep3">
 
                             <h5 class="section-title">A. Parent Information</h5>
 
@@ -658,6 +658,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // --- BROWSER AUTO-SAVE FEATURE ---
+        const formId = 'admissionStep3';
+        const form = document.getElementById(formId);
+        
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem(formId);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const fields = form.querySelectorAll(`[name="${key}"]`);
+                    fields.forEach(field => {
+                        if (field.type === 'radio' || field.type === 'checkbox') {
+                            if (field.value === data[key] || (field.type === 'checkbox' && data[key] === 'on')) {
+                                field.checked = true;
+                            }
+                        } else {
+                            field.value = data[key];
+                        }
+                    });
+                });
+                // Trigger visibility updates
+                if(document.getElementById('fatherDeceased').checked) toggleParentFields('father');
+                if(document.getElementById('motherDeceased').checked) toggleParentFields('mother');
+                if(document.getElementById('parentGradYes').checked) document.getElementById('parentGradDetails').style.display='block';
+                if(document.getElementById('parentTeachYes').checked) document.getElementById('parentTeachDetails').style.display='block';
+                if(document.getElementById('siblingDmsfYes').checked) document.getElementById('siblingDmsfDetails').style.display='block';
+            }
+        });
+
+        form.addEventListener('input', (e) => {
+            const formData = new FormData(form);
+            const data = {};
+            // Special handling for checkboxes which FormData adds only if checked
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                if(cb.checked) data[cb.name] = 'on';
+            });
+            formData.forEach((value, key) => {
+                if (!(value instanceof File)) data[key] = value;
+            });
+            localStorage.setItem(formId, JSON.stringify(data));
+        });
+
         function toggleParentFields(parent) {
             const isDeceased = document.getElementById(parent + 'Deceased').checked;
             const fieldsContainer = document.getElementById(parent + 'Fields');
@@ -666,7 +709,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isDeceased) {
                 fieldsContainer.style.opacity = '0.5';
                 inputs.forEach(input => {
-                    input.value = '';
                     input.disabled = true;
                 });
             } else {
@@ -675,7 +717,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     input.disabled = false;
                 });
             }
-        }</script>
+        }
+    </script>
 </body>
 
 </html>

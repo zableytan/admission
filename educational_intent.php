@@ -409,7 +409,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST" autocomplete="off">
+                        <form method="POST" autocomplete="off" id="admissionStep4">
 
                             <h5 class="section-title">A. Educational Background</h5>
 
@@ -971,6 +971,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // --- BROWSER AUTO-SAVE FEATURE ---
+        const formId = 'admissionStep4';
+        const form = document.getElementById(formId);
+        
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem(formId);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const fields = form.querySelectorAll(`[name="${key}"]`);
+                    fields.forEach(field => {
+                        if (field.type === 'radio' || field.type === 'checkbox') {
+                            if (field.value === data[key] || (field.type === 'checkbox' && data[key] === 'on')) {
+                                field.checked = true;
+                            }
+                        } else {
+                            field.value = data[key];
+                        }
+                    });
+                });
+                
+                // Trigger visibility updates
+                if(document.getElementById('hsYes') && document.getElementById('hsYes').checked) document.getElementById('hsHonorType').style.display='block';
+                if(form.querySelector('input[name="hs_honor_type"][value="Others"]:checked')) toggleHsOther(true);
+                if(document.getElementById('collegeYes') && document.getElementById('collegeYes').checked) document.getElementById('collegeHonorsList').style.display='block';
+                
+                const gapAct = form.elements['post_grad_activity'] ? form.elements['post_grad_activity'].value : 'none';
+                toggleGapDetails(gapAct === 'Took another course' ? 'course' : (gapAct === 'Worked as employee' ? 'employee' : 'none'));
+
+                if(document.getElementById('mdFirstNo') && document.getElementById('mdFirstNo').checked) document.getElementById('prevMdDetails').style.display='block';
+                if(form.elements['prev_app_status']) toggleMedSchoolName(form.elements['prev_app_status'].value);
+
+                const futurePlan = form.elements['future_plan'] ? form.elements['future_plan'].value : 'none';
+                togglePlanDetails(futurePlan === 'Pursue another Post-graduate course' ? 'course' : (futurePlan === 'Others' ? 'other' : 'none'));
+            }
+        });
+
+        form.addEventListener('input', () => {
+            const formData = new FormData(form);
+            const data = {};
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => { if(cb.checked) data[cb.name] = 'on'; });
+            formData.forEach((value, key) => {
+                if (!(value instanceof File)) data[key] = value;
+            });
+            localStorage.setItem(formId, JSON.stringify(data));
+        });
+
         function toggleHsOther(show) {
             document.getElementById('hsOtherSpec').style.display = show ? 'block' : 'none';
         }

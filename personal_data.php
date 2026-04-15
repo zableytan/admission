@@ -346,7 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST" autocomplete="off">
+                        <form method="POST" autocomplete="off" id="admissionStep2">
                             <h5 class="section-title">A. Detailed Personal Data</h5>
 
                             <div class="row g-4 mb-4">
@@ -642,7 +642,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-</script>
+        // --- BROWSER AUTO-SAVE FEATURE ---
+        const formId = 'admissionStep2';
+        const form = document.getElementById(formId);
+        
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem(formId);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const field = form.elements[key];
+                    if (field) {
+                        if (field.type === 'radio' || field.type === 'checkbox') {
+                            if (field.value === data[key]) field.checked = true;
+                        } else {
+                            field.value = data[key];
+                        }
+                    }
+                });
+                // Trigger visibility updates for conditional fields
+                if(document.getElementById('vaxYes').checked) document.getElementById('vaxDetails').style.display='block';
+                if(document.getElementById('chronicYes').checked) document.getElementById('chronicDetails').style.display='block';
+                if(document.getElementById('disabilityYes').checked) document.getElementById('disabilityDetails').style.display='block';
+                if(document.getElementById('scholarshipCheck').checked) document.getElementById('scholarshipDetail').style.display='block';
+                if(form.elements['staying_place'].value === 'Others') document.getElementById('stayingOther').style.display='block';
+            }
+        });
+
+        form.addEventListener('input', () => {
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                if (!(value instanceof File)) data[key] = value;
+            });
+            localStorage.setItem(formId, JSON.stringify(data));
+        });
+    </script>
 </body>
 
 </html>

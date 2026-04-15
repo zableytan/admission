@@ -106,9 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                 $placeholders = implode(',', array_fill(0, count($colleges_array), '?'));
                 
                 // We also check for 'Medicine' if any 'Medicine (NMD/IMD)' is selected
+                // EXCLUSION: Accelerated Pathway for Medicine should NOT trigger Medicine admin notifications
                 $query_colleges = $colleges_array;
                 foreach($colleges_array as $c) {
-                    if (strpos($c, 'Medicine') !== false) {
+                    if (strpos($c, 'Medicine') !== false && strpos($c, 'Accelerated Pathway') === false) {
                         $query_colleges[] = 'Medicine';
                     }
                 }
@@ -230,19 +231,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Fetch Applications
+// Fetch Applications — submitted applications first, then by created_at
+$order_clause = "ORDER BY
+    CASE WHEN (is_submitted = 1 OR (record_pdf_path IS NOT NULL AND record_pdf_path != '')) THEN 0 ELSE 1 END ASC,
+    created_at DESC";
+
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
     // Super Admin viewing all departments
-    $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
+    $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD
     if ($college === 'Medicine') {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated Pathway%') OR college LIKE '%All Colleges%') $order_clause");
         $stmt->execute([]);
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");
         $stmt->execute(["%$college%"]);
     }
     $applications = $stmt->fetchAll();
@@ -494,19 +499,31 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
 
             <div class="card shadow-sm">
                 <div class="card-header">
-                    <div class="row align-items-center">
+                    <div class="row align-items-center g-2">
                         <div class="col">
                             <h5 class="mb-0 fw-bold">Recent Applications</h5>
                         </div>
-                        <div class="col-auto d-flex align-items-center">
+                        <div class="col-auto d-flex align-items-center flex-wrap gap-2">
+                            <!-- Submission Filter Buttons -->
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Submission filter" id="submissionFilter">
+                                <button type="button" class="btn btn-primary active" data-filter="all" id="filterAll">
+                                    <i class="bi bi-list-ul me-1"></i> All
+                                </button>
+                                <button type="button" class="btn btn-outline-success" data-filter="submitted" id="filterSubmitted">
+                                    <i class="bi bi-check-circle me-1"></i> Submitted
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" data-filter="draft" id="filterDraft">
+                                    <i class="bi bi-pencil-square me-1"></i> Draft
+                                </button>
+                            </div>
                             <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
-                                <button type="button" class="btn btn-danger btn-sm me-2" id="btnDeleteSelected" style="display:none;" onclick="submitBulkDelete()">
+                                <button type="button" class="btn btn-danger btn-sm" id="btnDeleteSelected" style="display:none;" onclick="submitBulkDelete()">
                                     <i class="bi bi-trash me-1"></i> Delete Selected
                                 </button>
                             <?php endif; ?>
-                            <div class="input-group input-group-sm">
+                            <div class="input-group input-group-sm" style="max-width: 220px;">
                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control bg-light border-start-0"
+                                <input type="text" class="form-control bg-light border-start-0" id="searchInput"
                                     placeholder="Search applicants...">
                             </div>
                         </div>
@@ -529,9 +546,12 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                     <th class="pe-4 text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="applicationsTableBody">
                                 <?php foreach ($applications as $app): ?>
-                                    <tr>
+                                <?php
+                                    $is_submitted_row = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
+                                ?>
+                                    <tr data-submission="<?= $is_submitted_row ? 'submitted' : 'draft' ?>" data-name="<?= htmlspecialchars(strtolower($app['given_name'] . ' ' . $app['family_name'] . ' ' . $app['email'])) ?>">
                                         <td class="ps-4">
                                             <div class="d-flex align-items-center">
                                                 <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
@@ -574,9 +594,13 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                             <?php if ($app['status'] == 'Accepted'): ?>
                                                 <div class="mt-2">
                                                     <?php if (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']): ?>
-                                                        <span class="badge bg-success rounded-pill px-2"><i class="bi bi-check2-circle"></i> With Registrar</span>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 small shadow-none">
+                                                            <i class="bi bi-person-check-fill me-1"></i> Acknowledged
+                                                        </span>
                                                     <?php else: ?>
-                                                        <span class="badge bg-secondary rounded-pill px-2"><i class="bi bi-hourglass"></i> Not at Registrar</span>
+                                                        <span class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 small shadow-none">
+                                                            <i class="bi bi-clock me-1"></i> Pending Registrar
+                                                        </span>
                                                     <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
@@ -648,10 +672,17 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                     </tr>
                                 <?php endforeach; ?>
                                 <?php if (empty($applications)): ?>
-                                    <tr>
+                                    <tr id="emptyStateRow">
                                         <td colspan="5" class="text-center py-5 text-muted">
                                             <i class="bi bi-inbox display-4 d-block mb-3"></i>
                                             No applications found for this college.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <tr id="emptyStateRow" style="display:none;">
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="bi bi-funnel display-4 d-block mb-3"></i>
+                                            No applications match the current filter.
                                         </td>
                                     </tr>
                                 <?php endif; ?>
@@ -677,6 +708,64 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ── Submission Filter & Search ────────────────────────────────────────
+        (function () {
+            const filterBtns = document.querySelectorAll('#submissionFilter button');
+            const searchInput = document.getElementById('searchInput');
+            let activeFilter = 'all';
+
+            function applyFilters() {
+                const searchVal = (searchInput ? searchInput.value.toLowerCase().trim() : '');
+                const rows = document.querySelectorAll('#applicationsTableBody tr[data-submission]');
+
+                rows.forEach(row => {
+                    const submissionMatch = (activeFilter === 'all') || (row.dataset.submission === activeFilter);
+                    const nameData = (row.dataset.name || '');
+                    const searchMatch = !searchVal || nameData.includes(searchVal);
+                    row.style.display = (submissionMatch && searchMatch) ? '' : 'none';
+                });
+
+                // Show empty state if all rows hidden
+                const emptyRow = document.getElementById('emptyStateRow');
+                if (emptyRow) {
+                    const visibleRows = document.querySelectorAll('#applicationsTableBody tr[data-submission]:not([style*="display: none"])');
+                    emptyRow.style.display = visibleRows.length === 0 ? '' : 'none';
+                }
+            }
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('active');
+                        // Reset to outline variant when inactive
+                        if (b.dataset.filter === 'submitted') {
+                            b.className = b.className.replace('btn-success', 'btn-outline-success');
+                        } else if (b.dataset.filter === 'draft') {
+                            b.className = b.className.replace('btn-warning', 'btn-outline-warning');
+                        } else {
+                            b.className = b.className.replace('btn-primary', 'btn-outline-primary');
+                        }
+                    });
+
+                    this.classList.add('active');
+                    if (this.dataset.filter === 'submitted') {
+                        this.className = this.className.replace('btn-outline-success', 'btn-success');
+                    } else if (this.dataset.filter === 'draft') {
+                        this.className = this.className.replace('btn-outline-warning', 'btn-warning');
+                    } else {
+                        this.className = this.className.replace('btn-outline-primary', 'btn-primary');
+                    }
+
+                    activeFilter = this.dataset.filter;
+                    applyFilters();
+                });
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+            }
+        })();
+        // ─────────────────────────────────────────────────────────────────────
         <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
             const selectAllApps = document.getElementById('selectAllApps');
             const appCheckboxes = document.querySelectorAll('.app-checkbox');

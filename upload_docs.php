@@ -85,6 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $good_moral_path = handleUpload('good_moral_file', $upload_dir, $app_id);
     $passport_path = $is_imd ? handleUpload('passport_file', $upload_dir, $app_id) : null;
 
+    // "To be followed" flags for optional documents
+    $tbf_tor       = isset($_POST['tbf_tor'])       ? 1 : 0;
+    $tbf_form137   = isset($_POST['tbf_form137'])   ? 1 : 0;
+    $tbf_diploma   = isset($_POST['tbf_diploma'])   ? 1 : 0;
+    $tbf_good_moral = isset($_POST['tbf_good_moral']) ? 1 : 0;
+
     // Handle multiple "other" docs
     if (isset($_FILES['other_docs'])) {
         foreach ($_FILES['other_docs']['name'] as $key => $name) {
@@ -101,24 +107,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $other_docs_paths = !empty($other_paths) ? implode(',', $other_paths) : null;
 
-    // Update the database with file paths
+    // Update the database with file paths and TBF flags
     try {
         $sql = "UPDATE applications SET
-            photo_path=?, tor_path=?, form137_path=?, birth_cert_path=?, nmat_path=?, diploma_path=?, gwa_cert_path=?, 
-            entrance_exam_path=?, receipt_path=?, good_moral_path=?, passport_path=?, other_docs_paths=?
+            photo_path=?, tor_path=?, tbf_tor=?, form137_path=?, tbf_form137=?, birth_cert_path=?, nmat_path=?,
+            diploma_path=?, tbf_diploma=?, gwa_cert_path=?, entrance_exam_path=?, receipt_path=?,
+            good_moral_path=?, tbf_good_moral=?, passport_path=?, other_docs_paths=?
             WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $photo_path,
             $tor_path,
+            $tbf_tor,
             $form137_path,
+            $tbf_form137,
             $birth_cert_path,
             $nmat_path,
             $diploma_path,
+            $tbf_diploma,
             $gwa_path,
             null,
             null,
             $good_moral_path,
+            $tbf_good_moral,
             $passport_path,
             $other_docs_paths,
             $app_id
@@ -402,19 +413,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class='section-header'>ATTACHED DOCUMENTS CHECKLIST</div>
             <table class='info-table'>
                 <tr>
-                    <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . ($tor_path ? '✓ Provided' : '✗ Missing') . "</td>
-                    <td class='row-label'>Form 137</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . ($tor_path ? '✓ Provided' : ($tbf_tor ? '📋 To be followed' : '✗ Missing')) . "</td>
+                    <td class='row-label'>Form 137</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : ($tbf_form137 ? '📋 To be followed' : '✗ Missing')) . "</td>
                 </tr>
                 <tr>
                     <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . ($birth_cert_path ? '✓ Provided' : '✗ Missing') . "</td>
                     <td class='row-label'>NMAT Result</td><td class='row-value'>" . ($nmat_path ? '✓ Provided' : '✗ Missing') . "</td>
                 </tr>
                 <tr>
-                    <td class='row-label'>Diploma</td><td class='row-value'>" . ($diploma_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Diploma</td><td class='row-value'>" . ($diploma_path ? '✓ Provided' : ($tbf_diploma ? '📋 To be followed' : '✗ Missing')) . "</td>
                     <td class='row-label'>GWA Certificate</td><td class='row-value'>" . ($gwa_path ? '✓ Provided' : '✗ Missing') . "</td>
                 </tr>
                 <tr>
-                    <td class='row-label'>Good Moral</td><td class='row-value'>" . ($good_moral_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    <td class='row-label'>Good Moral</td><td class='row-value'>" . ($good_moral_path ? '✓ Provided' : ($tbf_good_moral ? '📋 To be followed' : '✗ Missing')) . "</td>
                     " . ($is_imd ? "<td class='row-label'>Passport Copy</td><td class='row-value'>" . ($passport_path ? '✓ Provided' : '✗ Missing') . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
                 </tr>
             </table>
@@ -739,6 +750,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-left: 10px;
         }
 
+        .optional-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #e0f2fe;
+            color: #0369a1;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        .btn-tbf {
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 2px solid #f59e0b;
+            background: white;
+            color: #b45309;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-tbf.active {
+            background: #fef3c7;
+            border-color: #d97706;
+            color: #92400e;
+        }
+        .tbf-file-area {
+            transition: all 0.3s;
+        }
+        .tbf-file-area.disabled-upload {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
         /* Loading Animation Styles */
         #loadingOverlay {
             position: fixed;
@@ -853,7 +900,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 **<?= $student_name ?>**</p>
                         </div>
 
-                        <form method="POST" enctype="multipart/form-data">
+                        <form method="POST" enctype="multipart/form-data" autocomplete="off">
                             <h5 class="section-title">Required Documents</h5>
                             <p class="text-muted small mb-4">Please upload clear scans or photos of the following (PDF,
                                 JPG, or PNG formats only). Maximum file size: 5MB per file.</p>
@@ -872,20 +919,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-text upload-icon"></i>
-                                    <label class="form-label mb-0">2. Transcript of Records (TOR) <span
-                                            class="required-badge">Required</span></label>
+                                    <label class="form-label mb-0">2. Transcript of Records (TOR)
+                                        <span class="optional-badge">Optional</span></label>
+                                    <button type="button" class="btn-tbf ms-auto" id="tbf-tor-btn" onclick="toggleTBF('tor')">📋 To be followed</button>
+                                    <input type="hidden" name="tbf_tor" id="tbf_tor" value="">
                                 </div>
-                                <input type="file" name="tor_file" class="form-control" required>
+                                <div class="tbf-file-area" id="tbf-tor-area">
+                                    <input type="file" name="tor_file" class="form-control" id="tor_file">
+                                </div>
                             </div>
 
                             <!-- Document: Form 137 -->
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-spreadsheet upload-icon"></i>
-                                    <label class="form-label mb-0">3. Form 137 <span
-                                            class="required-badge">Required</span></label>
+                                    <label class="form-label mb-0">3. Form 137
+                                        <span class="optional-badge">Optional</span></label>
+                                    <button type="button" class="btn-tbf ms-auto" id="tbf-form137-btn" onclick="toggleTBF('form137')">📋 To be followed</button>
+                                    <input type="hidden" name="tbf_form137" id="tbf_form137" value="">
                                 </div>
-                                <input type="file" name="form137_file" class="form-control" required>
+                                <div class="tbf-file-area" id="tbf-form137-area">
+                                    <input type="file" name="form137_file" class="form-control" id="form137_file">
+                                </div>
                             </div>
 
                             <!-- Document: Birth Certificate -->
@@ -914,10 +969,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-award upload-icon"></i>
-                                    <label class="form-label mb-0">6. Copy of Diploma <span
-                                            class="text-muted small fw-normal ms-2">(If available)</span></label>
+                                    <label class="form-label mb-0">6. Copy of Diploma
+                                        <span class="optional-badge">Optional</span></label>
+                                    <button type="button" class="btn-tbf ms-auto" id="tbf-diploma-btn" onclick="toggleTBF('diploma')">📋 To be followed</button>
+                                    <input type="hidden" name="tbf_diploma" id="tbf_diploma" value="">
                                 </div>
-                                <input type="file" name="diploma_file" class="form-control">
+                                <div class="tbf-file-area" id="tbf-diploma-area">
+                                    <input type="file" name="diploma_file" class="form-control" id="diploma_file">
+                                </div>
                             </div>
 
                             <!-- Document 4: GWA -->
@@ -934,10 +993,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-shield-check upload-icon"></i>
-                                    <label class="form-label mb-0">8. Certificate of Good Moral Character <span
-                                            class="required-badge">Required</span></label>
+                                    <label class="form-label mb-0">8. Certificate of Good Moral Character
+                                        <span class="optional-badge">Optional</span></label>
+                                    <button type="button" class="btn-tbf ms-auto" id="tbf-good_moral-btn" onclick="toggleTBF('good_moral')">📋 To be followed</button>
+                                    <input type="hidden" name="tbf_good_moral" id="tbf_good_moral" value="">
                                 </div>
-                                <input type="file" name="good_moral_file" class="form-control" required>
+                                <div class="tbf-file-area" id="tbf-good_moral-area">
+                                    <input type="file" name="good_moral_file" class="form-control" id="good_moral_file">
+                                </div>
                             </div>
 
                             <!-- Document: Passport Copy (Foreign Applicants ONLY) -->
@@ -1012,10 +1075,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/form-draft.js"></script>
     <script>
         const applicationForm = document.querySelector('form');
         const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'));
+
+        // TBF toggle logic
+        const tbfDocs = ['tor', 'form137', 'diploma', 'good_moral'];
+        const tbfState = {};
+        tbfDocs.forEach(key => tbfState[key] = false);
+
+        function toggleTBF(key) {
+            tbfState[key] = !tbfState[key];
+            const btn = document.getElementById('tbf-' + key + '-btn');
+            const area = document.getElementById('tbf-' + key + '-area');
+            const hidden = document.getElementById('tbf_' + key);
+            const fileInput = document.getElementById(key === 'good_moral' ? 'good_moral_file' : key + '_file');
+
+            if (tbfState[key]) {
+                btn.classList.add('active');
+                btn.textContent = '✅ Marked as To be followed';
+                area.classList.add('disabled-upload');
+                hidden.value = '1';
+                if (fileInput) fileInput.value = ''; // clear any selected file
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '📋 To be followed';
+                area.classList.remove('disabled-upload');
+                hidden.value = '';
+            }
+        }
 
         function showPrivacyModal() {
             if (applicationForm.checkValidity()) {

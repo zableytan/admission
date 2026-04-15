@@ -44,7 +44,8 @@ if (is_array($college_input)) {
 
 // Determine if this is a Medicine application (NMD or IMD)
 // OR if multiple colleges are selected (per user request)
-$is_medicine = (strpos($college, 'Medicine') !== false) || $is_multiple;
+// Note: "Accelerated Pathway for Medicine" does NOT require NMAT fields.
+$is_medicine = (strpos($college, 'Medicine') !== false && strpos($college, 'Accelerated Pathway for Medicine') === false) || $is_multiple;
 
 // Determine fields and logic based on College selection
 if ($is_medicine) {
@@ -350,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST">
+                        <form method="POST" autocomplete="off">
                             <input type="hidden" name="college" value="<?= htmlspecialchars($college) ?>">
                             <?php if ($applicant_type): ?>
                                 <input type="hidden" name="applicant_type" value="<?= htmlspecialchars($applicant_type) ?>">
@@ -514,7 +515,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/form-draft.js"></script>
 
     <script>
         // Real-time validation for NMAT Score and Expiry

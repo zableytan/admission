@@ -386,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST">
+                        <form method="POST" autocomplete="off">
 
                             <h5 class="section-title">A. Parent Information</h5>
 
@@ -696,7 +696,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/form-draft.js"></script>
     <script>
         function toggleParentFields(parent) {
             const isDeceased = document.getElementById(parent + 'Deceased').checked;

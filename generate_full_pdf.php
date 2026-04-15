@@ -319,16 +319,20 @@ $html = "
         <div class='section-header'>ATTACHED DOCUMENTS CHECKLIST</div>
         <table class='info-table'>
             <tr>
-                <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . (!empty($app_data['tor_path']) ? '✓ Provided' : '✗ Missing') . "</td>
+                <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . (!empty($app_data['tor_path']) ? '✓ Provided' : (!empty($app_data['tbf_tor']) ? '📋 To be followed' : '✗ Missing')) . "</td>
                 <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . (!empty($app_data['birth_cert_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
             <tr>
+                <td class='row-label'>Form 137</td><td class='row-value'>" . (!empty($app_data['form137_path']) ? '✓ Provided' : (!empty($app_data['tbf_form137']) ? '📋 To be followed' : '✗ Missing')) . "</td>
                 <td class='row-label'>NMAT Result</td><td class='row-value'>" . (!empty($app_data['nmat_path']) ? '✓ Provided' : '✗ Missing') . "</td>
-                <td class='row-label'>Diploma</td><td class='row-value'>" . (!empty($app_data['diploma_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
             <tr>
+                <td class='row-label'>Diploma</td><td class='row-value'>" . (!empty($app_data['diploma_path']) ? '✓ Provided' : (!empty($app_data['tbf_diploma']) ? '📋 To be followed' : '✗ Missing')) . "</td>
                 <td class='row-label'>GWA Certificate</td><td class='row-value'>" . (!empty($app_data['gwa_cert_path']) ? '✓ Provided' : '✗ Missing') . "</td>
-                <td class='row-label'>Good Moral</td><td class='row-value'>" . (!empty($app_data['good_moral_path']) ? '✓ Provided' : '✗ Missing') . "</td>
+            </tr>
+            <tr>
+                <td class='row-label'>Good Moral</td><td class='row-value'>" . (!empty($app_data['good_moral_path']) ? '✓ Provided' : (!empty($app_data['tbf_good_moral']) ? '📋 To be followed' : '✗ Missing')) . "</td>
+                <td class='row-label'>Passport Copy</td><td class='row-value'>" . (!empty($app_data['passport_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
         </table>
 

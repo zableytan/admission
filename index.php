@@ -260,7 +260,7 @@
         <h2>Welcome</h2>
         <p class="sub-text">Embark on your medical journey with Davao Medical School Foundation.</p>
 
-        <form action="apply.php" method="GET">
+        <form action="apply.php" method="GET" autocomplete="off">
             <div class="text-start mb-4">
                 <label class="form-label">Select Your Desired College(s)</label>
                 <div class="college-selection-grid">
@@ -385,7 +385,7 @@
             });
         });
     </script>
-    <script src="js/form-draft.js"></script>
+
 
 </body>
 

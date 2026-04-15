@@ -26,8 +26,11 @@ if (!$app) {
 }
 
 // Helper for file status
-function getFileLink($path, $label) {
+function getFileLink($path, $label, $tbf = 0) {
     if (!$path) {
+        if ($tbf) {
+            return '<span class="badge text-bg-warning px-2 py-1"><i class="bi bi-clock-history me-1"></i>To be followed</span>';
+        }
         return '<span class="text-muted small"><i>Not Uploaded</i></span>';
     }
     if (file_exists($path)) {
@@ -354,7 +357,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="fw-bold text-dark">Transcript of Records (TOR)</div>
                             <div class="small text-muted">Primary academic requirement</div>
                         </div>
-                        <?= getFileLink($app['tor_path'], 'TOR') ?>
+                        <?= getFileLink($app['tor_path'], 'TOR', $app['tbf_tor'] ?? 0) ?>
                     </div>
 
                     <div class="doc-item">
@@ -362,7 +365,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="fw-bold text-dark">Form 137</div>
                             <div class="small text-muted">Secondary academic record</div>
                         </div>
-                        <?= getFileLink($app['form137_path'], 'Form 137') ?>
+                        <?= getFileLink($app['form137_path'], 'Form 137', $app['tbf_form137'] ?? 0) ?>
                     </div>
                     
                     <div class="doc-item">
@@ -388,7 +391,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="fw-bold text-dark">Diploma</div>
                             <div class="small text-muted">Proof of graduation</div>
                         </div>
-                        <?= getFileLink($app['diploma_path'], 'Diploma') ?>
+                        <?= getFileLink($app['diploma_path'], 'Diploma', $app['tbf_diploma'] ?? 0) ?>
                     </div>
 
                     <div class="doc-item">
@@ -404,7 +407,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="fw-bold text-dark">Good Moral Character</div>
                             <div class="small text-muted">Certificate of Good Moral</div>
                         </div>
-                        <?= getFileLink($app['good_moral_path'], 'Good Moral') ?>
+                        <?= getFileLink($app['good_moral_path'], 'Good Moral', $app['tbf_good_moral'] ?? 0) ?>
                     </div>
 
                     <?php if($app['other_docs_paths']): ?>

@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST">
+                        <form method="POST" autocomplete="off">
 
                             <h5 class="section-title">A. Educational Background</h5>
 
@@ -1045,7 +1045,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/form-draft.js"></script>
 </body>
 
 </html>

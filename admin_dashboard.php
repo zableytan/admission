@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                     $msg = "Error: Could not create directory '$target_dir'. Please create it manually.";
                 }
             }
-            
+
             if (empty($msg)) {
                 // Ensure the directory is writable
                 @chmod($target_dir, 0777);
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                 // Generate unique filename for the signed document
                 $file_ext = pathinfo($_FILES["signed_doc"]["name"], PATHINFO_EXTENSION);
                 $file_name = "SIGNED_" . $app_id . "_" . time() . "." . $file_ext;
-                
+
                 // Use absolute path for move_uploaded_file for better reliability
                 $resolved_dir = realpath($target_dir);
                 if (!$resolved_dir) {
@@ -104,11 +104,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                 // Split the colleges (if multiple) and find corresponding admins
                 $colleges_array = explode(', ', $app_college);
                 $placeholders = implode(',', array_fill(0, count($colleges_array), '?'));
-                
+
                 // We also check for 'Medicine' if any 'Medicine (NMD/IMD)' is selected
+                // EXCLUSION: Accelerated Pathway for Medicine should NOT trigger Medicine admin notifications
                 $query_colleges = $colleges_array;
-                foreach($colleges_array as $c) {
-                    if (strpos($c, 'Medicine') !== false) {
+                foreach ($colleges_array as $c) {
+                    if (strpos($c, 'Medicine') !== false && strpos($c, 'Accelerated Pathway') === false) {
                         $query_colleges[] = 'Medicine';
                     }
                 }
@@ -151,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                     // Attach the signed document if it's not too large
                     $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . dirname($_SERVER['REQUEST_URI']);
                     $signed_doc_url = $base_url . '/' . $signed_doc_path;
-                    
+
                     if ($signed_doc_path) {
                         $abs_path = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $signed_doc_path);
                         if (file_exists($abs_path)) {
@@ -166,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                     }
 
                     // Performance optimization
-                    $mail->SMTPKeepAlive = true; 
+                    $mail->SMTPKeepAlive = true;
 
                     $mail->isHTML(true);
                     $mail->Subject = "Admission Accepted: $s_name - " . $app_college;
@@ -213,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (!empty($_POST['selected_apps']) && is_array($_POST['selected_apps'])) {
         $ids = array_map('intval', $_POST['selected_apps']);
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        
+
         try {
             $sql = "DELETE FROM applications WHERE id IN ($placeholders)";
             $stmt = $pdo->prepare($sql);
@@ -223,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $_SESSION['flash_msg'] = "Error deleting applications.";
             }
         } catch (PDOException $e) {
-             $_SESSION['flash_msg'] = "Error: " . $e->getMessage();
+            $_SESSION['flash_msg'] = "Error: " . $e->getMessage();
         }
         header("Location: admin_dashboard.php");
         exit;
@@ -231,22 +232,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-$is_high_level = (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || (isset($_SESSION['is_dean']) && $_SESSION['is_dean']);
-$submission_filter = filter_input(INPUT_GET, 'submission_type', FILTER_SANITIZE_SPECIAL_CHARS) ?: 'All';
-
-if ($is_high_level && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin / Dean viewing all departments
+if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin viewing all departments
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD
     if ($college === 'Medicine') {
-        // Show all Medicine sub-colleges but EXCLUDE Accelerated Pathway
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
         $stmt->execute([]);
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");
         $stmt->execute(["%$college%"]);
     }
     $applications = $stmt->fetchAll();
@@ -272,7 +269,7 @@ if ($is_authorized_summary && $college === 'All') {
         if (array_key_exists($status, $summary_data)) {
             $summary_data[$status]++;
         }
-        
+
         // Submission status
         $is_submitted = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
         if ($is_submitted) {
@@ -280,13 +277,14 @@ if ($is_authorized_summary && $college === 'All') {
         } else {
             $summary_data['drafts']++;
         }
-        
+
         // Handle multiple colleges if applicable
         $c_list = explode(', ', $app['college']);
         foreach ($c_list as $c) {
             $c = trim($c);
-            if (empty($c)) continue;
-            
+            if (empty($c))
+                continue;
+
             if (!isset($summary_data['by_college'][$c])) {
                 $summary_data['by_college'][$c] = [
                     'total' => 0,
@@ -309,17 +307,19 @@ if ($is_authorized_summary && $college === 'All') {
         }
     }
     // Sort colleges by total count descending
-    uasort($summary_data['by_college'], function($a, $b) {
+    uasort($summary_data['by_college'], function ($a, $b) {
         return $b['total'] <=> $a['total'];
     });
 }
 
 // Filter the application list if a specific submission type is selected
 if ($submission_filter !== 'All') {
-    $applications = array_filter($applications, function($app) use ($submission_filter) {
+    $applications = array_filter($applications, function ($app) use ($submission_filter) {
         $is_submitted = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
-        if ($submission_filter === 'Submitted') return $is_submitted;
-        if ($submission_filter === 'Draft') return !$is_submitted;
+        if ($submission_filter === 'Submitted')
+            return $is_submitted;
+        if ($submission_filter === 'Draft')
+            return !$is_submitted;
         return true;
     });
 }
@@ -514,17 +514,31 @@ if ($submission_filter !== 'All') {
             flex-direction: column;
             justify-content: center;
         }
-        
+
         .summary-card:hover {
             transform: translateY(-5px);
         }
-        
-        .summary-total { background: linear-gradient(135deg, #1e293b 0%, #475569 100%); }
-        .summary-submitted { background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%); }
-        .summary-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .summary-accepted { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .summary-declined { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        
+
+        .summary-total {
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+        }
+
+        .summary-submitted {
+            background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+        }
+
+        .summary-pending {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .summary-accepted {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .summary-declined {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
         .summary-icon {
             font-size: 2.5rem;
             opacity: 0.3;
@@ -532,14 +546,14 @@ if ($submission_filter !== 'All') {
             right: 20px;
             top: 20px;
         }
-        
+
         .summary-value {
             font-size: 2.25rem;
             font-weight: 800;
             margin-bottom: 0;
             line-height: 1;
         }
-        
+
         .summary-label {
             font-size: 0.875rem;
             font-weight: 600;
@@ -552,7 +566,7 @@ if ($submission_filter !== 'All') {
         .college-row {
             transition: background 0.2s;
         }
-        
+
         .college-row:hover {
             background-color: rgba(26, 35, 126, 0.02) !important;
         }
@@ -584,38 +598,46 @@ if ($submission_filter !== 'All') {
                         <select name="college" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
                             onchange="this.form.submit()">
                             <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All Departments</option>
-                            <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Doctor of Medicine (ALL)</option>
-                            <option value="Medicine (Filipino)" <?= $college === 'Medicine (Filipino)' ? 'selected' : '' ?>>Doctor of Medicine (Filipino)</option>
-                            <option value="Medicine (Foreign)" <?= $college === 'Medicine (Foreign)' ? 'selected' : '' ?>>Doctor of Medicine (Foreign)</option>
+                            <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Doctor of Medicine (ALL)
+                            </option>
+                            <option value="Medicine (Filipino)" <?= $college === 'Medicine (Filipino)' ? 'selected' : '' ?>>
+                                Doctor of Medicine (Filipino)</option>
+                            <option value="Medicine (Foreign)" <?= $college === 'Medicine (Foreign)' ? 'selected' : '' ?>>
+                                Doctor of Medicine (Foreign)</option>
                             <option value="Nursing" <?= $college === 'Nursing' ? 'selected' : '' ?>>BS in Nursing</option>
-                            <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Doctor of Dental Medicine</option>
-                            <option value="Midwifery" <?= $college === 'Midwifery' ? 'selected' : '' ?>>BS in Midwifery</option>
+                            <option value="Dentistry" <?= $college === 'Dentistry' ? 'selected' : '' ?>>Doctor of Dental
+                                Medicine</option>
+                            <option value="Midwifery" <?= $college === 'Midwifery' ? 'selected' : '' ?>>BS in Midwifery
+                            </option>
                             <option value="Biology" <?= $college === 'Biology' ? 'selected' : '' ?>>BS in Biology</option>
                             <option value="Master in Community Health" <?= $college === 'Master in Community Health' ? 'selected' : '' ?>>Master in Community Health</option>
                             <option value="Master in Health Professions Education" <?= $college === 'Master in Health Professions Education' ? 'selected' : '' ?>>Master in Health Professions Education</option>
                             <option value="Master in Participatory Development" <?= $college === 'Master in Participatory Development' ? 'selected' : '' ?>>Master in Participatory Development</option>
                             <option value="Accelerated Pathway for Medicine" <?= $college === 'Accelerated Pathway for Medicine' ? 'selected' : '' ?>>Accelerated Pathway for Medicine</option>
                         </select>
-                        <select name="submission_type" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
+                        <select name="submission_type"
+                            class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
                             onchange="this.form.submit()">
                             <option value="All" <?= $submission_filter === 'All' ? 'selected' : '' ?>>All Records</option>
-                            <option value="Submitted" <?= $submission_filter === 'Submitted' ? 'selected' : '' ?>>Submitted Only</option>
+                            <option value="Submitted" <?= $submission_filter === 'Submitted' ? 'selected' : '' ?>>Submitted
+                                Only</option>
                             <option value="Draft" <?= $submission_filter === 'Draft' ? 'selected' : '' ?>>Drafts Only</option>
                         </select>
                     </form>
-                        <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
-                            <a href="admin_manage.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-2">
-                                <i class="bi bi-people-fill me-1"></i> Manage Admins
-                            </a>
-                        <?php endif; ?>
-                        
-                        <!-- Export Button -->
-                        <a href="export_excel.php?college=<?= urlencode($college) ?>&submission_type=<?= urlencode($submission_filter) ?>" 
-                           class="btn btn-success btn-sm rounded-pill px-3">
-                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export to Excel
+                    <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
+                        <a href="admin_manage.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-2">
+                            <i class="bi bi-people-fill me-1"></i> Manage Admins
                         </a>
                     <?php endif; ?>
-                    <span class="text-white opacity-75 ms-3 me-3 small">Welcome, <?= isset($_SESSION['is_dean']) && $_SESSION['is_dean'] ? 'Dean' : 'Admin' ?></span>
+
+                    <!-- Export Button -->
+                    <a href="export_excel.php?college=<?= urlencode($college) ?>&submission_type=<?= urlencode($submission_filter) ?>"
+                        class="btn btn-success btn-sm rounded-pill px-3">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export to Excel
+                    </a>
+                <?php endif; ?>
+                <span class="text-white opacity-75 ms-3 me-3 small">Welcome,
+                    <?= isset($_SESSION['is_dean']) && $_SESSION['is_dean'] ? 'Dean' : 'Admin' ?></span>
                 <a href="admin_login.php?logout=true" class="btn btn-outline-light btn-sm rounded-pill px-3">
                     <i class="bi bi-box-arrow-right me-1"></i> Logout
                 </a>
@@ -655,22 +677,26 @@ if ($submission_filter !== 'All') {
                         </div>
                     </div>
                     <div class="col-md">
-                        <div class="summary-card summary-submitted shadow-sm position-relative overflow-hidden p-3 border-start border-4 border-white-50">
-                            <i class="bi bi-file-earmark-check summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                        <div
+                            class="summary-card summary-submitted shadow-sm position-relative overflow-hidden p-3 border-start border-4 border-white-50">
+                            <i class="bi bi-file-earmark-check summary-icon"
+                                style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
                             <div class="summary-label small">Submitted</div>
                             <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['submitted'] ?></div>
                         </div>
                     </div>
                     <div class="col-md">
                         <div class="summary-card summary-pending shadow-sm position-relative overflow-hidden p-3">
-                            <i class="bi bi-hourglass-split summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <i class="bi bi-hourglass-split summary-icon"
+                                style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
                             <div class="summary-label small">Pending Review</div>
                             <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['pending'] ?></div>
                         </div>
                     </div>
                     <div class="col-md">
                         <div class="summary-card summary-accepted shadow-sm position-relative overflow-hidden p-3">
-                            <i class="bi bi-check-circle summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <i class="bi bi-check-circle summary-icon"
+                                style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
                             <div class="summary-label small">Accepted</div>
                             <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['accepted'] ?></div>
                         </div>
@@ -688,7 +714,8 @@ if ($submission_filter !== 'All') {
                     <div class="col-12">
                         <div class="card shadow-sm">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0 fw-bold"><i class="bi bi-building me-2"></i>Departmental Tracking Breakdown</h5>
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-building me-2"></i>Departmental Tracking Breakdown
+                                </h5>
                                 <span class="badge bg-light text-muted border px-3">Aggregated Summary</span>
                             </div>
                             <div class="card-body p-0">
@@ -706,20 +733,29 @@ if ($submission_filter !== 'All') {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($summary_data['by_college'] as $dept => $stats): 
+                                            <?php foreach ($summary_data['by_college'] as $dept => $stats):
                                                 $progress = $stats['submitted'] > 0 ? (($stats['accepted'] + $stats['declined']) / $stats['submitted']) * 100 : 0;
-                                            ?>
+                                                ?>
                                                 <tr class="college-row">
                                                     <td class="ps-4 fw-bold text-dark"><?= htmlspecialchars($dept) ?></td>
-                                                    <td class="text-center"><span class="badge bg-secondary-subtle text-secondary rounded-pill px-3"><?= $stats['total'] ?></span></td>
-                                                    <td class="text-center"><span class="badge bg-primary rounded-pill px-3"><?= $stats['submitted'] ?></span></td>
+                                                    <td class="text-center"><span
+                                                            class="badge bg-secondary-subtle text-secondary rounded-pill px-3"><?= $stats['total'] ?></span>
+                                                    </td>
+                                                    <td class="text-center"><span
+                                                            class="badge bg-primary rounded-pill px-3"><?= $stats['submitted'] ?></span>
+                                                    </td>
                                                     <td class="text-center text-muted"><?= $stats['drafts'] ?></td>
-                                                    <td class="text-center text-warning fw-semibold"><?= $stats['pending'] ?></td>
-                                                    <td class="text-center text-success fw-semibold"><?= $stats['accepted'] ?></td>
+                                                    <td class="text-center text-warning fw-semibold"><?= $stats['pending'] ?>
+                                                    </td>
+                                                    <td class="text-center text-success fw-semibold"><?= $stats['accepted'] ?>
+                                                    </td>
                                                     <td class="pe-4">
                                                         <div class="d-flex align-items-center">
                                                             <div class="progress flex-grow-1" style="height: 6px;">
-                                                                <div class="progress-bar bg-success" role="progressbar" style="width: <?= $progress ?>%" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                                <div class="progress-bar bg-success" role="progressbar"
+                                                                    style="width: <?= $progress ?>%"
+                                                                    aria-valuenow="<?= $progress ?>" aria-valuemin="0"
+                                                                    aria-valuemax="100"></div>
                                                             </div>
                                                             <span class="ms-2 small text-muted"><?= round($progress) ?>%</span>
                                                         </div>
@@ -728,7 +764,8 @@ if ($submission_filter !== 'All') {
                                             <?php endforeach; ?>
                                             <?php if (empty($summary_data['by_college'])): ?>
                                                 <tr>
-                                                    <td colspan="6" class="text-center py-4 text-muted">No data available yet.</td>
+                                                    <td colspan="6" class="text-center py-4 text-muted">No data available yet.
+                                                    </td>
                                                 </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -742,19 +779,35 @@ if ($submission_filter !== 'All') {
 
             <div class="card shadow-sm">
                 <div class="card-header">
-                    <div class="row align-items-center">
+                    <div class="row align-items-center g-2">
                         <div class="col">
                             <h5 class="mb-0 fw-bold">Recent Applications</h5>
                         </div>
-                        <div class="col-auto d-flex align-items-center">
+                        <div class="col-auto d-flex align-items-center flex-wrap gap-2">
+                            <!-- Submission Filter Buttons -->
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Submission filter"
+                                id="submissionFilter">
+                                <button type="button" class="btn btn-primary active" data-filter="all" id="filterAll">
+                                    <i class="bi bi-list-ul me-1"></i> All
+                                </button>
+                                <button type="button" class="btn btn-outline-success" data-filter="submitted"
+                                    id="filterSubmitted">
+                                    <i class="bi bi-check-circle me-1"></i> Submitted
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" data-filter="draft"
+                                    id="filterDraft">
+                                    <i class="bi bi-pencil-square me-1"></i> Draft
+                                </button>
+                            </div>
                             <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
-                                <button type="button" class="btn btn-danger btn-sm me-2" id="btnDeleteSelected" style="display:none;" onclick="submitBulkDelete()">
+                                <button type="button" class="btn btn-danger btn-sm" id="btnDeleteSelected"
+                                    style="display:none;" onclick="submitBulkDelete()">
                                     <i class="bi bi-trash me-1"></i> Delete Selected
                                 </button>
                             <?php endif; ?>
-                            <div class="input-group input-group-sm">
+                            <div class="input-group input-group-sm" style="max-width: 220px;">
                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control bg-light border-start-0"
+                                <input type="text" class="form-control bg-light border-start-0" id="searchInput"
                                     placeholder="Search applicants...">
                             </div>
                         </div>
@@ -777,27 +830,36 @@ if ($submission_filter !== 'All') {
                                     <th class="pe-4 text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="applicationsTableBody">
                                 <?php foreach ($applications as $app): ?>
-                                    <tr>
+                                    <?php
+                                    $is_submitted_row = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
+                                    ?>
+                                    <tr data-submission="<?= $is_submitted_row ? 'submitted' : 'draft' ?>"
+                                        data-name="<?= htmlspecialchars(strtolower($app['given_name'] . ' ' . $app['family_name'] . ' ' . $app['email'])) ?>">
                                         <td class="ps-4">
                                             <div class="d-flex align-items-center">
                                                 <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
-                                                    <input class="form-check-input me-3 app-checkbox" type="checkbox" value="<?= $app['id'] ?>">
+                                                    <input class="form-check-input me-3 app-checkbox" type="checkbox"
+                                                        value="<?= $app['id'] ?>">
                                                 <?php endif; ?>
                                                 <div>
-                                                    <span class="applicant-name"><?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?></span>
+                                                    <span
+                                                        class="applicant-name"><?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?></span>
                                                     <span class="applicant-email"><?= $app['email'] ?></span>
                                                     <div class="mt-1 d-flex align-items-center gap-2">
-                                                        <span class="small text-muted">ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></span>
-                                                        <?php 
+                                                        <span class="small text-muted">ID:
+                                                            #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?></span>
+                                                        <?php
                                                         $is_really_submitted = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
                                                         if ($is_really_submitted): ?>
-                                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill x-small py-0">
+                                                            <span
+                                                                class="badge bg-success-subtle text-success border border-success-subtle rounded-pill x-small py-0">
                                                                 <i class="bi bi-check-circle-fill"></i> Submitted
                                                             </span>
                                                         <?php else: ?>
-                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill x-small py-0">
+                                                            <span
+                                                                class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill x-small py-0">
                                                                 <i class="bi bi-pencil-square"></i> Draft
                                                             </span>
                                                         <?php endif; ?>
@@ -806,12 +868,15 @@ if ($submission_filter !== 'All') {
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="mb-1 fw-semibold small <?= $app['college'] === 'All Colleges' ? 'text-danger fw-bold' : 'text-primary' ?>">
+                                            <div
+                                                class="mb-1 fw-semibold small <?= $app['college'] === 'All Colleges' ? 'text-danger fw-bold' : 'text-primary' ?>">
                                                 <?= $app['college'] ?>
                                             </div>
-                                            <span class="score-pill"><?= $app['score_value'] ?> (<?= $app['score_type'] ?>)</span>
+                                            <span class="score-pill"><?= $app['score_value'] ?>
+                                                (<?= $app['score_type'] ?>)</span>
                                             <?php if (!empty($app['gwa_value'])): ?>
-                                                <div class="mt-1"><span class="score-pill"><?= $app['gwa_value'] ?> (GWA)</span></div>
+                                                <div class="mt-1"><span class="score-pill"><?= $app['gwa_value'] ?> (GWA)</span>
+                                                </div>
                                             <?php endif; ?>
                                         </td>
                                         <td>
@@ -822,16 +887,22 @@ if ($submission_filter !== 'All') {
                                             <?php if ($app['status'] == 'Accepted'): ?>
                                                 <div class="mt-2">
                                                     <?php if (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']): ?>
-                                                        <span class="badge bg-success rounded-pill px-2"><i class="bi bi-check2-circle"></i> With Registrar</span>
+                                                        <span
+                                                            class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 small shadow-none">
+                                                            <i class="bi bi-person-check-fill me-1"></i> Acknowledged
+                                                        </span>
                                                     <?php else: ?>
-                                                        <span class="badge bg-secondary rounded-pill px-2"><i class="bi bi-hourglass"></i> Not at Registrar</span>
+                                                        <span
+                                                            class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 small shadow-none">
+                                                            <i class="bi bi-clock me-1"></i> Pending Registrar
+                                                        </span>
                                                     <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="d-flex flex-wrap gap-1 mb-2">
-                                                <?php 
+                                                <?php
                                                 $doc_icons = [
                                                     'tor_path' => 'file-earmark-text',
                                                     'birth_cert_path' => 'person-badge',
@@ -840,11 +911,12 @@ if ($submission_filter !== 'All') {
                                                     'gwa_cert_path' => 'calculator',
                                                     'good_moral_path' => 'shield-check'
                                                 ];
-                                                foreach($doc_icons as $field => $icon):
-                                                    if(!empty($app[$field])):
-                                                ?>
-                                                    <i class="bi bi-<?= $icon ?> text-success" title="<?= str_replace('_', ' ', strtoupper($field)) ?>"></i>
-                                                <?php endif; endforeach; ?>
+                                                foreach ($doc_icons as $field => $icon):
+                                                    if (!empty($app[$field])):
+                                                        ?>
+                                                        <i class="bi bi-<?= $icon ?> text-success"
+                                                            title="<?= str_replace('_', ' ', strtoupper($field)) ?>"></i>
+                                                    <?php endif; endforeach; ?>
                                             </div>
                                             <div class="d-flex gap-2">
                                                 <a href="view_application.php?id=<?= $app['id'] ?>"
@@ -896,10 +968,17 @@ if ($submission_filter !== 'All') {
                                     </tr>
                                 <?php endforeach; ?>
                                 <?php if (empty($applications)): ?>
-                                    <tr>
+                                    <tr id="emptyStateRow">
                                         <td colspan="5" class="text-center py-5 text-muted">
                                             <i class="bi bi-inbox display-4 d-block mb-3"></i>
                                             No applications found for this college.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <tr id="emptyStateRow" style="display:none;">
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="bi bi-funnel display-4 d-block mb-3"></i>
+                                            No applications match the current filter.
                                         </td>
                                     </tr>
                                 <?php endif; ?>
@@ -925,6 +1004,64 @@ if ($submission_filter !== 'All') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ── Submission Filter & Search ────────────────────────────────────────
+        (function () {
+            const filterBtns = document.querySelectorAll('#submissionFilter button');
+            const searchInput = document.getElementById('searchInput');
+            let activeFilter = 'all';
+
+            function applyFilters() {
+                const searchVal = (searchInput ? searchInput.value.toLowerCase().trim() : '');
+                const rows = document.querySelectorAll('#applicationsTableBody tr[data-submission]');
+
+                rows.forEach(row => {
+                    const submissionMatch = (activeFilter === 'all') || (row.dataset.submission === activeFilter);
+                    const nameData = (row.dataset.name || '');
+                    const searchMatch = !searchVal || nameData.includes(searchVal);
+                    row.style.display = (submissionMatch && searchMatch) ? '' : 'none';
+                });
+
+                // Show empty state if all rows hidden
+                const emptyRow = document.getElementById('emptyStateRow');
+                if (emptyRow) {
+                    const visibleRows = document.querySelectorAll('#applicationsTableBody tr[data-submission]:not([style*="display: none"])');
+                    emptyRow.style.display = visibleRows.length === 0 ? '' : 'none';
+                }
+            }
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('active');
+                        // Reset to outline variant when inactive
+                        if (b.dataset.filter === 'submitted') {
+                            b.className = b.className.replace('btn-success', 'btn-outline-success');
+                        } else if (b.dataset.filter === 'draft') {
+                            b.className = b.className.replace('btn-warning', 'btn-outline-warning');
+                        } else {
+                            b.className = b.className.replace('btn-primary', 'btn-outline-primary');
+                        }
+                    });
+
+                    this.classList.add('active');
+                    if (this.dataset.filter === 'submitted') {
+                        this.className = this.className.replace('btn-outline-success', 'btn-success');
+                    } else if (this.dataset.filter === 'draft') {
+                        this.className = this.className.replace('btn-outline-warning', 'btn-warning');
+                    } else {
+                        this.className = this.className.replace('btn-outline-primary', 'btn-primary');
+                    }
+
+                    activeFilter = this.dataset.filter;
+                    applyFilters();
+                });
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+            }
+        })();
+        // ─────────────────────────────────────────────────────────────────────
         <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
             const selectAllApps = document.getElementById('selectAllApps');
             const appCheckboxes = document.querySelectorAll('.app-checkbox');
@@ -943,7 +1080,7 @@ if ($submission_filter !== 'All') {
             }
 
             if (selectAllApps) {
-                selectAllApps.addEventListener('change', function() {
+                selectAllApps.addEventListener('change', function () {
                     appCheckboxes.forEach(cb => cb.checked = this.checked);
                     updateDeleteBtn();
                 });
@@ -951,7 +1088,7 @@ if ($submission_filter !== 'All') {
 
             if (appCheckboxes) {
                 appCheckboxes.forEach(cb => {
-                    cb.addEventListener('change', function() {
+                    cb.addEventListener('change', function () {
                         const allChecked = document.querySelectorAll('.app-checkbox:checked').length === appCheckboxes.length;
                         if (selectAllApps) selectAllApps.checked = allChecked;
                         updateDeleteBtn();

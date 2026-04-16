@@ -25,6 +25,16 @@ if (!$app) {
     exit;
 }
 
+// RESTRICTION: Doctor of Medicine admins should NOT see Accelerated Pathway applications
+$admin_college = $_SESSION['admin_college'] ?? '';
+$is_super = $_SESSION['is_super_admin'] ?? false;
+if (!$is_super && $admin_college === 'Medicine') {
+    if (strpos($app['college'], 'Accelerated Pathway') !== false) {
+        header("Location: admin_dashboard.php");
+        exit;
+    }
+}
+
 // Helper for file status
 function getFileLink($path, $label, $tbf = 0) {
     if (!$path) {
@@ -83,6 +93,24 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
     <div class="row">
         <!-- Main Info -->
         <div class="col-lg-8">
+            <?php if($app['status'] == 'Accepted'): ?>
+                <div class="alert <?= (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']) ? 'alert-success border-success' : 'alert-light border-secondary text-muted' ?> mb-4 rounded-4 shadow-sm py-3 px-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="small text-uppercase fw-bold opacity-75 d-block mb-1">Registrar Processing Status</span>
+                            <?php if (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']): ?>
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-patch-check-fill me-2"></i> ACKNOWLEDGED BY REGISTRAR</h5>
+                                <div class="small mt-1 text-success fw-semibold">The applicant has completed the registrar office requirements.</div>
+                            <?php else: ?>
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i> PENDING REGISTRAR VISIT</h5>
+                                <div class="small mt-1 fw-medium">The student has been accepted but has not yet visited the registrar for processing.</div>
+                            <?php endif; ?>
+                        </div>
+                        <i class="bi <?= (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']) ? 'bi-building-check' : 'bi-building-exclamation' ?> display-5 opacity-25"></i>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- Admission Record PDF (First) -->
             <?php if($app['record_pdf_path']): ?>
             <div class="detail-card card mb-4 border-danger">

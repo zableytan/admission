@@ -182,11 +182,11 @@
         // Clear all admission drafts on completion
         document.addEventListener('DOMContentLoaded', function () {
             Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('admission_draft_')) {
+                if (key.startsWith('admission_draft_') || key.startsWith('admissionStep')) {
                     localStorage.removeItem(key);
                 }
             });
-            console.log('All admission drafts cleared.');
+            console.log('Application drafts cleared.');
         });
     </script>
 </body>

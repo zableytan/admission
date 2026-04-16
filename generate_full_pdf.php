@@ -79,6 +79,15 @@ if (!$app_data) {
     die("Application not found.");
 }
 
+// RESTRICTION: Doctor of Medicine admins should NOT see Accelerated Pathway applications
+$admin_college = $_SESSION['admin_college'] ?? '';
+$is_super = $_SESSION['is_super_admin'] ?? false;
+if (!$is_super && $admin_college === 'Medicine') {
+    if (strpos($app_data['college'], 'Accelerated Pathway') !== false) {
+        die("Unauthorized access to this application category.");
+    }
+}
+
 // --- 1. GENERATE SUMMARY PDF (Using Dompdf) ---
 // --- 1. PREPARE LOGO FOR PDF ---
 $logo_path = 'DMSF_Logo.png';

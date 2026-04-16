@@ -27,6 +27,9 @@ if (isset($_GET['college']) && (isset($_SESSION['is_super_admin']) && $_SESSION[
 
 $msg = '';
 
+// Check if user is high-level (Super Admin or Dean)
+$is_high_level = (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || (isset($_SESSION['is_dean']) && $_SESSION['is_dean']);
+
 // Handle Status Update & File Re-upload (Application Processing)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     $app_id = $_POST['app_id'];
@@ -209,6 +212,95 @@ if (isset($_SESSION['flash_msg'])) {
     unset($_SESSION['flash_msg']);
 }
 
+// Handle Interview Scheduling
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_interview') {
+    $app_id = $_POST['app_id'];
+    $student_email = $_POST['student_email'];
+    $i_date = $_POST['interview_date'];
+    $i_time = $_POST['interview_time'];
+    $i_link = $_POST['interview_link'];
+
+    try {
+        // Update database - using ignore error for columns because we'll add them if missing
+        try {
+            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_status = 'Scheduled' WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+        } catch (PDOException $e) {
+            // Check if columns exist, if not add them (Self-healing migration)
+            if (strpos($e->getMessage(), 'Unknown column') !== false) {
+                $pdo->exec("ALTER TABLE applications 
+                    ADD COLUMN interview_date DATE NULL,
+                    ADD COLUMN interview_time TIME NULL,
+                    ADD COLUMN interview_link TEXT NULL,
+                    ADD COLUMN interview_status VARCHAR(50) DEFAULT 'Not Scheduled'");
+                // Retry update
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+            } else {
+                throw $e;
+            }
+        }
+
+        // Send Email
+        $smtp_config = require 'mail_config.php';
+        $mail = new PHPMailer(true);
+
+        // Fetch admin details for "From" name/email
+        $admin_id = $_SESSION['admin_id'];
+        $admin_stmt = $pdo->prepare("SELECT * FROM admins WHERE id = ?");
+        $admin_stmt->execute([$admin_id]);
+        $current_admin = $admin_stmt->fetch();
+        
+        // Split admin emails if multiple
+        $admin_email_primary = explode(',', $current_admin['email'])[0];
+
+        $mail->isSMTP();
+        $mail->Host = $smtp_config['host'];
+        $mail->SMTPAuth = true;
+        $mail->Username = $smtp_config['username'];
+        $mail->Password = $smtp_config['password'];
+        $mail->SMTPSecure = $smtp_config['encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = $smtp_config['port'];
+
+        $mail->setFrom($smtp_config['from_email'], "DMSF " . $current_admin['college'] . " Admissions");
+        if (!empty($admin_email_primary) && filter_var($admin_email_primary, FILTER_VALIDATE_EMAIL)) {
+            $mail->addReplyTo($admin_email_primary, "DMSF " . $current_admin['college'] . " Admissions");
+        }
+        $mail->addAddress($student_email);
+
+        $mail->isHTML(true);
+        $mail->Subject = "Interview Invitation: DMSF Admission";
+        
+        $formatted_date = date('F d, Y', strtotime($i_date));
+        $formatted_time = date('h:i A', strtotime($i_time));
+
+        $mail->Body = "
+        <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+            <h2 style='color: #1a237e;'>Interview Schedule Notification</h2>
+            <p>Dear Applicant,</p>
+            <p>We are pleased to invite you for an interview as part of your application process at <strong>Davao Medical School Foundation, Inc.</strong></p>
+            <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #1a237e; margin: 20px 0;'>
+                <p style='margin: 5px 0;'><strong>Date:</strong> $formatted_date</p>
+                <p style='margin: 5px 0;'><strong>Time:</strong> $formatted_time</p>
+                <p style='margin: 5px 0;'><strong>Meeting Link:</strong> <a href='$i_link' style='color: #007bff;'>$i_link</a></p>
+            </div>
+            <p>Please ensure you have a stable internet connection and are present in the virtual meeting room at least 5 minutes before your scheduled time.</p>
+            <p>Should you have any questions or need to reschedule, please contact the <strong>" . $current_admin['college'] . "</strong> department.</p>
+            <br>
+            <p>Best Regards,</p>
+            <p><strong>DMSF Admissions Office</strong><br>" . $current_admin['college'] . " Department</p>
+        </div>";
+
+        $mail->send();
+        $_SESSION['flash_msg'] = "Interview scheduled and email sent to applicant.";
+    } catch (Exception $e) {
+        $_SESSION['flash_msg'] = "Error scheduling interview: " . $e->getMessage();
+    }
+    header("Location: admin_dashboard.php");
+    exit;
+}
+
 // Handle bulk delete for super admins
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'bulk_delete' && isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
     if (!empty($_POST['selected_apps']) && is_array($_POST['selected_apps'])) {
@@ -232,15 +324,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
+$order_clause = "ORDER BY is_submitted DESC, created_at DESC";
+
 if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
     // Super Admin viewing all departments
-    $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
+    $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
-    // Special case for Medicine: show both NMD and IMD
+    // Special case for Medicine: show both NMD and IMD, but EXCLUDE Accelerated Pathway
     if ($college === 'Medicine') {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') $order_clause");
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");
@@ -584,9 +678,8 @@ if ($submission_filter !== 'All') {
 
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container-fluid px-4">
-            <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="DMSF_Logo.png" alt="DMSF Logo" height="40" class="me-2"
-                    style="filter: brightness(0) invert(1);">
+            <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
+                <img src="DMSF_Logo.png" alt="DMSF Logo" height="45" class="me-2">
                 <div>
                     <span class="fw-bold d-block" style="line-height: 1.2;">DMSF</span>
                     <span class="small opacity-75" style="font-size: 0.7rem;"><?= $college ?> Portal</span>
@@ -884,6 +977,14 @@ if ($submission_filter !== 'All') {
                                                 <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
                                                 <?= $app['status'] ?>
                                             </span>
+                                            <?php if (isset($app['interview_status']) && $app['interview_status'] === 'Scheduled'): ?>
+                                                <div class="mt-2 text-center">
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small py-1 px-2" 
+                                                          title="Link: <?= $app['interview_link'] ?>">
+                                                        <i class="bi bi-calendar-check me-1"></i> Interview: <?= date('M d, H:i', strtotime($app['interview_date'] . ' ' . $app['interview_time'])) ?>
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
                                             <?php if ($app['status'] == 'Accepted'): ?>
                                                 <div class="mt-2">
                                                     <?php if (isset($app['registrar_acknowledged']) && $app['registrar_acknowledged']): ?>
@@ -932,7 +1033,16 @@ if ($submission_filter !== 'All') {
                                             </div>
                                         </td>
                                         <td class="pe-4">
-                                            <?php if ($app['status'] == 'Pending' && !(isset($_SESSION['is_dean']) && $_SESSION['is_dean'])): ?>
+                                            <?php 
+                                            $is_submitted_current = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
+                                            if ($app['status'] == 'Pending' && $is_submitted_current && !(isset($_SESSION['is_dean']) && $_SESSION['is_dean'])): ?>
+                                                <div class="mb-3">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 fw-bold shadow-sm"
+                                                        onclick="openInterviewModal(<?= $app['id'] ?>, '<?= htmlspecialchars($app['email']) ?>', '<?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?>')">
+                                                        <i class="bi bi-calendar-event me-1"></i> SET INTERVIEW
+                                                    </button>
+                                                </div>
+                                                
                                                 <form method="POST" enctype="multipart/form-data" class="action-form">
                                                     <input type="hidden" name="app_id" value="<?= $app['id'] ?>">
                                                     <input type="hidden" name="student_email" value="<?= $app['email'] ?>">
@@ -997,6 +1107,54 @@ if ($submission_filter !== 'All') {
         <p class="text-muted small mt-2">Sending notification emails, please wait.</p>
     </div>
 
+    <!-- Interview Modal -->
+    <div class="modal fade" id="interviewModal" tabindex="-1" aria-labelledby="interviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <form method="POST" id="interviewForm">
+                    <input type="hidden" name="action" value="set_interview">
+                    <input type="hidden" name="app_id" id="interviewAppId">
+                    <input type="hidden" name="student_email" id="interviewStudentEmail">
+                    <div class="modal-header border-0 pb-0 pt-4 px-4">
+                        <h5 class="modal-title fw-bold" id="interviewModalLabel">Schedule Interview</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="p-3 bg-light rounded-3 mb-4">
+                            <span class="d-block small text-muted text-uppercase fw-bold mb-1">Applicant</span>
+                            <span class="h6 fw-bold text-primary mb-0" id="interviewStudentName"></span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Date</label>
+                                <input type="date" name="interview_date" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Time</label>
+                                <input type="time" name="interview_time" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Meeting Link (Zoom/Google Meet)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-link-45deg"></i></span>
+                                    <input type="url" name="interview_link" class="form-control border-start-0 rounded-end-3" 
+                                           placeholder="https://zoom.us/j/..." required>
+                                </div>
+                                <div class="form-text mt-2 small">This link will be included in the invitation email.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 p-4 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                            <i class="bi bi-send me-2"></i>Send Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Bulk Delete Form -->
     <form method="POST" id="bulkDeleteForm" style="display:none;">
         <input type="hidden" name="action" value="bulk_delete">
@@ -1004,6 +1162,14 @@ if ($submission_filter !== 'All') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const interviewModal = new bootstrap.Modal(document.getElementById('interviewModal'));
+        function openInterviewModal(id, email, name) {
+            document.getElementById('interviewAppId').value = id;
+            document.getElementById('interviewStudentEmail').value = email;
+            document.getElementById('interviewStudentName').innerText = name;
+            interviewModal.show();
+        }
+
         // ── Submission Filter & Search ────────────────────────────────────────
         (function () {
             const filterBtns = document.querySelectorAll('#submissionFilter button');

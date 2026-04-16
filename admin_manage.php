@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $raw_email = $_POST['email'] ?? '';
         $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
         $is_super = isset($_POST['is_super']) ? 1 : 0;
+        $is_dean = isset($_POST['is_dean']) ? 1 : 0;
 
         // Validate multiple emails
         $emails = array_map('trim', explode(',', $raw_email));
@@ -40,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = "One or more email addresses are invalid.";
         } else {
             try {
-                $stmt = $pdo->prepare("INSERT INTO admins (username, password, email, college, is_super_admin) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$username, $password, $final_email_string, $college, $is_super]);
+                $stmt = $pdo->prepare("INSERT INTO admins (username, password, email, college, is_super_admin, is_dean) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$username, $password, $final_email_string, $college, $is_super, $is_dean]);
                 $msg = "Admin account created successfully.";
             } catch (PDOException $e) {
                 if ($e->getCode() == 23000) {
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $raw_email = $_POST['email'] ?? '';
         $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
         $is_super = isset($_POST['is_super']) ? 1 : 0;
+        $is_dean = isset($_POST['is_dean']) ? 1 : 0;
         $password = $_POST['password'] ?? '';
 
         // Validate multiple emails
@@ -81,11 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 if (!empty($password)) {
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("UPDATE admins SET username = ?, email = ?, college = ?, is_super_admin = ?, password = ? WHERE id = ?");
-                    $stmt->execute([$username, $final_email_string, $college, $is_super, $hashed_password, $id]);
+                    $stmt = $pdo->prepare("UPDATE admins SET username = ?, email = ?, college = ?, is_super_admin = ?, is_dean = ?, password = ? WHERE id = ?");
+                    $stmt->execute([$username, $final_email_string, $college, $is_super, $is_dean, $hashed_password, $id]);
                 } else {
-                    $stmt = $pdo->prepare("UPDATE admins SET username = ?, email = ?, college = ?, is_super_admin = ? WHERE id = ?");
-                    $stmt->execute([$username, $final_email_string, $college, $is_super, $id]);
+                    $stmt = $pdo->prepare("UPDATE admins SET username = ?, email = ?, college = ?, is_super_admin = ?, is_dean = ? WHERE id = ?");
+                    $stmt->execute([$username, $final_email_string, $college, $is_super, $is_dean, $id]);
                 }
                 $msg = "Admin account updated successfully.";
             } catch (PDOException $e) {
@@ -214,10 +216,14 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                                     <option value="All">All (Super Admin)</option>
                                 </select>
                             </div>
-                            <div class="mb-4">
+                            <div class="mb-4 d-flex gap-3">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" name="is_super" id="isSuper">
-                                    <label class="form-check-label fw-bold" for="isSuper">Super Admin Access</label>
+                                    <label class="form-check-label fw-bold" for="isSuper">Super Admin</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_dean" id="isDean">
+                                    <label class="form-check-label fw-bold" for="isDean">Dean Role</label>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
@@ -259,8 +265,9 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                                             </td>
                                             <td>
                                                 <?php if ($admin['is_super_admin']): ?>
-                                                    <span class="badge bg-primary"><i class="bi bi-star-fill me-1"></i>Super
-                                                        Admin</span>
+                                                    <span class="badge bg-primary"><i class="bi bi-star-fill me-1"></i>Super Admin</span>
+                                                <?php elseif ($admin['is_dean']): ?>
+                                                    <span class="badge bg-dark"><i class="bi bi-eye-fill me-1"></i>Dean</span>
                                                 <?php else: ?>
                                                     <span class="badge bg-info text-dark">Staff</span>
                                                 <?php endif; ?>
@@ -337,10 +344,14 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                                 <option value="All">All (Super Admin)</option>
                             </select>
                         </div>
-                        <div class="mb-2">
+                        <div class="mb-2 d-flex gap-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="is_super" id="editIsSuper">
-                                <label class="form-check-label fw-bold" for="editIsSuper">Super Admin Access</label>
+                                <label class="form-check-label fw-bold" for="editIsSuper">Super Admin</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_dean" id="editIsDean">
+                                <label class="form-check-label fw-bold" for="editIsDean">Dean Role</label>
                             </div>
                         </div>
                     </div>
@@ -364,6 +375,7 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
             document.getElementById('editEmail').value = admin.email || '';
             document.getElementById('editCollege').value = admin.college;
             document.getElementById('editIsSuper').checked = admin.is_super_admin == 1;
+            document.getElementById('editIsDean').checked = admin.is_dean == 1;
 
             editModal.show();
         }

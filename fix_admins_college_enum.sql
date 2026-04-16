@@ -21,4 +21,3 @@ MODIFY COLUMN `college` ENUM(
     'All Colleges',
     'All'
 ) NOT NULL;
-

@@ -12,14 +12,14 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-// Handle College Switching for Super Admins
-if (isset($_GET['college']) && isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
+// Handle College Switching for Super Admins / Deans
+if (isset($_GET['college']) && (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean'])) {
     $college = filter_input(INPUT_GET, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
     $_SESSION['admin_college'] = $college;
 } else {
     $college = $_SESSION['admin_college'];
-    if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && !isset($_GET['college'])) {
-        // Default super admin view to All departments
+    if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && !isset($_GET['college'])) {
+        // Default high-level view to All departments
         $college = 'All';
         $_SESSION['admin_college'] = 'All';
     }
@@ -231,21 +231,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin viewing all departments
+$is_high_level = (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || (isset($_SESSION['is_dean']) && $_SESSION['is_dean']);
+$submission_filter = filter_input(INPUT_GET, 'submission_type', FILTER_SANITIZE_SPECIAL_CHARS) ?: 'All';
+
+if ($is_high_level && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin / Dean viewing all departments
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD
     if ($college === 'Medicine') {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        // Show all Medicine sub-colleges but EXCLUDE Accelerated Pathway
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
         $stmt->execute(["%$college%"]);
     }
     $applications = $stmt->fetchAll();
+}
+
+// Super Admin Specific Summaries
+$summary_data = [
+    'total' => 0,
+    'submitted' => 0,
+    'drafts' => 0,
+    'pending' => 0,
+    'accepted' => 0,
+    'declined' => 0,
+    'by_college' => []
+];
+
+$is_authorized_summary = (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || (isset($_SESSION['is_dean']) && $_SESSION['is_dean']);
+
+if ($is_authorized_summary && $college === 'All') {
+    $summary_data['total'] = count($applications);
+    foreach ($applications as $app) {
+        $status = strtolower($app['status']);
+        if (array_key_exists($status, $summary_data)) {
+            $summary_data[$status]++;
+        }
+        
+        // Submission status
+        $is_submitted = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
+        if ($is_submitted) {
+            $summary_data['submitted']++;
+        } else {
+            $summary_data['drafts']++;
+        }
+        
+        // Handle multiple colleges if applicable
+        $c_list = explode(', ', $app['college']);
+        foreach ($c_list as $c) {
+            $c = trim($c);
+            if (empty($c)) continue;
+            
+            if (!isset($summary_data['by_college'][$c])) {
+                $summary_data['by_college'][$c] = [
+                    'total' => 0,
+                    'submitted' => 0,
+                    'drafts' => 0,
+                    'pending' => 0,
+                    'accepted' => 0,
+                    'declined' => 0
+                ];
+            }
+            $summary_data['by_college'][$c]['total']++;
+            if ($is_submitted) {
+                $summary_data['by_college'][$c]['submitted']++;
+            } else {
+                $summary_data['by_college'][$c]['drafts']++;
+            }
+            if (array_key_exists($status, $summary_data['by_college'][$c])) {
+                $summary_data['by_college'][$c][$status]++;
+            }
+        }
+    }
+    // Sort colleges by total count descending
+    uasort($summary_data['by_college'], function($a, $b) {
+        return $b['total'] <=> $a['total'];
+    });
+}
+
+// Filter the application list if a specific submission type is selected
+if ($submission_filter !== 'All') {
+    $applications = array_filter($applications, function($app) use ($submission_filter) {
+        $is_submitted = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
+        if ($submission_filter === 'Submitted') return $is_submitted;
+        if ($submission_filter === 'Draft') return !$is_submitted;
+        return true;
+    });
 }
 ?>
 
@@ -425,6 +501,68 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
         .x-small {
             font-size: 0.7rem;
         }
+
+        /* Summary Stats Cards */
+        .summary-card {
+            border: none;
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            transition: transform 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .summary-total { background: linear-gradient(135deg, #1e293b 0%, #475569 100%); }
+        .summary-submitted { background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%); }
+        .summary-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .summary-accepted { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .summary-declined { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        
+        .summary-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        
+        .summary-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0;
+            line-height: 1;
+        }
+        
+        .summary-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .college-row {
+            transition: background 0.2s;
+        }
+        
+        .college-row:hover {
+            background-color: rgba(26, 35, 126, 0.02) !important;
+        }
+
+        .mini-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -441,11 +579,11 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                 </div>
             </a>
             <div class="ms-auto d-flex align-items-center">
-                <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
-                    <form action="admin_dashboard.php" method="GET" class="me-3">
+                <?php if ($is_high_level): ?>
+                    <form action="admin_dashboard.php" method="GET" class="me-3 d-flex gap-2">
                         <select name="college" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
                             onchange="this.form.submit()">
-                            <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All</option>
+                            <option value="All" <?= $college === 'All' ? 'selected' : '' ?>>All Departments</option>
                             <option value="Medicine" <?= $college === 'Medicine' ? 'selected' : '' ?>>Doctor of Medicine (ALL)</option>
                             <option value="Medicine (Filipino)" <?= $college === 'Medicine (Filipino)' ? 'selected' : '' ?>>Doctor of Medicine (Filipino)</option>
                             <option value="Medicine (Foreign)" <?= $college === 'Medicine (Foreign)' ? 'selected' : '' ?>>Doctor of Medicine (Foreign)</option>
@@ -458,12 +596,26 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                             <option value="Master in Participatory Development" <?= $college === 'Master in Participatory Development' ? 'selected' : '' ?>>Master in Participatory Development</option>
                             <option value="Accelerated Pathway for Medicine" <?= $college === 'Accelerated Pathway for Medicine' ? 'selected' : '' ?>>Accelerated Pathway for Medicine</option>
                         </select>
+                        <select name="submission_type" class="form-select form-select-sm rounded-pill border-0 shadow-sm px-3"
+                            onchange="this.form.submit()">
+                            <option value="All" <?= $submission_filter === 'All' ? 'selected' : '' ?>>All Records</option>
+                            <option value="Submitted" <?= $submission_filter === 'Submitted' ? 'selected' : '' ?>>Submitted Only</option>
+                            <option value="Draft" <?= $submission_filter === 'Draft' ? 'selected' : '' ?>>Drafts Only</option>
+                        </select>
                     </form>
-                    <a href="admin_manage.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-3">
-                        <i class="bi bi-people-fill me-1"></i> Manage Admins
-                    </a>
-                <?php endif; ?>
-                <span class="text-white opacity-75 me-3 small">Welcome, Admin</span>
+                        <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
+                            <a href="admin_manage.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-2">
+                                <i class="bi bi-people-fill me-1"></i> Manage Admins
+                            </a>
+                        <?php endif; ?>
+                        
+                        <!-- Export Button -->
+                        <a href="export_excel.php?college=<?= urlencode($college) ?>&submission_type=<?= urlencode($submission_filter) ?>" 
+                           class="btn btn-success btn-sm rounded-pill px-3">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export to Excel
+                        </a>
+                    <?php endif; ?>
+                    <span class="text-white opacity-75 ms-3 me-3 small">Welcome, <?= isset($_SESSION['is_dean']) && $_SESSION['is_dean'] ? 'Dean' : 'Admin' ?></span>
                 <a href="admin_login.php?logout=true" class="btn btn-outline-light btn-sm rounded-pill px-3">
                     <i class="bi bi-box-arrow-right me-1"></i> Logout
                 </a>
@@ -489,6 +641,102 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                 <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
                     <i class="bi bi-info-circle-fill me-2"></i> <?= $msg ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($is_authorized_summary && $college === 'All'): ?>
+                <!-- Super Admin / Dean Summary Dashboard -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md">
+                        <div class="summary-card summary-total shadow-sm position-relative overflow-hidden p-3">
+                            <i class="bi bi-layers summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <div class="summary-label small">Total Records</div>
+                            <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['total'] ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <div class="summary-card summary-submitted shadow-sm position-relative overflow-hidden p-3 border-start border-4 border-white-50">
+                            <i class="bi bi-file-earmark-check summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <div class="summary-label small">Submitted</div>
+                            <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['submitted'] ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <div class="summary-card summary-pending shadow-sm position-relative overflow-hidden p-3">
+                            <i class="bi bi-hourglass-split summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <div class="summary-label small">Pending Review</div>
+                            <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['pending'] ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <div class="summary-card summary-accepted shadow-sm position-relative overflow-hidden p-3">
+                            <i class="bi bi-check-circle summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <div class="summary-label small">Accepted</div>
+                            <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['accepted'] ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <div class="summary-card summary-declined shadow-sm position-relative overflow-hidden p-3">
+                            <i class="bi bi-x-circle summary-icon" style="font-size: 1.8rem; top: 10px; right: 10px;"></i>
+                            <div class="summary-label small">Declined</div>
+                            <div class="summary-value" style="font-size: 1.7rem;"><?= $summary_data['declined'] ?></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-building me-2"></i>Departmental Tracking Breakdown</h5>
+                                <span class="badge bg-light text-muted border px-3">Aggregated Summary</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="ps-4 py-3">Department/College</th>
+                                                <th class="text-center py-3">Total</th>
+                                                <th class="text-center py-3">Submitted</th>
+                                                <th class="text-center py-3">Drafts</th>
+                                                <th class="text-center py-3 text-warning">Pending</th>
+                                                <th class="text-center py-3 text-success">Accepted</th>
+                                                <th class="pe-4 py-3" style="width: 180px;">Completion</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($summary_data['by_college'] as $dept => $stats): 
+                                                $progress = $stats['submitted'] > 0 ? (($stats['accepted'] + $stats['declined']) / $stats['submitted']) * 100 : 0;
+                                            ?>
+                                                <tr class="college-row">
+                                                    <td class="ps-4 fw-bold text-dark"><?= htmlspecialchars($dept) ?></td>
+                                                    <td class="text-center"><span class="badge bg-secondary-subtle text-secondary rounded-pill px-3"><?= $stats['total'] ?></span></td>
+                                                    <td class="text-center"><span class="badge bg-primary rounded-pill px-3"><?= $stats['submitted'] ?></span></td>
+                                                    <td class="text-center text-muted"><?= $stats['drafts'] ?></td>
+                                                    <td class="text-center text-warning fw-semibold"><?= $stats['pending'] ?></td>
+                                                    <td class="text-center text-success fw-semibold"><?= $stats['accepted'] ?></td>
+                                                    <td class="pe-4">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: <?= $progress ?>%" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                            </div>
+                                                            <span class="ms-2 small text-muted"><?= round($progress) ?>%</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                            <?php if (empty($summary_data['by_college'])): ?>
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-4 text-muted">No data available yet.</td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             <?php endif; ?>
 
@@ -612,7 +860,7 @@ if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($colle
                                             </div>
                                         </td>
                                         <td class="pe-4">
-                                            <?php if ($app['status'] == 'Pending'): ?>
+                                            <?php if ($app['status'] == 'Pending' && !(isset($_SESSION['is_dean']) && $_SESSION['is_dean'])): ?>
                                                 <form method="POST" enctype="multipart/form-data" class="action-form">
                                                     <input type="hidden" name="app_id" value="<?= $app['id'] ?>">
                                                     <input type="hidden" name="student_email" value="<?= $app['email'] ?>">

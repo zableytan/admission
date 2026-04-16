@@ -19,13 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $admin = $stmt->fetch();
 
     if ($admin && password_verify($password, $admin['password'])) {
-        // Double check college if not super admin
-        if (!$admin['is_super_admin'] && $admin['college'] !== $college) {
+        // Double check college if not super admin or dean
+        if (!$admin['is_super_admin'] && !$admin['is_dean'] && $admin['college'] !== $college) {
             $error = "Access denied: You are not authorized for the " . htmlspecialchars($college) . " department.";
         } else {
             $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_college'] = $admin['is_super_admin'] ? $college : $admin['college'];
+            $_SESSION['admin_college'] = ($admin['is_super_admin'] || $admin['is_dean']) ? $college : $admin['college'];
             $_SESSION['is_super_admin'] = (bool)$admin['is_super_admin'];
+            $_SESSION['is_dean'] = (bool)$admin['is_dean'];
             header("Location: admin_dashboard.php");
             exit;
         }

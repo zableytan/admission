@@ -25,6 +25,7 @@ if (isset($_GET['college']) && (isset($_SESSION['is_super_admin']) && $_SESSION[
     }
 }
 
+$submission_filter = isset($_GET['submission_type']) ? filter_input(INPUT_GET, 'submission_type', FILTER_SANITIZE_SPECIAL_CHARS) : 'All';
 $msg = '';
 
 // Check if user is high-level (Super Admin or Dean)
@@ -219,13 +220,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $i_date = $_POST['interview_date'];
     $i_time = $_POST['interview_time'];
     $i_link = $_POST['interview_link'];
+    $i_pass = $_POST['interview_password'] ?? '';
+    $i_code = $_POST['interview_code'] ?? '';
 
     try {
         // Update database - using ignore error for columns because we'll add them if missing
         try {
-            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_status = 'Scheduled' WHERE id = ?";
+            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_password = ?, interview_code = ?, interview_status = 'Scheduled' WHERE id = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+            $stmt->execute([$i_date, $i_time, $i_link, $i_pass, $i_code, $app_id]);
         } catch (PDOException $e) {
             // Check if columns exist, if not add them (Self-healing migration)
             if (strpos($e->getMessage(), 'Unknown column') !== false) {
@@ -233,10 +236,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     ADD COLUMN interview_date DATE NULL,
                     ADD COLUMN interview_time TIME NULL,
                     ADD COLUMN interview_link TEXT NULL,
+                    ADD COLUMN interview_password VARCHAR(100) NULL,
+                    ADD COLUMN interview_code VARCHAR(100) NULL,
                     ADD COLUMN interview_status VARCHAR(50) DEFAULT 'Not Scheduled'");
                 // Retry update
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+                $stmt->execute([$i_date, $i_time, $i_link, $i_pass, $i_code, $app_id]);
             } else {
                 throw $e;
             }
@@ -284,6 +289,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <p style='margin: 5px 0;'><strong>Date:</strong> $formatted_date</p>
                 <p style='margin: 5px 0;'><strong>Time:</strong> $formatted_time</p>
                 <p style='margin: 5px 0;'><strong>Meeting Link:</strong> <a href='$i_link' style='color: #007bff;'>$i_link</a></p>
+                " . (!empty($i_code) ? "<p style='margin: 5px 0;'><strong>Meeting ID/Code:</strong> $i_code</p>" : "") . "
+                " . (!empty($i_pass) ? "<p style='margin: 5px 0;'><strong>Passcode/Password:</strong> $i_pass</p>" : "") . "
             </div>
             <p>Please ensure you have a stable internet connection and are present in the virtual meeting room at least 5 minutes before your scheduled time.</p>
             <p>Should you have any questions or need to reschedule, please contact the <strong>" . $current_admin['college'] . "</strong> department.</p>
@@ -324,27 +331,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-<<<<<<< HEAD
-$order_clause = "ORDER BY created_at DESC";
-if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin or Dean viewing all departments
-=======
 $order_clause = "ORDER BY is_submitted DESC, created_at DESC";
 
-if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin viewing all departments
->>>>>>> 98413a174019cb93cb722e3b2ba3d9a59faaef86
+if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin or Dean viewing all departments
     $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD, but EXCLUDE Accelerated Pathway
     if ($college === 'Medicine') {
-<<<<<<< HEAD
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') $order_clause");
-=======
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') $order_clause");
->>>>>>> 98413a174019cb93cb722e3b2ba3d9a59faaef86
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");
@@ -1055,7 +1052,7 @@ if ($submission_filter !== 'All') {
                                         <td class="pe-4">
                                             <?php 
                                             $is_submitted_current = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
-                                            if ($app['status'] == 'Pending' && $is_submitted_current && !(isset($_SESSION['is_dean']) && $_SESSION['is_dean'])): ?>
+                                            if ($app['status'] == 'Pending' && $is_submitted_current && ( (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || !(isset($_SESSION['is_dean']) && $_SESSION['is_dean']) )): ?>
                                                 <div class="mb-3">
                                                     <button type="button" class="btn btn-outline-primary btn-sm w-100 fw-bold shadow-sm"
                                                         onclick="openInterviewModal(<?= $app['id'] ?>, '<?= htmlspecialchars($app['email']) ?>', '<?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?>')">
@@ -1161,6 +1158,14 @@ if ($submission_filter !== 'All') {
                                            placeholder="https://zoom.us/j/..." required>
                                 </div>
                                 <div class="form-text mt-2 small">This link will be included in the invitation email.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Meeting ID / Code (Optional)</label>
+                                <input type="text" name="interview_code" class="form-control rounded-3" placeholder="e.g. 123 456 789">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Passcode / Password (Optional)</label>
+                                <input type="text" name="interview_password" class="form-control rounded-3" placeholder="e.g. 987654">
                             </div>
                         </div>
                     </div>

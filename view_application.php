@@ -390,10 +390,10 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
 
                     <div class="doc-item">
                         <div>
-                            <div class="fw-bold text-dark">Form 137</div>
+                            <div class="fw-bold text-dark">Form 138 (Report Card)</div>
                             <div class="small text-muted">Secondary academic record</div>
                         </div>
-                        <?= getFileLink($app['form137_path'], 'Form 137', $app['tbf_form137'] ?? 0) ?>
+                        <?= getFileLink($app['form137_path'], 'Form 138 (Report Card)', $app['tbf_form137'] ?? 0) ?>
                     </div>
                     
                     <div class="doc-item">

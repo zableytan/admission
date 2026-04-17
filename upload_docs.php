@@ -414,7 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <table class='info-table'>
                 <tr>
                     <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . ($tor_path ? '✓ Provided' : ($tbf_tor ? '📋 To be followed' : '✗ Missing')) . "</td>
-                    <td class='row-label'>Form 137</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : ($tbf_form137 ? '📋 To be followed' : '✗ Missing')) . "</td>
+                    <td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : ($tbf_form137 ? '📋 To be followed' : '✗ Missing')) . "</td>
                 </tr>
                 <tr>
                     <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . ($birth_cert_path ? '✓ Provided' : '✗ Missing') . "</td>
@@ -512,7 +512,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file_map = [
             'Applicant Photo' => $app_data['photo_path'],
             'TOR' => $tor_path,
-            'Form 137' => $form137_path,
+            'Form 138 (Report Card)' => $form137_path,
             'Birth Cert' => $birth_cert_path,
             'NMAT' => $nmat_path,
             'Diploma' => $diploma_path,
@@ -890,11 +890,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <!-- Document: Form 137 -->
+                            <!-- Document: Form 138 (Report Card) -->
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-spreadsheet upload-icon"></i>
-                                    <label class="form-label mb-0">3. Form 137
+                                    <label class="form-label mb-0">3. Form 138 (Report Card)
                                         <span class="optional-badge">Optional</span></label>
                                     <button type="button" class="btn-tbf ms-auto" id="tbf-form137-btn" onclick="toggleTBF('form137')">📋 To be followed</button>
                                     <input type="hidden" name="tbf_form137" id="tbf_form137" value="">

@@ -332,7 +332,7 @@ $html = "
                 <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . (!empty($app_data['birth_cert_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Form 137</td><td class='row-value'>" . (!empty($app_data['form137_path']) ? '✓ Provided' : (!empty($app_data['tbf_form137']) ? '📋 To be followed' : '✗ Missing')) . "</td>
+                <td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . (!empty($app_data['form137_path']) ? '✓ Provided' : (!empty($app_data['tbf_form137']) ? '📋 To be followed' : '✗ Missing')) . "</td>
                 <td class='row-label'>NMAT Result</td><td class='row-value'>" . (!empty($app_data['nmat_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
             <tr>
@@ -383,7 +383,7 @@ unlink($temp_summary);
 $file_fields = [
     'Applicant Passport Photo' => $app_data['photo_path'],
     'Transcript of Records (TOR)' => $app_data['tor_path'],
-    'Form 137' => $app_data['form137_path'],
+    'Form 138 (Report Card)' => $app_data['form137_path'],
     'Birth Certificate (PSA)' => $app_data['birth_cert_path'],
     'NMAT Result' => $app_data['nmat_path'],
     'Diploma' => $app_data['diploma_path'],

@@ -75,10 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tel_no_mailing = filter_input(INPUT_POST, 'tel_no_mailing', FILTER_SANITIZE_SPECIAL_CHARS);
     $home_address = filter_input(INPUT_POST, 'home_address', FILTER_SANITIZE_SPECIAL_CHARS);
     $tel_no_home = filter_input(INPUT_POST, 'tel_no_home', FILTER_SANITIZE_SPECIAL_CHARS);
-    
+
     // Collect multiple social media selections
     $socmed_array = isset($_POST['social_media']) ? $_POST['social_media'] : [];
-    $social_media = implode(', ', array_map(function($val) {
+    $social_media = implode(', ', array_map(function ($val) {
         return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
     }, $socmed_array));
 
@@ -125,11 +125,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 family_name = ?, given_name = ?, middle_name = ?, college = ?, score_type = ?, score_value = ?, gwa_value = ?, nmat_date = ?, board_rating = ?, 
                 mailing_address = ?, mobile_no = ?, tel_no_mailing = ?, home_address = ?, tel_no_home = ?, social_media = ?
                 WHERE id = ?";
-            
+
             $stmt = $pdo->prepare($sql);
             $success = $stmt->execute([
-                $family_name, $given_name, $middle_name, $posted_college, $score_type, $score_val, $gwa_val, $nmat_date, $board_rating,
-                $mailing_address, $mobile_no, $tel_no_mailing, $home_address, $tel_no_home, $social_media, $app_id
+                $family_name,
+                $given_name,
+                $middle_name,
+                $posted_college,
+                $score_type,
+                $score_val,
+                $gwa_val,
+                $nmat_date,
+                $board_rating,
+                $mailing_address,
+                $mobile_no,
+                $tel_no_mailing,
+                $home_address,
+                $tel_no_home,
+                $social_media,
+                $app_id
             ]);
         } else {
             // Prepare the comprehensive INSERT statement for a new applicant.
@@ -140,8 +154,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare($sql);
             $success = $stmt->execute([
-                $family_name, $given_name, $middle_name, $email, $posted_college, $score_type, $score_val, $gwa_val, $nmat_date, $board_rating,
-                $mailing_address, $mobile_no, $tel_no_mailing, $home_address, $tel_no_home, $social_media
+                $family_name,
+                $given_name,
+                $middle_name,
+                $email,
+                $posted_college,
+                $score_type,
+                $score_val,
+                $gwa_val,
+                $nmat_date,
+                $board_rating,
+                $mailing_address,
+                $mobile_no,
+                $tel_no_mailing,
+                $home_address,
+                $tel_no_home,
+                $social_media
             ]);
             if ($success) {
                 $app_id = $pdo->lastInsertId();
@@ -291,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-<?php include 'contact_modal.php'; ?>
+    <?php include 'contact_modal.php'; ?>
 
     <div class="container py-5">
         <div class="logo-container">
@@ -422,48 +450,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input type="text" name="tel_no_home" class="form-control" placeholder="Optional">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label d-block mb-3">Social Media Accounts (Select all that apply)</label>
+                                    <label class="form-label d-block mb-3">Social Media Accounts (Select all that
+                                        apply)</label>
                                     <div class="row g-2">
                                         <div class="col-md-3 col-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="Facebook" id="smFB">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]"
+                                                    value="Facebook" id="smFB">
                                                 <label class="form-check-label small" for="smFB">Facebook</label>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="Instagram" id="smIG">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]"
+                                                    value="Instagram" id="smIG">
                                                 <label class="form-check-label small" for="smIG">Instagram</label>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="Twitter (X)" id="smTW">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]"
+                                                    value="Twitter (X)" id="smTW">
                                                 <label class="form-check-label small" for="smTW">Twitter (X)</label>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="LinkedIn" id="smLI">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]"
+                                                    value="LinkedIn" id="smLI">
                                                 <label class="form-check-label small" for="smLI">LinkedIn</label>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="TikTok" id="smTK">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]"
+                                                    value="TikTok" id="smTK">
                                                 <label class="form-check-label small" for="smTK">TikTok</label>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="social_media[]" value="YouTube" id="smYT">
+                                                <input class="form-check-input" type="checkbox" name="social_media[]"
+                                                    value="YouTube" id="smYT">
                                                 <label class="form-check-label small" for="smYT">YouTube</label>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-12">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text bg-light">Other</span>
-                                                <input type="text" name="social_media[]" class="form-control" placeholder="Specify platform...">
+                                                <input type="text" name="social_media[]" class="form-control"
+                                                    placeholder="Specify platform...">
                                             </div>
                                         </div>
                                     </div>
@@ -493,7 +529,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // This script saves form data to localStorage so it's not lost on refresh
         const formId = 'admissionStep1';
         const form = document.getElementById(formId);
-        
+
         // 1. Restore data on page load
         window.addEventListener('load', () => {
             const savedData = localStorage.getItem(formId);
@@ -525,7 +561,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
 
         // 3. Clear storage if user successfully moves to Step 2
-        <?php if(isset($_GET['clear_storage'])): ?>
+        <?php if (isset($_GET['clear_storage'])): ?>
             localStorage.removeItem(formId);
         <?php endif; ?>
 
@@ -597,6 +633,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
         });
+    </script>
 </body>
 
 </html>

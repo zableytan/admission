@@ -232,15 +232,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin viewing all departments
-    $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
+$order_clause = "ORDER BY created_at DESC";
+if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin or Dean viewing all departments
+    $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD
     if ($college === 'Medicine') {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') $order_clause");
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");
@@ -785,20 +786,29 @@ if ($submission_filter !== 'All') {
                         </div>
                         <div class="col-auto d-flex align-items-center flex-wrap gap-2">
                             <!-- Submission Filter Buttons -->
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Submission filter"
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Status filter"
                                 id="submissionFilter">
                                 <button type="button" class="btn btn-primary active" data-filter="all" id="filterAll">
-                                    <i class="bi bi-list-ul me-1"></i> All
+                                    <i class="bi bi-list-ul me-1"></i> Active
+                                </button>
+                                <button type="button" class="btn btn-outline-success" data-filter="accepted"
+                                    id="filterAccepted">
+                                    <i class="bi bi-check-circle me-1"></i> Accepted
                                 </button>
                                 <button type="button" class="btn btn-outline-success" data-filter="submitted"
                                     id="filterSubmitted">
-                                    <i class="bi bi-check-circle me-1"></i> Submitted
+                                    <i class="bi bi-file-earmark-check me-1"></i> Submitted
                                 </button>
                                 <button type="button" class="btn btn-outline-warning" data-filter="draft"
                                     id="filterDraft">
-                                    <i class="bi bi-pencil-square me-1"></i> Draft
+                                    <i class="bi bi-pencil-square me-1"></i> Drafts
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-filter="declined"
+                                    id="filterDeclined">
+                                    <i class="bi bi-archive me-1"></i> Archived
                                 </button>
                             </div>
+
                             <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>
                                 <button type="button" class="btn btn-danger btn-sm" id="btnDeleteSelected"
                                     style="display:none;" onclick="submitBulkDelete()">
@@ -836,6 +846,7 @@ if ($submission_filter !== 'All') {
                                     $is_submitted_row = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
                                     ?>
                                     <tr data-submission="<?= $is_submitted_row ? 'submitted' : 'draft' ?>"
+                                        data-status="<?= strtolower($app['status']) ?>"
                                         data-name="<?= htmlspecialchars(strtolower($app['given_name'] . ' ' . $app['family_name'] . ' ' . $app['email'])) ?>">
                                         <td class="ps-4">
                                             <div class="d-flex align-items-center">
@@ -1012,47 +1023,72 @@ if ($submission_filter !== 'All') {
 
             function applyFilters() {
                 const searchVal = (searchInput ? searchInput.value.toLowerCase().trim() : '');
-                const rows = document.querySelectorAll('#applicationsTableBody tr[data-submission]');
+                const rows = document.querySelectorAll('#applicationsTableBody tr[data-status]');
 
                 rows.forEach(row => {
-                    const submissionMatch = (activeFilter === 'all') || (row.dataset.submission === activeFilter);
+                    const status = row.dataset.status;
+                    const submission = row.dataset.submission;
+                    let match = false;
+
+                    switch (activeFilter) {
+                        case 'all': // "Active" view: Everything except Declined
+                            match = (status !== 'declined');
+                            break;
+                        case 'accepted':
+                            match = (status === 'accepted');
+                            break;
+                        case 'declined':
+                            match = (status === 'declined');
+                            break;
+                        case 'submitted':
+                            match = (status !== 'declined' && submission === 'submitted');
+                            break;
+                        case 'draft':
+                            match = (status !== 'declined' && submission === 'draft');
+                            break;
+                        default:
+                            match = true;
+                    }
+
                     const nameData = (row.dataset.name || '');
                     const searchMatch = !searchVal || nameData.includes(searchVal);
-                    row.style.display = (submissionMatch && searchMatch) ? '' : 'none';
+                    row.style.display = (match && searchMatch) ? '' : 'none';
                 });
 
                 // Show empty state if all rows hidden
                 const emptyRow = document.getElementById('emptyStateRow');
                 if (emptyRow) {
-                    const visibleRows = document.querySelectorAll('#applicationsTableBody tr[data-submission]:not([style*="display: none"])');
+                    const visibleRows = document.querySelectorAll('#applicationsTableBody tr:not([id="emptyStateRow"]):not([style*="display: none"])');
                     emptyRow.style.display = visibleRows.length === 0 ? '' : 'none';
                 }
             }
 
             filterBtns.forEach(btn => {
                 btn.addEventListener('click', function () {
+                    // Reset all buttons to outline variant
                     filterBtns.forEach(b => {
                         b.classList.remove('active');
-                        // Reset to outline variant when inactive
-                        if (b.dataset.filter === 'submitted') {
-                            b.className = b.className.replace('btn-success', 'btn-outline-success');
-                        } else if (b.dataset.filter === 'draft') {
-                            b.className = b.className.replace('btn-warning', 'btn-outline-warning');
-                        } else {
-                            b.className = b.className.replace('btn-primary', 'btn-outline-primary');
-                        }
+                        // Clean up classes
+                        b.classList.remove('btn-primary', 'btn-success', 'btn-warning', 'btn-secondary');
+                        // Restore outline variants
+                        const f = b.dataset.filter;
+                        if (f === 'all') b.classList.add('btn-outline-primary');
+                        else if (f === 'accepted' || f === 'submitted') b.classList.add('btn-outline-success');
+                        else if (f === 'draft') b.classList.add('btn-outline-warning');
+                        else if (f === 'declined') b.classList.add('btn-outline-secondary');
                     });
 
+                    // Set active button
                     this.classList.add('active');
-                    if (this.dataset.filter === 'submitted') {
-                        this.className = this.className.replace('btn-outline-success', 'btn-success');
-                    } else if (this.dataset.filter === 'draft') {
-                        this.className = this.className.replace('btn-outline-warning', 'btn-warning');
-                    } else {
-                        this.className = this.className.replace('btn-outline-primary', 'btn-primary');
-                    }
+                    this.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-warning', 'btn-outline-secondary');
+                    
+                    const f = this.dataset.filter;
+                    if (f === 'all') this.classList.add('btn-primary');
+                    else if (f === 'accepted' || f === 'submitted') this.classList.add('btn-success');
+                    else if (f === 'draft') this.classList.add('btn-warning');
+                    else if (f === 'declined') this.classList.add('btn-secondary');
 
-                    activeFilter = this.dataset.filter;
+                    activeFilter = f;
                     applyFilters();
                 });
             });
@@ -1060,6 +1096,9 @@ if ($submission_filter !== 'All') {
             if (searchInput) {
                 searchInput.addEventListener('input', applyFilters);
             }
+
+            // Initial call to hide Archived/Declined items on load
+            applyFilters();
         })();
         // ─────────────────────────────────────────────────────────────────────
         <?php if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']): ?>

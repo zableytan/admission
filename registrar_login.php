@@ -5,33 +5,25 @@ require 'db.php';
 // Handle Logout
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: admin_login.php");
+    header("Location: registrar_login.php");
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS);
     $password = $_POST['password'];
-    $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
 
-    $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ? AND is_registrar = 1");
     $stmt->execute([$username]);
-    $admin = $stmt->fetch();
+    $registrar = $stmt->fetch();
 
-    if ($admin && password_verify($password, $admin['password'])) {
-        // Double check college if not super admin or dean
-        if (!$admin['is_super_admin'] && !$admin['is_dean'] && $admin['college'] !== $college) {
-            $error = "Access denied: You are not authorized for the " . htmlspecialchars($college) . " department.";
-        } else {
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_college'] = ($admin['is_super_admin'] || $admin['is_dean']) ? $college : $admin['college'];
-            $_SESSION['is_super_admin'] = (bool)$admin['is_super_admin'];
-            $_SESSION['is_dean'] = (bool)$admin['is_dean'];
-            header("Location: admin_dashboard.php");
-            exit;
-        }
+    if ($registrar && password_verify($password, $registrar['password'])) {
+        $_SESSION['registrar_id'] = $registrar['id'];
+        $_SESSION['registrar_username'] = $registrar['username'];
+        header("Location: registrar_dashboard.php");
+        exit;
     } else {
-        $error = "Invalid username or password.";
+        $error = "Invalid registrar credentials.";
     }
 }
 ?>
@@ -41,14 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal Login - DMSF</title>
+    <title>Registrar Portal Login - DMSF</title>
     <link rel="icon" type="image/png" href="DMSF_Logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --primary-color: #1a237e; /* Deep Indigo */
-            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --primary-color: #196199;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #d6e4f0 100%);
         }
         body { 
             background: var(--bg-gradient);
@@ -100,9 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.3s;
         }
         .btn-login:hover {
-            background: #0d125a;
+            background: #124873;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(26, 35, 126, 0.3);
+            box-shadow: 0 5px 15px rgba(25, 97, 153, 0.3);
             color: white;
         }
         .footer-text {
@@ -118,8 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="login-card">
     <div class="login-header">
         <img src="DMSF_Logo.png" alt="DMSF Logo">
-        <h4 class="mb-0">Department Portal</h4>
-        <p class="small opacity-75 mb-0">Secure Administrator Access</p>
+        <h4 class="mb-0">Registrar Portal</h4>
+        <p class="small opacity-75 mb-0">Secure Verification Access</p>
     </div>
     <div class="login-body">
         <?php if(isset($error)): ?> 
@@ -131,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="form-label small fw-bold text-muted">USERNAME</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 rounded-start-10"><i class="bi bi-person text-muted"></i></span>
-                    <input type="text" name="username" class="form-control border-start-0 rounded-end-10 mb-0" required placeholder="Enter username">
+                    <input type="text" name="username" class="form-control border-start-0 rounded-end-10 mb-0" required placeholder="Enter registrar username">
                 </div>
             </div>
             <div class="mb-4">
@@ -141,27 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" name="password" class="form-control border-start-0 rounded-end-10 mb-0" required placeholder="Enter password">
                 </div>
             </div>
-            <div class="mb-4">
-                <label class="form-label small fw-bold text-muted">COLLECTIVE DEPARTMENT</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0 rounded-start-10"><i class="bi bi-building text-muted"></i></span>
-                    <select name="college" class="form-select border-start-0 rounded-end-10 mb-0" required>
-                        <option value="Medicine" selected>Doctor of Medicine (ALL)</option>
-                        <option value="Medicine (Filipino)">Doctor of Medicine (Filipino)</option>
-                        <option value="Medicine (Foreign)">Doctor of Medicine (Foreign)</option>
-                        <option value="Nursing">BS in Nursing</option>
-                        <option value="Dentistry">Doctor of Dental Medicine</option>
-                        <option value="Midwifery">BS in Midwifery</option>
-                        <option value="Biology">BS in Biology</option>
-                        <option value="Master in Community Health">Master in Community Health</option>
-                        <option value="Master in Health Professions Education">Master in Health Professions Education</option>
-                        <option value="Master in Participatory Development">Master in Participatory Development</option>
-                        <option value="Accelerated Pathway for Medicine">Accelerated Pathway for Medicine</option>
-                    </select>
-                </div>
-            </div>
             <button type="submit" class="btn btn-login w-100 shadow-sm">
-                Login to Dashboard
+                Login to Registrar Portal
             </button>
         </form>
         <div class="footer-text">

@@ -28,6 +28,7 @@ if (isset($_GET['college']) && (isset($_SESSION['is_super_admin']) && $_SESSION[
 // Handle Submission Type Filtering
 $submission_filter = isset($_GET['submission_type']) ? $_GET['submission_type'] : 'All';
 
+$submission_filter = isset($_GET['submission_type']) ? filter_input(INPUT_GET, 'submission_type', FILTER_SANITIZE_SPECIAL_CHARS) : 'All';
 $msg = '';
 
 // Check if user is high-level (Super Admin or Dean)
@@ -222,14 +223,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $i_date = $_POST['interview_date'];
     $i_time = $_POST['interview_time'];
     $i_link = $_POST['interview_link'];
-    $i_type = $_POST['interview_type'];
 
     try {
         // Update database - using ignore error for columns because we'll add them if missing
         try {
-            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_type = ?, interview_status = 'Scheduled' WHERE id = ?";
+            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_status = 'Scheduled' WHERE id = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$i_date, $i_time, $i_link, $i_type, $app_id]);
+            $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
         } catch (PDOException $e) {
             // Check if columns exist, if not add them (Self-healing migration)
             if (strpos($e->getMessage(), 'Unknown column') !== false) {
@@ -237,11 +237,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     ADD COLUMN interview_date DATE NULL,
                     ADD COLUMN interview_time TIME NULL,
                     ADD COLUMN interview_link TEXT NULL,
-                    ADD COLUMN interview_type VARCHAR(50) DEFAULT 'Online',
                     ADD COLUMN interview_status VARCHAR(50) DEFAULT 'Not Scheduled'");
                 // Retry update
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$i_date, $i_time, $i_link, $i_type, $app_id]);
+                $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
             } else {
                 throw $e;
             }
@@ -289,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <p style='margin: 5px 0;'><strong>Interview Type:</strong> $i_type</p>
                 <p style='margin: 5px 0;'><strong>Date:</strong> $formatted_date</p>
                 <p style='margin: 5px 0;'><strong>Time:</strong> $formatted_time</p>
-                <p style='margin: 5px 0;'><strong>" . ($i_type === 'Face to Face' ? 'Venue' : 'Meeting Link') . ":</strong> " . ($i_type === 'Online' ? "<a href='$i_link' style='color: #007bff;'>$i_link</a>" : "$i_link") . "</p>
+                <p style='margin: 5px 0;'><strong>Meeting Link:</strong> <a href='$i_link' style='color: #007bff;'>$i_link</a></p>
             </div>
             <p>" . ($i_type === 'Face to Face' ? 'Please ensure you are at the venue at least 15 minutes before your scheduled time and bring a valid ID.' : 'Please ensure you have a stable internet connection and are present in the virtual meeting room at least 5 minutes before your scheduled time.') . "</p>
             <p>Should you have any questions or need to reschedule, please contact the <strong>" . $current_admin['college'] . "</strong> department.</p>
@@ -330,9 +329,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-$order_clause = "ORDER BY is_submitted DESC, created_at DESC";
+<<<<<<< HEAD
+$order_clause = "ORDER BY created_at DESC";
 if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
     // Super Admin or Dean viewing all departments
+=======
+$order_clause = "ORDER BY is_submitted DESC, created_at DESC";
+
+if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin viewing all departments
+>>>>>>> 98413a174019cb93cb722e3b2ba3d9a59faaef86
     $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
@@ -1051,7 +1057,7 @@ if ($submission_filter !== 'All') {
                                         <td class="pe-4">
                                             <?php 
                                             $is_submitted_current = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
-                                            if ($app['status'] == 'Pending' && $is_submitted_current && !(isset($_SESSION['is_dean']) && $_SESSION['is_dean'])): ?>
+                                            if ($app['status'] == 'Pending' && $is_submitted_current && ( (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || !(isset($_SESSION['is_dean']) && $_SESSION['is_dean']) )): ?>
                                                 <div class="mb-3">
                                                     <button type="button" class="btn btn-outline-primary btn-sm w-100 fw-bold shadow-sm"
                                                         onclick="openInterviewModal(<?= $app['id'] ?>, '<?= htmlspecialchars($app['email']) ?>', '<?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?>')">
@@ -1170,6 +1176,14 @@ if ($submission_filter !== 'All') {
                                            placeholder="https://zoom.us/j/..." required>
                                 </div>
                                 <div class="form-text mt-2 small" id="linkFieldHelp">This link will be included in the invitation email.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Meeting ID / Code (Optional)</label>
+                                <input type="text" name="interview_code" class="form-control rounded-3" placeholder="e.g. 123 456 789">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Passcode / Password (Optional)</label>
+                                <input type="text" name="interview_password" class="form-control rounded-3" placeholder="e.g. 987654">
                             </div>
                         </div>
                     </div>

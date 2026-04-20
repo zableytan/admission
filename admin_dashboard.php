@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $admin_stmt = $pdo->prepare("SELECT * FROM admins WHERE id = ?");
         $admin_stmt->execute([$admin_id]);
         $current_admin = $admin_stmt->fetch();
-        
+
         // Split admin emails if multiple
         $admin_email_primary = explode(',', $current_admin['email'])[0];
 
@@ -275,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         $mail->isHTML(true);
         $mail->Subject = "Interview Invitation: DMSF Admission";
-        
+
         $formatted_date = date('F d, Y', strtotime($i_date));
         $formatted_time = date('h:i A', strtotime($i_time));
 
@@ -329,16 +329,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-<<<<<<< HEAD
-$order_clause = "ORDER BY created_at DESC";
-if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin or Dean viewing all departments
-=======
 $order_clause = "ORDER BY is_submitted DESC, created_at DESC";
 
-if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin viewing all departments
->>>>>>> 98413a174019cb93cb722e3b2ba3d9a59faaef86
+if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
+    // Super Admin or Dean viewing all departments
     $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
@@ -1000,10 +994,13 @@ if ($submission_filter !== 'All') {
                                             </span>
                                             <?php if (isset($app['interview_status']) && $app['interview_status'] === 'Scheduled'): ?>
                                                 <div class="mt-2 text-center">
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small py-1 px-2" 
-                                                          title="<?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'Venue' : 'Link' ?>: <?= htmlspecialchars($app['interview_link']) ?>">
-                                                        <i class="bi bi-<?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'geo-alt' : 'calendar-check' ?> me-1"></i> 
-                                                        <?= strtoupper($app['interview_type'] ?? 'Online') ?>: <?= date('M d, h:i A', strtotime($app['interview_date'] . ' ' . $app['interview_time'])) ?>
+                                                    <span
+                                                        class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small py-1 px-2"
+                                                        title="<?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'Venue' : 'Link' ?>: <?= htmlspecialchars($app['interview_link']) ?>">
+                                                        <i
+                                                            class="bi bi-<?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'geo-alt' : 'calendar-check' ?> me-1"></i>
+                                                        <?= strtoupper($app['interview_type'] ?? 'Online') ?>:
+                                                        <?= date('M d, h:i A', strtotime($app['interview_date'] . ' ' . $app['interview_time'])) ?>
                                                     </span>
                                                 </div>
                                             <?php endif; ?>
@@ -1055,16 +1052,17 @@ if ($submission_filter !== 'All') {
                                             </div>
                                         </td>
                                         <td class="pe-4">
-                                            <?php 
+                                            <?php
                                             $is_submitted_current = (isset($app['is_submitted']) && $app['is_submitted']) || !empty($app['record_pdf_path']);
-                                            if ($app['status'] == 'Pending' && $is_submitted_current && ( (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || !(isset($_SESSION['is_dean']) && $_SESSION['is_dean']) )): ?>
+                                            if ($app['status'] == 'Pending' && $is_submitted_current && ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || !(isset($_SESSION['is_dean']) && $_SESSION['is_dean']))): ?>
                                                 <div class="mb-3">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 fw-bold shadow-sm"
+                                                    <button type="button"
+                                                        class="btn btn-outline-primary btn-sm w-100 fw-bold shadow-sm"
                                                         onclick="openInterviewModal(<?= $app['id'] ?>, '<?= htmlspecialchars($app['email']) ?>', '<?= htmlspecialchars($app['given_name'] . ' ' . $app['family_name']) ?>')">
                                                         <i class="bi bi-calendar-event me-1"></i> SET INTERVIEW
                                                     </button>
                                                 </div>
-                                                
+
                                                 <form method="POST" enctype="multipart/form-data" class="action-form">
                                                     <input type="hidden" name="app_id" value="<?= $app['id'] ?>">
                                                     <input type="hidden" name="student_email" value="<?= $app['email'] ?>">
@@ -1151,11 +1149,14 @@ if ($submission_filter !== 'All') {
                                 <label class="form-label small fw-bold text-uppercase text-muted">Interview Type</label>
                                 <div class="d-flex gap-3">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="interview_type" id="typeOnline" value="Online" checked onclick="updateInterviewLinkField('Online')">
+                                        <input class="form-check-input" type="radio" name="interview_type"
+                                            id="typeOnline" value="Online" checked
+                                            onclick="updateInterviewLinkField('Online')">
                                         <label class="form-check-label" for="typeOnline">Online</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="interview_type" id="typeF2F" value="Face to Face" onclick="updateInterviewLinkField('Face to Face')">
+                                        <input class="form-check-input" type="radio" name="interview_type" id="typeF2F"
+                                            value="Face to Face" onclick="updateInterviewLinkField('Face to Face')">
                                         <label class="form-check-label" for="typeF2F">Face to Face</label>
                                     </div>
                                 </div>
@@ -1169,26 +1170,35 @@ if ($submission_filter !== 'All') {
                                 <input type="time" name="interview_time" class="form-control rounded-3" required>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-uppercase text-muted" id="linkFieldLabel">Meeting Link (Zoom/Google Meet)</label>
+                                <label class="form-label small fw-bold text-uppercase text-muted"
+                                    id="linkFieldLabel">Meeting Link (Zoom/Google Meet)</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0" id="linkFieldIcon"><i class="bi bi-link-45deg"></i></span>
-                                    <input type="text" name="interview_link" id="interviewLinkInput" class="form-control border-start-0 rounded-end-3" 
-                                           placeholder="https://zoom.us/j/..." required>
+                                    <span class="input-group-text bg-white border-end-0" id="linkFieldIcon"><i
+                                            class="bi bi-link-45deg"></i></span>
+                                    <input type="text" name="interview_link" id="interviewLinkInput"
+                                        class="form-control border-start-0 rounded-end-3"
+                                        placeholder="https://zoom.us/j/..." required>
                                 </div>
-                                <div class="form-text mt-2 small" id="linkFieldHelp">This link will be included in the invitation email.</div>
+                                <div class="form-text mt-2 small" id="linkFieldHelp">This link will be included in the
+                                    invitation email.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-uppercase text-muted">Meeting ID / Code (Optional)</label>
-                                <input type="text" name="interview_code" class="form-control rounded-3" placeholder="e.g. 123 456 789">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Meeting ID / Code
+                                    (Optional)</label>
+                                <input type="text" name="interview_code" class="form-control rounded-3"
+                                    placeholder="e.g. 123 456 789">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-uppercase text-muted">Passcode / Password (Optional)</label>
-                                <input type="text" name="interview_password" class="form-control rounded-3" placeholder="e.g. 987654">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Passcode / Password
+                                    (Optional)</label>
+                                <input type="text" name="interview_password" class="form-control rounded-3"
+                                    placeholder="e.g. 987654">
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer border-0 p-4 pt-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-light rounded-pill px-4"
+                            data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
                             <i class="bi bi-send me-2"></i>Send Schedule
                         </button>
@@ -1300,7 +1310,7 @@ if ($submission_filter !== 'All') {
                     // Set active button
                     this.classList.add('active');
                     this.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-warning', 'btn-outline-secondary');
-                    
+
                     const f = this.dataset.filter;
                     if (f === 'all') this.classList.add('btn-primary');
                     else if (f === 'accepted' || f === 'submitted') this.classList.add('btn-success');

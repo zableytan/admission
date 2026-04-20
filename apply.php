@@ -53,7 +53,7 @@ if ($is_medicine) {
     $score_field_name = "nmat_score";
     $score_placeholder = "Enter NMAT Percentile Rank (e.g., 90)";
 } else {
-    $score_label = ($college === 'All Colleges') ? "College GWA / NMAT Score" : "College GWA";
+    $score_label = ($college === 'All Colleges') ? "General Weighted Average (GWA) / NMAT Score" : "General Weighted Average (GWA)";
     $score_field_name = "gwa_score";
     $score_placeholder = ($college === 'All Colleges') ? "Enter your highest score (GWA or NMAT)" : "Enter General Weighted Average (e.g., 1.75)";
 }

@@ -44,7 +44,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Security Check
-if (!isset($_SESSION['admin_id'])) {
+if (!isset($_SESSION['admin_id']) && !isset($_SESSION['registrar_id'])) {
     die("Unauthorized access. Please log in again.");
 }
 

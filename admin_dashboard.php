@@ -25,6 +25,9 @@ if (isset($_GET['college']) && (isset($_SESSION['is_super_admin']) && $_SESSION[
     }
 }
 
+// Handle Submission Type Filtering
+$submission_filter = isset($_GET['submission_type']) ? $_GET['submission_type'] : 'All';
+
 $msg = '';
 
 // Check if user is high-level (Super Admin or Dean)
@@ -219,13 +222,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $i_date = $_POST['interview_date'];
     $i_time = $_POST['interview_time'];
     $i_link = $_POST['interview_link'];
+    $i_type = $_POST['interview_type'];
 
     try {
         // Update database - using ignore error for columns because we'll add them if missing
         try {
-            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_status = 'Scheduled' WHERE id = ?";
+            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_type = ?, interview_status = 'Scheduled' WHERE id = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+            $stmt->execute([$i_date, $i_time, $i_link, $i_type, $app_id]);
         } catch (PDOException $e) {
             // Check if columns exist, if not add them (Self-healing migration)
             if (strpos($e->getMessage(), 'Unknown column') !== false) {
@@ -233,10 +237,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     ADD COLUMN interview_date DATE NULL,
                     ADD COLUMN interview_time TIME NULL,
                     ADD COLUMN interview_link TEXT NULL,
+                    ADD COLUMN interview_type VARCHAR(50) DEFAULT 'Online',
                     ADD COLUMN interview_status VARCHAR(50) DEFAULT 'Not Scheduled'");
                 // Retry update
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+                $stmt->execute([$i_date, $i_time, $i_link, $i_type, $app_id]);
             } else {
                 throw $e;
             }
@@ -281,11 +286,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <p>Dear Applicant,</p>
             <p>We are pleased to invite you for an interview as part of your application process at <strong>Davao Medical School Foundation, Inc.</strong></p>
             <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #1a237e; margin: 20px 0;'>
+                <p style='margin: 5px 0;'><strong>Interview Type:</strong> $i_type</p>
                 <p style='margin: 5px 0;'><strong>Date:</strong> $formatted_date</p>
                 <p style='margin: 5px 0;'><strong>Time:</strong> $formatted_time</p>
-                <p style='margin: 5px 0;'><strong>Meeting Link:</strong> <a href='$i_link' style='color: #007bff;'>$i_link</a></p>
+                <p style='margin: 5px 0;'><strong>" . ($i_type === 'Face to Face' ? 'Venue' : 'Meeting Link') . ":</strong> " . ($i_type === 'Online' ? "<a href='$i_link' style='color: #007bff;'>$i_link</a>" : "$i_link") . "</p>
             </div>
-            <p>Please ensure you have a stable internet connection and are present in the virtual meeting room at least 5 minutes before your scheduled time.</p>
+            <p>" . ($i_type === 'Face to Face' ? 'Please ensure you are at the venue at least 15 minutes before your scheduled time and bring a valid ID.' : 'Please ensure you have a stable internet connection and are present in the virtual meeting room at least 5 minutes before your scheduled time.') . "</p>
             <p>Should you have any questions or need to reschedule, please contact the <strong>" . $current_admin['college'] . "</strong> department.</p>
             <br>
             <p>Best Regards,</p>
@@ -324,27 +330,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-<<<<<<< HEAD
-$order_clause = "ORDER BY created_at DESC";
+$order_clause = "ORDER BY is_submitted DESC, created_at DESC";
 if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
     // Super Admin or Dean viewing all departments
-=======
-$order_clause = "ORDER BY is_submitted DESC, created_at DESC";
-
-if (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] && ($college === 'All' || $college === '' || $college === null)) {
-    // Super Admin viewing all departments
->>>>>>> 98413a174019cb93cb722e3b2ba3d9a59faaef86
     $stmt = $pdo->query("SELECT * FROM applications $order_clause");
     $applications = $stmt->fetchAll();
 } else {
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD, but EXCLUDE Accelerated Pathway
     if ($college === 'Medicine') {
-<<<<<<< HEAD
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE '%Medicine%' OR college LIKE '%All Colleges%') $order_clause");
-=======
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') $order_clause");
->>>>>>> 98413a174019cb93cb722e3b2ba3d9a59faaef86
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");
@@ -1000,8 +995,9 @@ if ($submission_filter !== 'All') {
                                             <?php if (isset($app['interview_status']) && $app['interview_status'] === 'Scheduled'): ?>
                                                 <div class="mt-2 text-center">
                                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small py-1 px-2" 
-                                                          title="Link: <?= $app['interview_link'] ?>">
-                                                        <i class="bi bi-calendar-check me-1"></i> Interview: <?= date('M d, H:i', strtotime($app['interview_date'] . ' ' . $app['interview_time'])) ?>
+                                                          title="<?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'Venue' : 'Link' ?>: <?= htmlspecialchars($app['interview_link']) ?>">
+                                                        <i class="bi bi-<?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'geo-alt' : 'calendar-check' ?> me-1"></i> 
+                                                        <?= strtoupper($app['interview_type'] ?? 'Online') ?>: <?= date('M d, h:i A', strtotime($app['interview_date'] . ' ' . $app['interview_time'])) ?>
                                                     </span>
                                                 </div>
                                             <?php endif; ?>
@@ -1145,6 +1141,19 @@ if ($submission_filter !== 'All') {
                             <span class="h6 fw-bold text-primary mb-0" id="interviewStudentName"></span>
                         </div>
                         <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Interview Type</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="interview_type" id="typeOnline" value="Online" checked onclick="updateInterviewLinkField('Online')">
+                                        <label class="form-check-label" for="typeOnline">Online</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="interview_type" id="typeF2F" value="Face to Face" onclick="updateInterviewLinkField('Face to Face')">
+                                        <label class="form-check-label" for="typeF2F">Face to Face</label>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-uppercase text-muted">Date</label>
                                 <input type="date" name="interview_date" class="form-control rounded-3" required>
@@ -1154,13 +1163,13 @@ if ($submission_filter !== 'All') {
                                 <input type="time" name="interview_time" class="form-control rounded-3" required>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-uppercase text-muted">Meeting Link (Zoom/Google Meet)</label>
+                                <label class="form-label small fw-bold text-uppercase text-muted" id="linkFieldLabel">Meeting Link (Zoom/Google Meet)</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-link-45deg"></i></span>
-                                    <input type="url" name="interview_link" class="form-control border-start-0 rounded-end-3" 
+                                    <span class="input-group-text bg-white border-end-0" id="linkFieldIcon"><i class="bi bi-link-45deg"></i></span>
+                                    <input type="text" name="interview_link" id="interviewLinkInput" class="form-control border-start-0 rounded-end-3" 
                                            placeholder="https://zoom.us/j/..." required>
                                 </div>
-                                <div class="form-text mt-2 small">This link will be included in the invitation email.</div>
+                                <div class="form-text mt-2 small" id="linkFieldHelp">This link will be included in the invitation email.</div>
                             </div>
                         </div>
                     </div>
@@ -1188,6 +1197,27 @@ if ($submission_filter !== 'All') {
             document.getElementById('interviewStudentEmail').value = email;
             document.getElementById('interviewStudentName').innerText = name;
             interviewModal.show();
+        }
+
+        function updateInterviewLinkField(type) {
+            const label = document.getElementById('linkFieldLabel');
+            const placeholder = document.getElementById('interviewLinkInput');
+            const help = document.getElementById('linkFieldHelp');
+            const icon = document.getElementById('linkFieldIcon');
+
+            if (type === 'Face to Face') {
+                label.innerText = 'Venue / Room Number';
+                placeholder.placeholder = 'e.g. Dean\'s Office, 2nd Floor';
+                placeholder.type = 'text';
+                help.innerText = 'The physical location for the interview.';
+                icon.innerHTML = '<i class="bi bi-geo-alt"></i>';
+            } else {
+                label.innerText = 'Meeting Link (Zoom/Google Meet)';
+                placeholder.placeholder = 'https://zoom.us/j/...';
+                placeholder.type = 'url';
+                help.innerText = 'This link will be included in the invitation email.';
+                icon.innerHTML = '<i class="bi bi-link-45deg"></i>';
+            }
         }
 
         // ── Submission Filter & Search ────────────────────────────────────────

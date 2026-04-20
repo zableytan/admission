@@ -112,6 +112,13 @@ foreach ($applications as $app) {
             font-size: 0.8rem;
             color: #95a5a6;
         }
+        
+        .dropdown-icon {
+            transition: transform 0.3s ease;
+        }
+        [aria-expanded="true"] .dropdown-icon {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -167,21 +174,30 @@ foreach ($applications as $app) {
                 </div>
             <?php endif; ?>
 
-            <?php foreach ($grouped_apps as $college_name => $apps): ?>
+            <?php 
+                $college_index = 0;
+                foreach ($grouped_apps as $college_name => $apps): 
+                $college_index++;
+                $collapse_id = "collapse_college_" . $college_index;
+            ?>
                 <div class="college-section mb-5">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary text-white rounded-3 p-2 me-3">
+                    <div class="d-flex align-items-center mb-3 p-2 rounded-3 hover-bg-light" style="cursor: pointer; transition: background 0.2s;" data-bs-toggle="collapse" data-bs-target="#<?= $collapse_id ?>" aria-expanded="false" aria-controls="<?= $collapse_id ?>">
+                        <div class="bg-primary text-white rounded-3 p-2 me-3 shadow-sm">
                             <i class="bi bi-mortarboard-fill h4 mb-0"></i>
                         </div>
-                        <div>
+                        <div class="flex-grow-1">
                             <h4 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($college_name) ?></h4>
                             <span class="text-muted small fw-semibold text-uppercase"><?= count($apps) ?> Accepted Student(s)</span>
                         </div>
+                        <div class="text-secondary pe-2">
+                            <i class="bi bi-chevron-down fs-5 dropdown-icon"></i>
+                        </div>
                     </div>
                     
-                    <div class="card shadow-sm overflow-hidden">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
+                    <div class="collapse" id="<?= $collapse_id ?>">
+                        <div class="card shadow-sm overflow-hidden border-0 border-top border-primary border-4 rounded-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead>
                                         <tr>
@@ -261,6 +277,7 @@ foreach ($applications as $app) {
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -329,6 +346,7 @@ foreach ($applications as $app) {
             
             sections.forEach(section => {
                 const rows = section.querySelectorAll('.applicant-row');
+                const collapseDiv = section.querySelector('.collapse');
                 let visibleRowsInSection = 0;
                 
                 rows.forEach(row => {
@@ -341,6 +359,14 @@ foreach ($applications as $app) {
                         row.style.display = 'none';
                     }
                 });
+
+                // Auto-expand section if searching and there are matches
+                if (searchText && visibleRowsInSection > 0) {
+                    if (collapseDiv && !collapseDiv.classList.contains('show')) {
+                        const bsCollapse = new bootstrap.Collapse(collapseDiv, { toggle: false });
+                        bsCollapse.show();
+                    }
+                }
 
                 // Hide the whole section if no rows match
                 if (visibleRowsInSection === 0) {

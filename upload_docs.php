@@ -89,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tbf_tor       = isset($_POST['tbf_tor'])       ? 1 : 0;
     $tbf_form137   = isset($_POST['tbf_form137'])   ? 1 : 0;
     $tbf_diploma   = isset($_POST['tbf_diploma'])   ? 1 : 0;
+    $tbf_gwa       = isset($_POST['tbf_gwa'])       ? 1 : 0;
     $tbf_good_moral = isset($_POST['tbf_good_moral']) ? 1 : 0;
 
     // Handle multiple "other" docs
@@ -111,32 +112,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $sql = "UPDATE applications SET
             photo_path=?, tor_path=?, tbf_tor=?, form137_path=?, tbf_form137=?, birth_cert_path=?, nmat_path=?,
-            diploma_path=?, tbf_diploma=?, gwa_cert_path=?, entrance_exam_path=?, receipt_path=?,
+            diploma_path=?, tbf_diploma=?, gwa_cert_path=?, tbf_gwa=?, entrance_exam_path=?, receipt_path=?,
             good_moral_path=?, tbf_good_moral=?, passport_path=?, other_docs_paths=?, is_submitted=1
             WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $photo_path,
-            $tor_path,
-            $tbf_tor,
-            $form137_path,
-            $tbf_form137,
-            $birth_cert_path,
-            $nmat_path,
-            $diploma_path,
-            $tbf_diploma,
-            $gwa_path,
-            null,
-            null,
-            $good_moral_path,
-            $tbf_good_moral,
-            $passport_path,
-            $other_docs_paths,
-            $app_id
-        ]);
+        
+        $execute_params = [
+            $photo_path, $tor_path, $tbf_tor, $form137_path, $tbf_form137, $birth_cert_path, $nmat_path,
+            $diploma_path, $tbf_diploma, $gwa_path, $tbf_gwa, null, null,
+            $good_moral_path, $tbf_good_moral, $passport_path, $other_docs_paths, $app_id
+        ];
+
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($execute_params);
+        } catch (PDOException $e) {
+            // Self-healing: if column tbf_gwa is missing, add it
+            if (strpos($e->getMessage(), 'Unknown column \'tbf_gwa\'') !== false) {
+                $pdo->exec("ALTER TABLE applications ADD COLUMN tbf_gwa TINYINT(1) NOT NULL DEFAULT 0 AFTER gwa_cert_path");
+                // Retry
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($execute_params);
+            } else {
+                throw $e;
+            }
+        }
     } catch (PDOException $e) {
         error_log("Database Error in Step 5 initial update: " . $e->getMessage());
-        // We continue to try generating PDF and sending email if possible
     }
 
     // 3. EMAIL NOTIFICATION TO ADMINS
@@ -944,10 +945,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-calculator upload-icon"></i>
-                                    <label class="form-label mb-0">7. General Weighted Average in College <span
-                                            class="required-badge">Required</span></label>
+                                    <label class="form-label mb-0">7. General Weighted Average (GWA)
+                                        <span class="optional-badge">Optional</span></label>
+                                    <button type="button" class="btn-tbf ms-auto" id="tbf-gwa-btn" onclick="toggleTBF('gwa')">📋 To be followed</button>
+                                    <input type="hidden" name="tbf_gwa" id="tbf_gwa" value="">
                                 </div>
-                                <input type="file" name="gwa_file" class="form-control" required>
+                                <div class="tbf-file-area" id="tbf-gwa-area">
+                                    <input type="file" name="gwa_file" class="form-control" id="gwa_file">
+                                </div>
                             </div>
 
                             <!-- Document: Good Moral -->
@@ -1041,7 +1046,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'));
 
         // TBF toggle logic
-        const tbfDocs = ['tor', 'form137', 'diploma', 'good_moral'];
+        const tbfDocs = ['tor', 'form137', 'diploma', 'gwa', 'good_moral'];
         const tbfState = {};
         tbfDocs.forEach(key => tbfState[key] = false);
 

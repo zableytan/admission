@@ -3,13 +3,15 @@ session_start();
 require 'db.php';
 
 // Security Check
-if (!isset($_SESSION['admin_id'])) {
-    header("Location: admin_login.php");
+if (!isset($_SESSION['admin_id']) && !isset($_SESSION['registrar_id'])) {
+    header("Location: index.php");
     exit;
 }
 
+$back_url = isset($_SESSION['registrar_id']) && !isset($_SESSION['admin_id']) ? 'registrar_dashboard.php' : 'admin_dashboard.php';
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header("Location: admin_dashboard.php");
+    header("Location: " . $back_url);
     exit;
 }
 
@@ -21,7 +23,7 @@ $stmt->execute([$app_id]);
 $app = $stmt->fetch();
 
 if (!$app) {
-    header("Location: admin_dashboard.php");
+    header("Location: " . $back_url);
     exit;
 }
 
@@ -30,7 +32,7 @@ $admin_college = $_SESSION['admin_college'] ?? '';
 $is_super = $_SESSION['is_super_admin'] ?? false;
 if (!$is_super && $admin_college === 'Medicine') {
     if (strpos($app['college'], 'Accelerated Pathway') !== false) {
-        header("Location: admin_dashboard.php");
+        header("Location: " . $back_url);
         exit;
     }
 }
@@ -75,7 +77,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="admin_dashboard.php" class="btn btn-link text-decoration-none p-0 mb-2">← Back to Dashboard</a>
+            <a href="<?= $back_url ?>" class="btn btn-link text-decoration-none p-0 mb-2">← Back to Dashboard</a>
             <h2 class="fw-bold mb-0"><?= $student_name ?></h2>
             <p class="text-muted">Application ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?> | 
                 <span class="<?= $app['college'] === 'All Colleges' ? 'badge bg-primary rounded-pill px-2' : '' ?>">
@@ -427,7 +429,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="fw-bold text-dark">GWA Certificate</div>
                             <div class="small text-muted">General Weighted Average</div>
                         </div>
-                        <?= getFileLink($app['gwa_cert_path'], 'GWA') ?>
+                        <?= getFileLink($app['gwa_cert_path'], 'GWA', $app['tbf_gwa'] ?? 0) ?>
                     </div>
 
                     <div class="doc-item">
@@ -474,6 +476,34 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         <div class="label">Last Updated</div>
                         <div class="fw-bold small"><?= date('F d, Y h:i A', strtotime($app['updated_at'])) ?></div>
                     </div>
+                    <hr>
+                    <div class="label mb-2">Interview Information</div>
+                    <?php if($app['interview_status'] === 'Scheduled'): ?>
+                        <div class="p-3 bg-light rounded-3 mb-3 border-start border-primary border-4">
+                            <div class="label mb-1">Status</div>
+                            <div class="value small mb-2 text-primary fw-bold">SCHEDULED</div>
+                            
+                            <div class="label mb-1">Type</div>
+                            <div class="value small mb-2"><?= htmlspecialchars($app['interview_type'] ?? 'Online') ?></div>
+                            
+                            <div class="label mb-1">Date & Time</div>
+                            <div class="value small mb-2"><?= date('F d, Y', strtotime($app['interview_date'])) ?> at <?= date('h:i A', strtotime($app['interview_time'])) ?></div>
+                            
+                            <div class="label mb-1"><?= ($app['interview_type'] ?? 'Online') === 'Face to Face' ? 'Venue' : 'Meeting Link' ?></div>
+                            <div class="value small mb-0 text-break">
+                                <?php if(($app['interview_type'] ?? 'Online') === 'Face to Face'): ?>
+                                    <?= htmlspecialchars($app['interview_link']) ?>
+                                <?php else: ?>
+                                    <a href="<?= htmlspecialchars($app['interview_link']) ?>" target="_blank" class="text-primary text-decoration-none">
+                                        <i class="bi bi-link-45deg"></i> Join Meeting
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-light border small py-2">No interview scheduled yet.</div>
+                    <?php endif; ?>
+
                     <hr>
                     <div class="label mb-2">Decision Actions</div>
                     <?php if($app['status'] == 'Pending'): ?>

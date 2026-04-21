@@ -161,7 +161,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="label">Score (<?= $app['score_type'] ?>)</div>
                             <div class="value badge bg-light text-dark fs-6"><?= $app['score_value'] ?></div>
                         </div>
-                        <?php if(strpos($app['college'], 'Medicine') !== false): ?>
+                        <?php if(strpos($app['college'], 'Medicine') !== false && strpos($app['college'], 'Accelerated Pathway') === false): ?>
                         <div class="col-md-4">
                             <div class="label">NMAT Percentile</div>
                             <div class="value text-danger fs-5"><?= $app['score_value'] ?></div>
@@ -406,7 +406,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         <?= getFileLink($app['birth_cert_path'], 'Birth Cert') ?>
                     </div>
 
-                    <?php if(strpos($app['college'], 'Medicine') !== false): ?>
+                    <?php if(strpos($app['college'], 'Medicine') !== false && strpos($app['college'], 'Accelerated Pathway') === false): ?>
                     <div class="doc-item">
                         <div>
                             <div class="fw-bold text-dark">NMAT Result</div>

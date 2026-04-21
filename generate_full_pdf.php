@@ -333,7 +333,7 @@ $html = "
             </tr>
             <tr>
                 <td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . (!empty($app_data['form137_path']) ? '✓ Provided' : (!empty($app_data['tbf_form137']) ? '📋 To be followed' : '✗ Missing')) . "</td>
-                <td class='row-label'>NMAT Result</td><td class='row-value'>" . (!empty($app_data['nmat_path']) ? '✓ Provided' : '✗ Missing') . "</td>
+                " . (strpos($app_data['college'], 'Medicine') !== false && strpos($app_data['college'], 'Accelerated Pathway') === false ? "<td class='row-label'>NMAT Result</td><td class='row-value'>" . (!empty($app_data['nmat_path']) ? '✓ Provided' : '✗ Missing') . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
             </tr>
             <tr>
                 <td class='row-label'>Diploma</td><td class='row-value'>" . (!empty($app_data['diploma_path']) ? '✓ Provided' : (!empty($app_data['tbf_diploma']) ? '📋 To be followed' : '✗ Missing')) . "</td>
@@ -384,8 +384,14 @@ $file_fields = [
     'Applicant Passport Photo' => $app_data['photo_path'],
     'Transcript of Records (TOR)' => $app_data['tor_path'],
     'Form 138 (Report Card)' => $app_data['form137_path'],
-    'Birth Certificate (PSA)' => $app_data['birth_cert_path'],
-    'NMAT Result' => $app_data['nmat_path'],
+    'Birth Certificate (PSA)' => $app_data['birth_cert_path']
+];
+
+if (strpos($app_data['college'], 'Medicine') !== false && strpos($app_data['college'], 'Accelerated Pathway') === false) {
+    $file_fields['NMAT Result'] = $app_data['nmat_path'];
+}
+
+$file_fields += [
     'Diploma' => $app_data['diploma_path'],
     'GWA Certificate' => $app_data['gwa_cert_path'],
     'Good Moral Character' => $app_data['good_moral_path']

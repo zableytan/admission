@@ -419,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
                 <tr>
                     <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . ($birth_cert_path ? '✓ Provided' : '✗ Missing') . "</td>
-                    <td class='row-label'>NMAT Result</td><td class='row-value'>" . ($nmat_path ? '✓ Provided' : '✗ Missing') . "</td>
+                    " . (strpos($app_data['college'], 'Medicine') !== false && strpos($app_data['college'], 'Accelerated Pathway') === false ? "<td class='row-label'>NMAT Result</td><td class='row-value'>" . ($nmat_path ? '✓ Provided' : '✗ Missing') . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
                 </tr>
                 <tr>
                     <td class='row-label'>Diploma</td><td class='row-value'>" . ($diploma_path ? '✓ Provided' : ($tbf_diploma ? '📋 To be followed' : '✗ Missing')) . "</td>
@@ -514,8 +514,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'Applicant Photo' => $app_data['photo_path'],
             'TOR' => $tor_path,
             'Form 138 (Report Card)' => $form137_path,
-            'Birth Cert' => $birth_cert_path,
-            'NMAT' => $nmat_path,
+            'Birth Cert' => $birth_cert_path
+        ];
+
+        if (strpos($college, 'Medicine') !== false && strpos($college, 'Accelerated Pathway') === false) {
+            $file_map['NMAT'] = $nmat_path;
+        }
+
+        $file_map += [
             'Diploma' => $diploma_path,
             'GWA Cert' => $gwa_path,
             'Entrance Exam' => $entrance_path,
@@ -916,7 +922,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <!-- Document 2: NMAT (Conditional) -->
-                            <?php if (strpos($application['college'], 'Medicine') !== false): ?>
+                            <?php if (strpos($application['college'], 'Medicine') !== false && strpos($application['college'], 'Accelerated Pathway') === false): ?>
                                 <div class="file-upload-wrapper">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-journal-check upload-icon"></i>

@@ -26,6 +26,7 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 
 // Determine if this is a Medicine application OR if multiple colleges are selected
 $is_multiple = (strpos($application['college'], ',') !== false);
+$is_accelerated = (strpos($application['college'], 'Accelerated Pathway for Medicine') !== false);
 $is_medicine = (strpos($application['college'], 'Medicine') !== false) || $is_multiple;
 
 // Dynamic labels based on college selection
@@ -446,7 +447,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </table>
                             </div>
 
-                            <?php if ($is_medicine): ?>
+                            <?php if ($is_medicine && !$is_accelerated): ?>
                                 <h5 class="section-title mt-4">Tertiary Background</h5>
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-12">

@@ -39,7 +39,7 @@ if (is_array($college_input)) {
     } else {
         $college = $college_input;
     }
-    $is_multiple = false;
+    $is_multiple = (strpos($college, ',') !== false);
 }
 
 // Determine if this is a Medicine application (NMD or IMD)

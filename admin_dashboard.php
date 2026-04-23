@@ -339,7 +339,7 @@ if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset(
     // Department-specific view + "All Colleges" applications
     // Special case for Medicine: show both NMD and IMD, but EXCLUDE Accelerated Pathway
     if ($college === 'Medicine') {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') $order_clause");
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE 'Medicine%' OR college LIKE '%, Medicine%' OR college LIKE '%All Colleges%') $order_clause");
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') $order_clause");

@@ -18,8 +18,8 @@ if ($college === 'All' || $college === '' || $college === null) {
     $applications = $stmt->fetchAll();
 } else {
     if ($college === 'Medicine') {
-        // Show all Medicine sub-colleges but EXCLUDE Accelerated Pathway
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE ((college LIKE '%Medicine%' AND college NOT LIKE '%Accelerated%') OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
+        // Show all Medicine sub-colleges but carefully separate from Accelerated Pathway
+        $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE 'Medicine%' OR college LIKE '%, Medicine%' OR college LIKE '%All Colleges%') ORDER BY created_at DESC");
         $stmt->execute([]);
     } else {
         $stmt = $pdo->prepare("SELECT * FROM applications WHERE (college LIKE ? OR college LIKE '%All Colleges%') ORDER BY created_at DESC");

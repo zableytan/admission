@@ -27,11 +27,12 @@ if (!$app) {
     exit;
 }
 
-// RESTRICTION: Doctor of Medicine admins should NOT see Accelerated Pathway applications
+// RESTRICTION: Doctor of Medicine admins should NOT see purely Accelerated Pathway applications
 $admin_college = $_SESSION['admin_college'] ?? '';
 $is_super = $_SESSION['is_super_admin'] ?? false;
 if (!$is_super && $admin_college === 'Medicine') {
-    if (strpos($app['college'], 'Accelerated Pathway') !== false) {
+    $is_valid_medicine = (strpos($app['college'], 'Medicine') === 0 || strpos($app['college'], ', Medicine') !== false || strpos($app['college'], 'All Colleges') !== false);
+    if (!$is_valid_medicine) {
         header("Location: " . $back_url);
         exit;
     }
@@ -405,6 +406,16 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <?= getFileLink($app['birth_cert_path'], 'Birth Cert') ?>
                     </div>
+
+                    <?php if(strpos($app['college'], 'Foreign') !== false): ?>
+                    <div class="doc-item border-primary">
+                        <div>
+                            <div class="fw-bold text-primary">Passport Copy</div>
+                            <div class="small text-muted">International Identification</div>
+                        </div>
+                        <?= getFileLink($app['passport_path'] ?? null, 'Passport Copy') ?>
+                    </div>
+                    <?php endif; ?>
 
                     <?php if(strpos($app['college'], 'Medicine') !== false && strpos($app['college'], 'Accelerated Pathway') === false): ?>
                     <div class="doc-item">

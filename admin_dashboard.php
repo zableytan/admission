@@ -223,24 +223,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $i_date = $_POST['interview_date'];
     $i_time = $_POST['interview_time'];
     $i_link = $_POST['interview_link'];
+    $i_type = $_POST['interview_type'] ?? 'Online';
 
     try {
         // Update database - using ignore error for columns because we'll add them if missing
         try {
-            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_status = 'Scheduled' WHERE id = ?";
+            $sql = "UPDATE applications SET interview_date = ?, interview_time = ?, interview_link = ?, interview_type = ?, interview_status = 'Scheduled' WHERE id = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+            $stmt->execute([$i_date, $i_time, $i_link, $i_type, $app_id]);
         } catch (PDOException $e) {
             // Check if columns exist, if not add them (Self-healing migration)
             if (strpos($e->getMessage(), 'Unknown column') !== false) {
-                $pdo->exec("ALTER TABLE applications 
-                    ADD COLUMN interview_date DATE NULL,
-                    ADD COLUMN interview_time TIME NULL,
-                    ADD COLUMN interview_link TEXT NULL,
-                    ADD COLUMN interview_status VARCHAR(50) DEFAULT 'Not Scheduled'");
+                // Robust migration: Add columns individually to avoid "Duplicate column" errors
+                $cols = [
+                    "interview_date" => "DATE NULL",
+                    "interview_time" => "TIME NULL",
+                    "interview_type" => "VARCHAR(50) DEFAULT 'Online'",
+                    "interview_link" => "TEXT NULL",
+                    "interview_status" => "VARCHAR(50) DEFAULT 'Not Scheduled'"
+                ];
+                foreach ($cols as $col => $def) {
+                    try {
+                        $pdo->exec("ALTER TABLE applications ADD COLUMN $col $def");
+                    } catch (PDOException $ex) {
+                        // Ignore "Duplicate column name" errors
+                    }
+                }
                 // Retry update
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$i_date, $i_time, $i_link, $app_id]);
+                $stmt->execute([$i_date, $i_time, $i_link, $i_type, $app_id]);
             } else {
                 throw $e;
             }
@@ -279,22 +290,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $formatted_date = date('F d, Y', strtotime($i_date));
         $formatted_time = date('h:i A', strtotime($i_time));
 
+        $i_code = $_POST['interview_code'] ?? '';
+        $i_pass = $_POST['interview_password'] ?? '';
+
         $mail->Body = "
-        <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
-            <h2 style='color: #1a237e;'>Interview Schedule Notification</h2>
+        <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>
+            <div style='text-align: center; margin-bottom: 20px;'>
+                <h2 style='color: #1a237e; margin-bottom: 5px;'>Interview Schedule Notification</h2>
+                <p style='color: #666; font-size: 0.9rem;'>" . $current_admin['college'] . " Department</p>
+            </div>
+            
             <p>Dear Applicant,</p>
             <p>We are pleased to invite you for an interview as part of your application process at <strong>Davao Medical School Foundation, Inc.</strong></p>
-            <div style='background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #1a237e; margin: 20px 0;'>
-                <p style='margin: 5px 0;'><strong>Interview Type:</strong> $i_type</p>
-                <p style='margin: 5px 0;'><strong>Date:</strong> $formatted_date</p>
-                <p style='margin: 5px 0;'><strong>Time:</strong> $formatted_time</p>
-                <p style='margin: 5px 0;'><strong>Meeting Link:</strong> <a href='$i_link' style='color: #007bff;'>$i_link</a></p>
+            
+            <div style='background: #f8f9fa; padding: 25px; border-radius: 12px; border-top: 4px solid #1a237e; margin: 25px 0;'>
+                <p style='margin: 10px 0; font-size: 1.1rem;'><strong>Mode:</strong> " . ($i_type === 'Face to Face' ? '📍 Face to Face' : '💻 Online / Virtual') . "</p>
+                <p style='margin: 10px 0;'><strong>Date:</strong> <span style='color: #1a237e; font-weight: bold;'>$formatted_date</span></p>
+                <p style='margin: 10px 0;'><strong>Time:</strong> <span style='color: #1a237e; font-weight: bold;'>$formatted_time</span></p>
+                
+                " . ($i_type === 'Face to Face' ? "
+                <div style='margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;'>
+                    <p style='margin: 5px 0;'><strong>Venue:</strong></p>
+                    <p style='margin: 5px 0; font-size: 1.2rem; color: #1a237e; font-weight: bold;'>$i_link</p>
+                    <p style='margin: 5px 0; font-size: 0.85rem; color: #666;'>Davao Medical School Foundation Campus, Bajada, Davao City</p>
+                </div>
+                " : "
+                <div style='margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;'>
+                    <p style='margin: 5px 0;'><strong>Meeting Link:</strong></p>
+                    <p style='margin: 5px 0;'><a href='$i_link' style='color: #007bff; font-weight: bold; font-size: 1.1rem;'>$i_link</a></p>
+                    " . (!empty($i_code) ? "<p style='margin: 5px 0; font-size: 0.9rem;'><strong>Meeting ID:</strong> $i_code</p>" : "") . "
+                    " . (!empty($i_pass) ? "<p style='margin: 5px 0; font-size: 0.9rem;'><strong>Passcode:</strong> $i_pass</p>" : "") . "
+                </div>
+                ") . "
             </div>
-            <p>" . ($i_type === 'Face to Face' ? 'Please ensure you are at the venue at least 15 minutes before your scheduled time and bring a valid ID.' : 'Please ensure you have a stable internet connection and are present in the virtual meeting room at least 5 minutes before your scheduled time.') . "</p>
-            <p>Should you have any questions or need to reschedule, please contact the <strong>" . $current_admin['college'] . "</strong> department.</p>
-            <br>
-            <p>Best Regards,</p>
-            <p><strong>DMSF Admissions Office</strong><br>" . $current_admin['college'] . " Department</p>
+
+            <div style='background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 20px;'>
+                <strong>Important Note:</strong><br>
+                " . ($i_type === 'Face to Face' ? 'Please arrive at the campus at least 15 minutes before your schedule. Present a valid ID at the security gate and proceed to the venue indicated above.' : 'Please ensure you have a stable internet connection and a working webcam/microphone. Join the virtual meeting at least 5 minutes before your scheduled time.') . "
+            </div>
+
+            <p style='font-size: 0.9rem;'>Should you have any questions or need to reschedule, please reply to this email or contact the <strong>" . $current_admin['college'] . "</strong> department office.</p>
+            
+            <hr style='border: 0; border-top: 1px solid #eee; margin: 30px 0;'>
+            <p style='font-size: 0.8rem; color: #999; text-align: center;'>
+                This is an automated notification from the Davao Medical School Foundation Admission System.<br>
+                &copy; 2026 DMSF Registrar's Office
+            </p>
         </div>";
 
         $mail->send();

@@ -50,6 +50,7 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 $college_applied = trim($application['college'] ?? '');
 // Check for legacy (IMD) or new (Foreign) designation
 $is_imd = (strpos($college_applied, '(IMD)') !== false) || (strpos($college_applied, '(Foreign)') !== false);
+$is_dentistry = (strpos($college_applied, 'Dentistry') !== false);
 
 // 2. POST LOGIC: Process file uploads
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -883,17 +884,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="file" name="photo_file" class="form-control" accept="image/*" required>
                             </div>
 
-                            <!-- Document 1: TOR -->
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-text upload-icon"></i>
                                     <label class="form-label mb-0">2. Transcript of Records (TOR)
-                                        <span class="optional-badge">Optional</span></label>
-                                    <button type="button" class="btn-tbf ms-auto" id="tbf-tor-btn" onclick="toggleTBF('tor')">📋 To be followed</button>
-                                    <input type="hidden" name="tbf_tor" id="tbf_tor" value="">
+                                        <?php if ($is_dentistry): ?>
+                                            <span class="required-badge">Required</span>
+                                        <?php else: ?>
+                                            <span class="optional-badge">Optional</span>
+                                        <?php endif; ?>
+                                    </label>
+                                    <?php if (!$is_dentistry): ?>
+                                        <button type="button" class="btn-tbf ms-auto" id="tbf-tor-btn" onclick="toggleTBF('tor')">📋 To be followed</button>
+                                        <input type="hidden" name="tbf_tor" id="tbf_tor" value="">
+                                    <?php endif; ?>
                                 </div>
                                 <div class="tbf-file-area" id="tbf-tor-area">
-                                    <input type="file" name="tor_file" class="form-control" id="tor_file">
+                                    <input type="file" name="tor_file" class="form-control" id="tor_file" <?= $is_dentistry ? 'required' : '' ?>>
                                 </div>
                             </div>
 
@@ -966,12 +973,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-shield-check upload-icon"></i>
                                     <label class="form-label mb-0">8. Certificate of Good Moral Character
-                                        <span class="optional-badge">Optional</span></label>
-                                    <button type="button" class="btn-tbf ms-auto" id="tbf-good_moral-btn" onclick="toggleTBF('good_moral')">📋 To be followed</button>
-                                    <input type="hidden" name="tbf_good_moral" id="tbf_good_moral" value="">
+                                        <?php if ($is_dentistry): ?>
+                                            <span class="required-badge">Required</span>
+                                        <?php else: ?>
+                                            <span class="optional-badge">Optional</span>
+                                        <?php endif; ?>
+                                    </label>
+                                    <?php if (!$is_dentistry): ?>
+                                        <button type="button" class="btn-tbf ms-auto" id="tbf-good_moral-btn" onclick="toggleTBF('good_moral')">📋 To be followed</button>
+                                        <input type="hidden" name="tbf_good_moral" id="tbf_good_moral" value="">
+                                    <?php endif; ?>
                                 </div>
                                 <div class="tbf-file-area" id="tbf-good_moral-area">
-                                    <input type="file" name="good_moral_file" class="form-control" id="good_moral_file">
+                                    <input type="file" name="good_moral_file" class="form-control" id="good_moral_file" <?= $is_dentistry ? 'required' : '' ?>>
                                 </div>
                             </div>
 

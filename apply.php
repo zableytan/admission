@@ -391,8 +391,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <input type="date" name="nmat_date" class="form-control" required>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">College GWA *</label>
-                                        <input type="number" step="0.01" name="medicine_gwa" class="form-control" required
+                                        <label class="form-label">College GWA (Optional)</label>
+                                        <input type="number" step="0.01" name="medicine_gwa" class="form-control"
                                             placeholder="Enter GWA (e.g. 1.75)">
                                         <div class="helper-text mt-2 mx-1">Your general weighted average.</div>
                                     </div>

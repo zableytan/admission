@@ -34,6 +34,22 @@ $msg = '';
 // Check if user is high-level (Super Admin or Dean)
 $is_high_level = (isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) || (isset($_SESSION['is_dean']) && $_SESSION['is_dean']);
 
+// Handle Global Process PDF Upload (Super Admin only)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_process_pdf' && isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin']) {
+    if (isset($_FILES['process_pdf']) && $_FILES['process_pdf']['error'] == 0) {
+        $target_dir = "uploads/settings/";
+        if (!is_dir($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+        $target_file = $target_dir . "process_after_noa.pdf";
+        if (move_uploaded_file($_FILES['process_pdf']['tmp_name'], $target_file)) {
+            $msg = "Process PDF updated successfully.";
+        } else {
+            $msg = "Error: Failed to upload Process PDF.";
+        }
+    }
+}
+
 // Handle Status Update & File Re-upload (Application Processing)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     $app_id = $_POST['app_id'];
@@ -165,12 +181,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                         if (file_exists($abs_path)) {
                             // Gmail limit is 25MB. We'll use 20MB as a safe threshold.
                             if (filesize($abs_path) < 20 * 1024 * 1024) {
-                                $mail->addAttachment($abs_path, "Signed_Admission_Form_" . str_replace(' ', '_', $s_name) . ".pdf");
+                                $mail->addAttachment($abs_path, "NOA_Signed_" . str_replace(' ', '_', $s_name) . ".pdf");
                                 $attachment_status = "attached to this email";
                             } else {
                                 $attachment_status = "available for download via the link below (file too large to attach)";
                             }
                         }
+                    }
+
+                    // Attach the Process PDF if it exists
+                    $process_pdf_path = "uploads/settings/process_after_noa.pdf";
+                    if (file_exists($process_pdf_path)) {
+                        $mail->addAttachment($process_pdf_path, "Enrollment_Process_Next_Steps.pdf");
                     }
 
                     // Performance optimization
@@ -184,8 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     <p>Dear <strong>$s_name</strong>,</p>
     <p>We are pleased to inform you that your application for admission to the <strong>$app_college</strong> at Davao
         Medical School Foundation, Inc. has been <strong>ACCEPTED</strong>.</p>
-    <p>Your <strong>Signed Admission Form</strong> is $attachment_status. Please keep this for your records and
-        follow the next steps as advised by the registrar.</p>
+    <p>Your <strong>Signed Admission Form (Notice of Admission)</strong> and the <strong>Enrollment Process PDF</strong> are $attachment_status. Please keep these for your records and
+        follow the next steps as advised in the attached documents.</p>
     <p><a href='$signed_doc_url' style='background-color: #1a237e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Download Signed Form</a></p>
     <br>
     <p>Best Regards,</p>
@@ -727,7 +749,7 @@ if ($submission_filter !== 'All') {
             <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
                 <img src="DMSF_Logo.png" alt="DMSF Logo" height="45" class="me-2">
                 <div>
-                    <span class="fw-bold d-block" style="line-height: 1.2;">DMSF</span>
+                    <span class="fw-bold d-block" style="line-height: 1.2;">DMSF (SETTINGS ON)</span>
                     <span class="small opacity-75" style="font-size: 0.7rem;"><?= $college ?> Portal</span>
                 </div>
             </a>
@@ -798,12 +820,54 @@ if ($submission_filter !== 'All') {
                 </div>
             </div>
 
+            <?php if (isset($_SESSION['is_super_admin']) && ($_SESSION['is_super_admin'] == 1 || $_SESSION['is_super_admin'] === true)): ?>
+                <!-- Admission Settings Section (Super Admin Only) - MOVED UP -->
+                <div class="card shadow mb-4 border-0" style="border-radius: 15px; background: #fff; border-left: 5px solid #1a237e !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-gear-fill me-2"></i>Admission Settings</h5>
+                            <?php if (file_exists("uploads/settings/process_after_noa.pdf")): ?>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Process PDF Uploaded
+                                </span>
+                            <?php else: ?>
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Process PDF Missing
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <p class="text-muted small mb-3">Upload the "Enrollment Process" PDF that will be attached to every acceptance email sent to students.</p>
+                        <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-center">
+                            <input type="hidden" name="action" value="upload_process_pdf">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <input type="file" name="process_pdf" class="form-control" accept=".pdf" required>
+                                    <button class="btn btn-primary fw-bold" type="submit">
+                                        <i class="bi bi-cloud-arrow-up-fill me-1"></i> UPDATE PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <?php if (file_exists("uploads/settings/process_after_noa.pdf")): ?>
+                            <div class="col-md-auto">
+                                <a href="uploads/settings/process_after_noa.pdf" target="_blank" class="btn btn-link btn-sm text-decoration-none fw-semibold">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> View Current PDF
+                                </a>
+                            </div>
+                            <?php endif; ?>
+                        </form>
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- DEBUG: Not Super Admin. Value: <?= var_export($_SESSION['is_super_admin'] ?? 'NULL', true) ?> -->
+            <?php endif; ?>
+
             <?php if ($msg): ?>
                 <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
                     <i class="bi bi-info-circle-fill me-2"></i> <?= $msg ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             <?php endif; ?>
+
 
             <?php if ($is_authorized_summary && $college === 'All'): ?>
                 <!-- Super Admin / Dean Summary Dashboard -->

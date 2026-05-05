@@ -51,6 +51,7 @@ $college_applied = trim($application['college'] ?? '');
 // Check for legacy (IMD) or new (Foreign) designation
 $is_imd = (strpos($college_applied, '(IMD)') !== false) || (strpos($college_applied, '(Foreign)') !== false);
 $is_dentistry = (strpos($college_applied, 'Dentistry') !== false);
+$is_nursing = (strpos($college_applied, 'Nursing') !== false);
 
 // 2. POST LOGIC: Process file uploads
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -909,12 +910,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-spreadsheet upload-icon"></i>
                                     <label class="form-label mb-0">3. Form 138 (Report Card)
-                                        <span class="optional-badge">Optional</span></label>
-                                    <button type="button" class="btn-tbf ms-auto" id="tbf-form137-btn" onclick="toggleTBF('form137')">📋 To be followed</button>
-                                    <input type="hidden" name="tbf_form137" id="tbf_form137" value="">
+                                        <?php if ($is_nursing): ?>
+                                            <span class="required-badge">Required</span>
+                                        <?php else: ?>
+                                            <span class="optional-badge">Optional</span>
+                                        <?php endif; ?>
+                                    </label>
+                                    <?php if (!$is_nursing): ?>
+                                        <button type="button" class="btn-tbf ms-auto" id="tbf-form137-btn" onclick="toggleTBF('form137')">📋 To be followed</button>
+                                        <input type="hidden" name="tbf_form137" id="tbf_form137" value="">
+                                    <?php endif; ?>
                                 </div>
                                 <div class="tbf-file-area" id="tbf-form137-area">
-                                    <input type="file" name="form137_file" class="form-control" id="form137_file">
+                                    <input type="file" name="form137_file" class="form-control" id="form137_file" <?= $is_nursing ? 'required' : '' ?>>
                                 </div>
                             </div>
 
@@ -959,12 +967,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-calculator upload-icon"></i>
                                     <label class="form-label mb-0">7. General Weighted Average (GWA)
-                                        <span class="optional-badge">Optional</span></label>
-                                    <button type="button" class="btn-tbf ms-auto" id="tbf-gwa-btn" onclick="toggleTBF('gwa')">📋 To be followed</button>
-                                    <input type="hidden" name="tbf_gwa" id="tbf_gwa" value="">
+                                        <?php if ($is_nursing): ?>
+                                            <span class="required-badge">Required</span>
+                                        <?php else: ?>
+                                            <span class="optional-badge">Optional</span>
+                                        <?php endif; ?>
+                                    </label>
+                                    <?php if (!$is_nursing): ?>
+                                        <button type="button" class="btn-tbf ms-auto" id="tbf-gwa-btn" onclick="toggleTBF('gwa')">📋 To be followed</button>
+                                        <input type="hidden" name="tbf_gwa" id="tbf_gwa" value="">
+                                    <?php endif; ?>
                                 </div>
                                 <div class="tbf-file-area" id="tbf-gwa-area">
-                                    <input type="file" name="gwa_file" class="form-control" id="gwa_file">
+                                    <input type="file" name="gwa_file" class="form-control" id="gwa_file" <?= $is_nursing ? 'required' : '' ?>>
                                 </div>
                             </div>
 

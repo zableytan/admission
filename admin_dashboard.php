@@ -124,7 +124,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                 $s_name = $s_given . ' ' . $s_family;
                 $app_college = $student_data['college'];
 
-                // Split the colleges (if multiple) and find corresponding admins
+                // Filter college for display in email (show only the one being accepted)
+                $display_college = $app_college;
+                $current_admin_college = $_SESSION['admin_college'] ?? 'All';
+                if ($current_admin_college !== 'All') {
+                    $student_colleges = explode(', ', $app_college);
+                    $filtered_colleges = [];
+                    foreach ($student_colleges as $sc) {
+                        // Check if the student's applied college matches or contains the current admin's college filter
+                        if (stripos($sc, $current_admin_college) !== false || stripos($current_admin_college, $sc) !== false) {
+                            $filtered_colleges[] = $sc;
+                        }
+                    }
+                    if (!empty($filtered_colleges)) {
+                        $display_college = implode(', ', $filtered_colleges);
+                    }
+                }
+
+                // Clean up the college name for the email by removing (Filipino) or (Foreign) suffixes
+                $display_college = preg_replace('/\s*\(.*?\)/', '', $display_college);
+
+                // Split the colleges (if multiple) and find corresponding admins for CC
                 $colleges_array = explode(', ', $app_college);
                 $placeholders = implode(',', array_fill(0, count($colleges_array), '?'));
 
@@ -199,12 +219,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
                     $mail->SMTPKeepAlive = true;
 
                     $mail->isHTML(true);
-                    $mail->Subject = "Admission Accepted: $s_name - " . $app_college;
+                    $mail->Subject = "Admission Accepted: $s_name - " . $display_college;
                     $mail->Body = "
 <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
     <h2 style='color: #1a237e;'>Congratulations!</h2>
     <p>Dear <strong>$s_name</strong>,</p>
-    <p>We are pleased to inform you that your application for admission to the <strong>$app_college</strong> at Davao
+    <p>We are pleased to inform you that your application for admission to the <strong>$display_college</strong> at Davao
         Medical School Foundation, Inc. has been <strong>ACCEPTED</strong>.</p>
     <p>Your <strong>Signed Admission Form (Notice of Admission)</strong> and the <strong>Enrollment Process PDF</strong> are $attachment_status. Please keep these for your records and
         follow the next steps as advised in the attached documents.</p>
@@ -300,9 +320,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $mail->SMTPSecure = $smtp_config['encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = $smtp_config['port'];
 
-        $mail->setFrom($smtp_config['from_email'], "DMSF " . $current_admin['college'] . " Admissions");
+        // Clean up college name for email (remove (Filipino)/(Foreign))
+        $admin_college_clean = preg_replace('/\s*\(.*?\)/', '', $current_admin['college']);
+
+        $mail->setFrom($smtp_config['from_email'], "DMSF " . $admin_college_clean . " Admissions");
         if (!empty($admin_email_primary) && filter_var($admin_email_primary, FILTER_VALIDATE_EMAIL)) {
-            $mail->addReplyTo($admin_email_primary, "DMSF " . $current_admin['college'] . " Admissions");
+            $mail->addReplyTo($admin_email_primary, "DMSF " . $admin_college_clean . " Admissions");
         }
         $mail->addAddress($student_email);
 
@@ -319,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>
             <div style='text-align: center; margin-bottom: 20px;'>
                 <h2 style='color: #1a237e; margin-bottom: 5px;'>Interview Schedule Notification</h2>
-                <p style='color: #666; font-size: 0.9rem;'>" . $current_admin['college'] . " Department</p>
+                <p style='color: #666; font-size: 0.9rem;'>$admin_college_clean Department</p>
             </div>
             
             <p>Dear Applicant,</p>

@@ -568,10 +568,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file_links_html .= "</ul>";
 
         $mail->isHTML(true);
-        $mail->Subject = "Admission Submission: " . $student_name . " (" . $college . ")";
+        $display_college = preg_replace('/\s*\(.*?\)/', '', $college);
+        $mail->Subject = "Admission Submission: " . $student_name . " (" . $display_college . ")";
 
         $mail->Body = "<h3>New Admission Application Received</h3>
-                           <p>A new application has been submitted by <strong>$student_name</strong> (#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ") for the <strong>$college</strong>.</p>
+                           <p>A new application has been submitted by <strong>$student_name</strong> (#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ") for the <strong>$display_college</strong>.</p>
                            <p><strong>Documents & Credentials:</strong></p>
                            $file_links_html
                            <p><em>Note: Large files are provided as links to avoid email size limits. Small files are attached directly.</em></p>

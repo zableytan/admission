@@ -38,6 +38,8 @@ if (!$is_super && $admin_college === 'Medicine') {
     }
 }
 
+$is_medicine = (strpos($app['college'], 'Medicine') !== false) && (strpos($app['college'], 'Accelerated') === false);
+
 // Helper for file status
 function getFileLink($path, $label, $tbf = 0) {
     if (!$path) {
@@ -391,6 +393,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         <?= getFileLink($app['tor_path'], 'TOR', $app['tbf_tor'] ?? 0) ?>
                     </div>
 
+                    <?php if (!$is_medicine): ?>
                     <div class="doc-item">
                         <div>
                             <div class="fw-bold text-dark">Form 138 (Report Card)</div>
@@ -398,6 +401,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <?= getFileLink($app['form137_path'], 'Form 138 (Report Card)', $app['tbf_form137'] ?? 0) ?>
                     </div>
+                    <?php endif; ?>
                     
                     <div class="doc-item">
                         <div>

@@ -52,6 +52,7 @@ $college_applied = trim($application['college'] ?? '');
 $is_imd = (strpos($college_applied, '(IMD)') !== false) || (strpos($college_applied, '(Foreign)') !== false);
 $is_dentistry = (strpos($college_applied, 'Dentistry') !== false);
 $is_nursing = (strpos($college_applied, 'Nursing') !== false);
+$is_medicine = (strpos($college_applied, 'Medicine') !== false) && (strpos($college_applied, 'Accelerated') === false);
 
 // 2. POST LOGIC: Process file uploads
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -417,7 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <table class='info-table'>
                 <tr>
                     <td class='row-label'>Transcript (TOR)</td><td class='row-value'>" . ($tor_path ? '✓ Provided' : ($tbf_tor ? '📋 To be followed' : '✗ Missing')) . "</td>
-                    <td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : ($tbf_form137 ? '📋 To be followed' : '✗ Missing')) . "</td>
+                    " . (!$is_medicine ? "<td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . ($form137_path ? '✓ Provided' : ($tbf_form137 ? '📋 To be followed' : '✗ Missing')) . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
                 </tr>
                 <tr>
                     <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . ($birth_cert_path ? '✓ Provided' : '✗ Missing') . "</td>
@@ -515,9 +516,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file_map = [
             'Applicant Photo' => $app_data['photo_path'],
             'TOR' => $tor_path,
-            'Form 138 (Report Card)' => $form137_path,
             'Birth Cert' => $birth_cert_path
         ];
+
+        if (!$is_medicine) {
+            $file_map['Form 138 (Report Card)'] = $form137_path;
+        }
 
         if (strpos($college, 'Medicine') !== false && strpos($college, 'Accelerated Pathway') === false) {
             $file_map['NMAT'] = $nmat_path;
@@ -907,6 +911,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <!-- Document: Form 138 (Report Card) -->
+                            <?php if (!$is_medicine): ?>
                             <div class="file-upload-wrapper">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-file-earmark-spreadsheet upload-icon"></i>
@@ -926,6 +931,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input type="file" name="form137_file" class="form-control" id="form137_file" <?= $is_nursing ? 'required' : '' ?>>
                                 </div>
                             </div>
+                            <?php endif; ?>
 
                             <!-- Document: Birth Certificate -->
                             <div class="file-upload-wrapper">

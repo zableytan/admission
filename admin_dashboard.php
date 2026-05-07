@@ -1153,6 +1153,7 @@ if ($submission_filter !== 'All') {
                                                 <?php
                                                 $doc_icons = [
                                                     'tor_path' => 'file-earmark-text',
+                                                    'form137_path' => 'file-earmark-spreadsheet',
                                                     'birth_cert_path' => 'person-badge',
                                                     'nmat_path' => 'journal-check',
                                                     'diploma_path' => 'award',

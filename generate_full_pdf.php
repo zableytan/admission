@@ -88,6 +88,8 @@ if (!$is_super && $admin_college === 'Medicine') {
     }
 }
 
+$is_medicine = (strpos($app_data['college'], 'Medicine') !== false) && (strpos($app_data['college'], 'Accelerated') === false);
+
 // --- 1. GENERATE SUMMARY PDF (Using Dompdf) ---
 // --- 1. PREPARE LOGO FOR PDF ---
 $logo_path = 'DMSF_Logo.png';
@@ -332,7 +334,7 @@ $html = "
                 <td class='row-label'>Birth Cert (PSA)</td><td class='row-value'>" . (!empty($app_data['birth_cert_path']) ? '✓ Provided' : '✗ Missing') . "</td>
             </tr>
             <tr>
-                <td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . (!empty($app_data['form137_path']) ? '✓ Provided' : (!empty($app_data['tbf_form137']) ? '📋 To be followed' : '✗ Missing')) . "</td>
+                " . (!$is_medicine ? "<td class='row-label'>Form 138 (Report Card)</td><td class='row-value'>" . (!empty($app_data['form137_path']) ? '✓ Provided' : (!empty($app_data['tbf_form137']) ? '📋 To be followed' : '✗ Missing')) . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
                 " . (strpos($app_data['college'], 'Medicine') !== false && strpos($app_data['college'], 'Accelerated Pathway') === false ? "<td class='row-label'>NMAT Result</td><td class='row-value'>" . (!empty($app_data['nmat_path']) ? '✓ Provided' : '✗ Missing') . "</td>" : "<td class='row-label'></td><td class='row-value'></td>") . "
             </tr>
             <tr>
@@ -383,9 +385,12 @@ unlink($temp_summary);
 $file_fields = [
     'Applicant Passport Photo' => $app_data['photo_path'],
     'Transcript of Records (TOR)' => $app_data['tor_path'],
-    'Form 138 (Report Card)' => $app_data['form137_path'],
     'Birth Certificate (PSA)' => $app_data['birth_cert_path']
 ];
+
+if (!$is_medicine) {
+    $file_fields['Form 138 (Report Card)'] = $app_data['form137_path'];
+}
 
 if (strpos($app_data['college'], 'Medicine') !== false && strpos($app_data['college'], 'Accelerated Pathway') === false) {
     $file_fields['NMAT Result'] = $app_data['nmat_path'];

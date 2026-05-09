@@ -1,0 +1,16 @@
+# Disable execution of scripts
+<FilesMatch "\.(php|php5|phtml|exe|sh|py)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Turn off PHP engine
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>

@@ -68,10 +68,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     function handleUpload($file_key, $upload_dir, $app_id)
     {
         if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] === UPLOAD_ERR_OK) {
-            $ext = pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION);
+            $file = $_FILES[$file_key];
+            
+            // Security Config
+            $max_size = 10 * 1024 * 1024; // 10MB
+            $allowed_exts = ['pdf', 'jpg', 'jpeg', 'png'];
+            $allowed_mimes = [
+                'application/pdf',
+                'image/jpeg',
+                'image/png'
+            ];
+
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            
+            // 1. Check extension
+            if (!in_array($ext, $allowed_exts)) return null;
+
+            // 2. Check size
+            if ($file['size'] > $max_size) return null;
+
+            // 3. Check MIME type
+            if (class_exists('finfo')) {
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime = $finfo->file($file['tmp_name']);
+                if (!in_array($mime, $allowed_mimes)) return null;
+            }
+
             $filename = $file_key . "_" . $app_id . "_" . time() . "." . $ext;
             $target = $upload_dir . $filename;
-            if (move_uploaded_file($_FILES[$file_key]['tmp_name'], $target)) {
+            
+            if (move_uploaded_file($file['tmp_name'], $target)) {
+                chmod($target, 0644);
                 return $target;
             }
         }
@@ -99,11 +126,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['other_docs'])) {
         foreach ($_FILES['other_docs']['name'] as $key => $name) {
             if ($_FILES['other_docs']['error'][$key] === UPLOAD_ERR_OK) {
-                $ext = pathinfo($name, PATHINFO_EXTENSION);
-                $filename = "other_" . $app_id . "_" . $key . "_" . time() . "." . $ext;
-                $target = $upload_dir . $filename;
-                if (move_uploaded_file($_FILES['other_docs']['tmp_name'][$key], $target)) {
-                    $other_paths[] = $target;
+                $file_tmp = $_FILES['other_docs']['tmp_name'][$key];
+                $file_size = $_FILES['other_docs']['size'][$key];
+                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                
+                $max_size = 10 * 1024 * 1024;
+                $allowed_exts = ['pdf', 'jpg', 'jpeg', 'png'];
+                $allowed_mimes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+                if (in_array($ext, $allowed_exts) && $file_size <= $max_size) {
+                    if (class_exists('finfo')) {
+                        $finfo = new finfo(FILEINFO_MIME_TYPE);
+                        $mime = $finfo->file($file_tmp);
+                        if (!in_array($mime, $allowed_mimes)) continue;
+                    }
+
+                    $filename = "other_" . $app_id . "_" . $key . "_" . time() . "." . $ext;
+                    $target = $upload_dir . $filename;
+                    if (move_uploaded_file($file_tmp, $target)) {
+                        chmod($target, 0644);
+                        $other_paths[] = $target;
+                    }
                 }
             }
         }

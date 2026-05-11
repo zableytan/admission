@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const data = JSON.parse(savedData);
             Object.keys(data).forEach(name => {
+                if (name === 'csrf_token') return;
                 const element = form.elements[name];
                 if (element) {
                     if (element.type === 'checkbox') {
@@ -60,7 +61,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(form);
         const data = {};
         formData.forEach((value, key) => {
-            // Skip hidden fields like 'college' or 'app_id' as they are usually fixed per session
+            // Skip hidden fields like 'college', 'app_id', and 'csrf_token' as they are session-dependent or fixed
+            if (key === 'csrf_token') return;
             if (form.elements[key] && form.elements[key].type === 'hidden') return;
             
             // For multi-select or multiple checkboxes with same name (if any)

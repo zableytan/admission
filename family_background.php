@@ -674,6 +674,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (savedData) {
                 const data = JSON.parse(savedData);
                 Object.keys(data).forEach(key => {
+                    if (key === 'csrf_token') return;
                     const fields = form.querySelectorAll(`[name="${key}"]`);
                     fields.forEach(field => {
                         if (field.type === 'radio' || field.type === 'checkbox') {
@@ -700,10 +701,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Special handling for checkboxes which FormData adds only if checked
             const checkboxes = form.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(cb => {
-                if(cb.checked) data[cb.name] = 'on';
+                if(cb.checked && cb.name !== 'csrf_token') data[cb.name] = 'on';
             });
             formData.forEach((value, key) => {
-                if (!(value instanceof File)) data[key] = value;
+                if (!(value instanceof File) && key !== 'csrf_token') data[key] = value;
             });
             localStorage.setItem(formId, JSON.stringify(data));
         });

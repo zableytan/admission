@@ -6,8 +6,14 @@
  */
 session_start();
 require 'db.php';
+require 'security.php';
 
 $message = '';
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
 
 // 1. GET LOGIC: Validate Application ID
 if (!isset($_GET['app_id']) || !is_numeric($_GET['app_id'])) {
@@ -32,6 +38,11 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 
 // 2. POST LOGIC: Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $message = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in personal_data.php", 'warning');
+    } else {
     // Collect and sanitize all fields
     $age = filter_input(INPUT_POST, 'age', FILTER_VALIDATE_INT);
     if ($age === false)
@@ -170,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $message = "Error: Could not save personal data. Please try again.";
     }
+    } // Close CSRF verification else block
 }
 ?>
 
@@ -347,6 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
 
                         <form method="POST" autocomplete="off" id="admissionStep2">
+                            <?= csrf_field() ?>
                             <h5 class="section-title">A. Detailed Personal Data</h5>
 
                             <div class="row g-4 mb-4">

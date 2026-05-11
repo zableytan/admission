@@ -7,8 +7,14 @@ use Dompdf\Options;
 
 require 'vendor/autoload.php';
 require 'db.php';
+require 'security.php';
 
 session_start();
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
 
 // Helper functions for PDF generation
 function getBoolText($val)
@@ -56,6 +62,11 @@ $is_medicine = (strpos($college_applied, 'Medicine') !== false) && (strpos($coll
 
 // 2. POST LOGIC: Process file uploads
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $message = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in upload_docs.php", 'warning');
+    } else {
     $upload_dir = 'uploads/';
     $photo_path = null;
     $tor_path = null;
@@ -633,6 +644,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     header("Location: application_complete.php?app_id=$app_id");
     exit;
+    } // Close CSRF verification else block
 }
 ?>
 
@@ -919,6 +931,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <form method="POST" enctype="multipart/form-data" autocomplete="off">
+                            <?= csrf_field() ?>
                             <h5 class="section-title">Required Documents</h5>
                             <p class="text-muted small mb-4">Please upload clear scans or photos of the following (PDF,
                                 JPG, or PNG formats only). Maximum file size: 5MB per file.</p>

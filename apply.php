@@ -8,6 +8,12 @@
 
 // Include the database connection script
 require 'db.php';
+require 'security.php';
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
 
 // --- 1. INITIAL SETUP & GET LOGIC ---
 if (!isset($_GET['college']) && !isset($_POST['college'])) {
@@ -63,6 +69,11 @@ $success = false; // Flag to control form display after success
 
 // --- 2. POST SUBMISSION PROCESSING LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $message = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in apply.php", 'warning');
+    } else {
     // Collect and sanitize all fields
     $family_name = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_SPECIAL_CHARS);
     $given_name = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -185,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = "Database error: Could not save application data. Please check your data types and connection.";
         }
     }
+    } // Close CSRF verification else block
 }
 ?>
 
@@ -353,6 +365,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
 
                         <form method="POST" autocomplete="off" id="admissionStep1">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="college" value="<?= htmlspecialchars($college) ?>">
                             <?php if ($applicant_type): ?>
                                 <input type="hidden" name="applicant_type" value="<?= htmlspecialchars($applicant_type) ?>">

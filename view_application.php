@@ -84,7 +84,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
             <h2 class="fw-bold mb-0"><?= $student_name ?></h2>
             <p class="text-muted">Application ID: #<?= str_pad($app['id'], 5, '0', STR_PAD_LEFT) ?> | 
                 <span class="<?= $app['college'] === 'All Colleges' ? 'badge bg-primary rounded-pill px-2' : '' ?>">
-                    <?= $app['college'] ?>
+                    <?= htmlspecialchars($app['college'] ?? '') ?>
                 </span>
             </p>
         </div>
@@ -132,7 +132,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                     </a>
                 </div>
                 <div class="card-footer bg-light text-center py-3">
-                    <a href="generate_full_pdf.php?id=<?= $app['id'] ?>" target="_blank" class="btn btn-outline-danger btn-sm">
+                    <a href="generate_full_pdf.php?id=<?= htmlspecialchars($app['id'] ?? '') ?>" target="_blank" class="btn btn-outline-danger btn-sm">
                         <i class="bi bi-printer me-1"></i> Generate Full PDF with Attachments (for Printing)
                     </a>
                 </div>
@@ -150,28 +150,28 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <div class="col-md-6">
                             <div class="label">College Applied</div>
-                            <div class="value text-primary font-bold"><?= $app['college'] ?></div>
+                            <div class="value text-primary font-bold"><?= htmlspecialchars($app['college'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Email Address</div>
-                            <div class="value"><?= $app['email'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['email'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Mobile Number</div>
-                            <div class="value"><?= $app['mobile_no'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['mobile_no'] ?? '') ?></div>
                         </div>
                         <div class="col-md-4">
-                            <div class="label">Score (<?= $app['score_type'] ?>)</div>
-                            <div class="value badge bg-light text-dark fs-6"><?= $app['score_value'] ?></div>
+                            <div class="label">Score (<?= htmlspecialchars($app['score_type'] ?? '') ?>)</div>
+                            <div class="value badge bg-light text-dark fs-6"><?= htmlspecialchars($app['score_value'] ?? '') ?></div>
                         </div>
                         <?php if(strpos($app['college'], 'Medicine') !== false && strpos($app['college'], 'Accelerated Pathway') === false): ?>
                         <div class="col-md-4">
                             <div class="label">NMAT Percentile</div>
-                            <div class="value text-danger fs-5"><?= $app['score_value'] ?></div>
+                            <div class="value text-danger fs-5"><?= htmlspecialchars($app['score_value'] ?? '') ?></div>
                         </div>
                         <div class="col-md-4">
                             <div class="label">NMAT Date</div>
-                            <div class="value"><?= $app['nmat_date'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['nmat_date'] ?? '') ?></div>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -185,19 +185,19 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                     <div class="row">
                         <div class="col-md-3">
                             <div class="label">Age</div>
-                            <div class="value"><?= $app['age'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['age'] ?? '') ?></div>
                         </div>
                         <div class="col-md-3">
                             <div class="label">Sex</div>
-                            <div class="value"><?= $app['sex'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['sex'] ?? '') ?></div>
                         </div>
                         <div class="col-md-3">
                             <div class="label">Civil Status</div>
-                            <div class="value"><?= $app['civil_status'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['civil_status'] ?? '') ?></div>
                         </div>
                         <div class="col-md-3">
                             <div class="label">Religion</div>
-                            <div class="value"><?= $app['religion'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['religion'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Date of Birth</div>
@@ -205,7 +205,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         </div>
                         <div class="col-md-6">
                             <div class="label">Place of Birth</div>
-                            <div class="value"><?= $app['place_of_birth'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['place_of_birth'] ?? '') ?></div>
                         </div>
                         <div class="col-md-12 mb-3">
                             <div class="label">Medical History</div>
@@ -215,12 +215,12 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         <div class="col-md-6 mb-3">
                             <div class="label">Vaccination Status</div>
                             <div class="value small">
-                                <strong><?= $app['vax_status'] ?></strong>
+                                <strong><?= htmlspecialchars($app['vax_status'] ?? '') ?></strong>
                                 <?php if($app['vax_status'] == 'Yes'): ?>
                                     <ul class="mb-0 x-small text-muted mt-1">
-                                        <li>1st Dose: <?= $app['vax_dose1'] ?></li>
-                                        <li>2nd Dose: <?= $app['vax_dose2'] ?></li>
-                                        <li>Booster: <?= $app['vax_booster'] ?></li>
+                                        <li>1st Dose: <?= htmlspecialchars($app['vax_dose1'] ?? '') ?></li>
+                                        <li>2nd Dose: <?= htmlspecialchars($app['vax_dose2'] ?? '') ?></li>
+                                        <li>Booster: <?= htmlspecialchars($app['vax_booster'] ?? '') ?></li>
                                     </ul>
                                 <?php endif; ?>
                             </div>
@@ -266,7 +266,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                                 <span class="badge bg-outline-primary border border-primary text-primary px-2 py-1"><?= $m ?></span>
                             <?php endforeach; ?>
                             <?php if($app['motivation_others']): ?>
-                                <span class="badge bg-light text-dark border px-2 py-1">Others: <?= $app['motivation_others'] ?></span>
+                                <span class="badge bg-light text-dark border px-2 py-1">Others: <?= htmlspecialchars($app['motivation_others'] ?? '') ?></span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -276,8 +276,8 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                             <div class="label">Financial Support</div>
                             <div class="value small">
                                 <?php if($app['support_scholarship_flag']): ?>
-                                    <div class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Scholarship: <?= $app['support_scholarship_name'] ?></div>
-                                    <div class="text-muted small ps-4">Status: <?= $app['support_status'] ?></div>
+                                    <div class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Scholarship: <?= htmlspecialchars($app['support_scholarship_name'] ?? '') ?></div>
+                                    <div class="text-muted small ps-4">Status: <?= htmlspecialchars($app['support_status'] ?? '') ?></div>
                                 <?php endif; ?>
                                 <?php if($app['support_parents']) echo '<div>Parents/Family</div>'; ?>
                                 <?php if($app['support_veteran_benefit']) echo '<div>Phil Veteran Benefit</div>'; ?>
@@ -320,22 +320,22 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="label">Learning Style Preference</div>
-                            <div class="value small"><?= $app['learning_style'] ?></div>
+                            <div class="value small"><?= htmlspecialchars($app['learning_style'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <div class="label">Extracurricular Involvement</div>
-                            <div class="value small"><?= $app['extracurricular_involvement'] ?></div>
+                            <div class="value small"><?= htmlspecialchars($app['extracurricular_involvement'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Student Stress Profile</div>
                             <div class="value small">
-                                <div>Level: <strong><?= $app['stress_level'] ?> / 5</strong></div>
-                                <div class="x-small text-muted mt-1">Source: <?= $app['stress_source'] ?></div>
+                                <div>Level: <strong><?= htmlspecialchars($app['stress_level'] ?? '') ?> / 5</strong></div>
+                                <div class="x-small text-muted mt-1">Source: <?= htmlspecialchars($app['stress_source'] ?? '') ?></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Coping Style</div>
-                            <div class="value small"><?= $app['coping_style'] ?></div>
+                            <div class="value small"><?= htmlspecialchars($app['coping_style'] ?? '') ?></div>
                         </div>
                     </div>
                 </div>
@@ -347,30 +347,30 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                 <div class="card-header d-flex justify-content-between">
                     <span>5. Tertiary Academic Background</span>
                     <?php if(isset($app['self_rating'])): ?>
-                        <span class="badge bg-info text-white">Self-Rating: <?= $app['self_rating'] ?>/5</span>
+                        <span class="badge bg-info text-white">Self-Rating: <?= htmlspecialchars($app['self_rating'] ?? '') ?>/5</span>
                     <?php endif; ?>
                 </div>
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-12 mb-3">
                             <div class="label">School & Degree</div>
-                            <div class="value"><?= $app['tertiary_name'] ?> (<?= $app['tertiary_degree'] ?>)</div>
+                            <div class="value"><?= htmlspecialchars($app['tertiary_name'] ?? '') ?> (<?= htmlspecialchars($app['tertiary_degree'] ?? '') ?>)</div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Region & Address</div>
-                            <div class="value text-muted small"><?= $app['tertiary_region'] ?>, <?= $app['tertiary_address'] ?></div>
+                            <div class="value text-muted small"><?= htmlspecialchars($app['tertiary_region'] ?? '') ?>, <?= htmlspecialchars($app['tertiary_address'] ?? '') ?></div>
                         </div>
                         <div class="col-md-3">
                             <div class="label">School Type</div>
-                            <div class="value"><?= $app['tertiary_school_type'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['tertiary_school_type'] ?? '') ?></div>
                         </div>
                         <div class="col-md-3">
                             <div class="label">Course Type</div>
-                            <div class="value"><?= $app['tertiary_course_type'] ?></div>
+                            <div class="value"><?= htmlspecialchars($app['tertiary_course_type'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">General Weighted Average (GWA)</div>
-                            <div class="value fw-bold text-success"><?= $app['tertiary_gwa'] ?></div>
+                            <div class="value fw-bold text-success"><?= htmlspecialchars($app['tertiary_gwa'] ?? '') ?></div>
                         </div>
                         <div class="col-md-6">
                             <div class="label">Academic Honors</div>
@@ -525,7 +525,7 @@ $student_name = htmlspecialchars($app['given_name'] . ' ' . ($app['middle_name']
                         <div class="alert alert-info small py-2">Waiting for admin decision.</div>
                     <?php else: ?>
                         <div class="alert alert-<?= $app['status'] == 'Accepted' ? 'success' : 'danger' ?> small py-2">
-                            This application has been marked as <strong><?= $app['status'] ?></strong>.
+                            This application has been marked as <strong><?= htmlspecialchars($app['status'] ?? '') ?></strong>.
                         </div>
                     <?php endif; ?>
                 </div>

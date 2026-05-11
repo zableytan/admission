@@ -1,0 +1,42 @@
+# Environment files (CONTAINS SENSITIVE DATA)
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+cache/
+
+# Uploads (optional - uncomment if you don't want to track uploads)
+# uploads/*
+# !uploads/.htaccess
+
+# Vendor dependencies (if using Git)
+vendor/
+
+# Composer
+composer.lock
+
+# Node modules (if using npm)
+node_modules/
+
+# Build files
+dist/
+build/

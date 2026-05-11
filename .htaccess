@@ -1,0 +1,16 @@
+# Security .htaccess for DMSF Admission System
+
+# Prevent directory browsing
+Options -Indexes
+
+# Protect sensitive files (.env, .git, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Security Headers (if mod_headers is enabled)
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>

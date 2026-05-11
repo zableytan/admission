@@ -1,6 +1,12 @@
 <?php
 session_start();
 require 'db.php';
+require 'security.php';
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
 
 // Security Check - Only Registrars can access this page
 if (!isset($_SESSION['registrar_id'])) {
@@ -12,6 +18,11 @@ $msg = '';
 
 // Handle Acknowledgement Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $msg = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in registrar_dashboard.php", 'warning');
+    } else {
     $app_id = $_POST['app_id'];
     $action = $_POST['action']; // 'acknowledge' or 'undo'
     
@@ -27,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     } else {
         $msg = "Failed to update record.";
     }
+    } // Close CSRF verification else block
 }
 
 if (isset($_SESSION['flash_msg'])) {
@@ -296,6 +308,7 @@ foreach ($applications as $app) {
                     <p class="text-muted mb-4" id="confirmMessage">Are you sure you want to perform this action?</p>
                     
                     <form method="POST" id="confirmForm">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="app_id" id="confirmAppId">
                         <input type="hidden" name="action" id="confirmAction">
                         

@@ -1,6 +1,18 @@
 <?php
 session_start();
 require 'db.php';
+require 'security.php';
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
+
+// Session security
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
 
 // Security Check - Only Super Admins can access this page
 if (!isset($_SESSION['admin_id']) || !$_SESSION['is_super_admin']) {
@@ -13,6 +25,11 @@ $error = '';
 
 // Handle Account Creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in admin_manage.php", 'warning');
+    } else {
     if ($_POST['action'] === 'create') {
         $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS);
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -111,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $msg = "Admin account deleted successfully.";
         }
     }
+    } // Close CSRF verification else block
 }
 
 // Fetch all admins
@@ -185,6 +203,7 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                     <div class="card-body p-4">
                         <h5 class="card-title fw-bold mb-4">Create New Admin</h5>
                         <form method="POST">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="action" value="create">
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-uppercase">Username</label>
@@ -289,6 +308,7 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                                                 <?php if ($admin['id'] != $_SESSION['admin_id']): ?>
                                                     <form method="POST" style="display:inline;"
                                                         onsubmit="return confirm('Are you sure you want to delete this admin?');">
+                                                        <?= csrf_field() ?>
                                                         <input type="hidden" name="action" value="delete">
                                                         <input type="hidden" name="id" value="<?= $admin['id'] ?>">
                                                         <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -319,6 +339,7 @@ $admins = $pdo->query("SELECT * FROM admins ORDER BY college, username ASC")->fe
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form method="POST">
+                    <?= csrf_field() ?>
                     <div class="modal-body p-4">
                         <input type="hidden" name="action" value="edit">
                         <input type="hidden" name="id" id="editId">

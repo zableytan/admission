@@ -5,6 +5,19 @@ use PHPMailer\PHPMailer\Exception;
 
 require 'vendor/autoload.php';
 require 'db.php';
+require 'security.php';
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+
+// Session security
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_samesite', 'Strict');
 
 // Security Check
 if (!isset($_SESSION['admin_id'])) {
@@ -52,6 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // Handle Status Update & File Re-upload (Application Processing)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $msg = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in admin_dashboard.php (status update)", 'warning');
+    } else {
     $app_id = $_POST['app_id'];
     $decision = $_POST['decision']; // Accepted or Declined
     $student_email = $_POST['student_email'];
@@ -250,6 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
     } else if ($decision === 'Accepted' && !$signed_doc_path && empty($msg)) {
         $msg = "Action failed: Signed document must be uploaded to accept the application.";
     }
+    } // Close CSRF verification else block
 }
 
 // Check for flash message
@@ -260,6 +279,11 @@ if (isset($_SESSION['flash_msg'])) {
 
 // Handle Interview Scheduling
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_interview') {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $msg = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in admin_dashboard.php (interview)", 'warning');
+    } else {
     $app_id = $_POST['app_id'];
     $student_email = $_POST['student_email'];
     $i_date = $_POST['interview_date'];
@@ -390,6 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     header("Location: admin_dashboard.php");
     exit;
+    } // Close CSRF verification else block
 }
 
 // Handle bulk delete for super admins
@@ -861,6 +886,7 @@ if ($submission_filter !== 'All') {
                         </div>
                         <p class="text-muted small mb-3">Upload the "Enrollment Process" PDF that will be attached to every acceptance email sent to students.</p>
                         <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-center">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="action" value="upload_process_pdf">
                             <div class="col-md-6">
                                 <div class="input-group input-group-sm">
@@ -1193,6 +1219,7 @@ if ($submission_filter !== 'All') {
                                                 </div>
 
                                                 <form method="POST" enctype="multipart/form-data" class="action-form">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="app_id" value="<?= $app['id'] ?>">
                                                     <input type="hidden" name="student_email" value="<?= $app['email'] ?>">
 
@@ -1261,6 +1288,7 @@ if ($submission_filter !== 'All') {
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
                 <form method="POST" id="interviewForm">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="set_interview">
                     <input type="hidden" name="app_id" id="interviewAppId">
                     <input type="hidden" name="student_email" id="interviewStudentEmail">

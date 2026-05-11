@@ -27,6 +27,11 @@ $student_name = htmlspecialchars($application['given_name'] . ' ' . $application
 
 // 2. POST LOGIC: Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $message = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in family_background.php", 'warning');
+    } else {
     // --- Collect Family Info ---
     $father_first_name = filter_input(INPUT_POST, 'father_first_name', FILTER_SANITIZE_SPECIAL_CHARS);
     $father_middle_name = filter_input(INPUT_POST, 'father_middle_name', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -169,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $message = "Error: Could not save family data. Please try again.";
     }
+    } // Close CSRF verification else block
 }
 ?>
 
@@ -348,6 +354,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
 
                         <form method="POST" autocomplete="off" id="admissionStep3">
+                            <?= csrf_field() ?>
 
                             <h5 class="section-title">A. Parent Information</h5>
 

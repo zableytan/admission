@@ -1,8 +1,14 @@
 <?php
 session_start();
 require 'db.php';
+require 'security.php';
 
 $message = '';
+
+// Security headers
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
 
 // 1. GET LOGIC: Validate Application ID
 if (!isset($_GET['app_id']) || !is_numeric($_GET['app_id'])) {
@@ -37,6 +43,11 @@ $school_label = $is_medicine ? "Medical School" : "College";
 
 // 2. POST LOGIC: Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $message = "Invalid security token. Please refresh and try again.";
+        log_security_event("CSRF token validation failed in educational_intent.php", 'warning');
+    } else {
     // --- Education & Honors ---
     $primary_school = filter_input(INPUT_POST, 'primary_school', FILTER_SANITIZE_SPECIAL_CHARS);
     $primary_location = filter_input(INPUT_POST, 'primary_location', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -218,6 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "Error: Could not save educational and intent data. Please try again.";
         // You might log $stmt->errorInfo() here for detailed debugging
     }
+    } // Close CSRF verification else block
 }
 ?>
 
@@ -411,6 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
 
                         <form method="POST" autocomplete="off" id="admissionStep4">
+                            <?= csrf_field() ?>
 
                             <h5 class="section-title">A. Educational Background</h5>
 

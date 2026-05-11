@@ -1,16 +1,18 @@
-# Disable execution of scripts
-<FilesMatch "\.(php|php5|phtml|exe|sh|py)$">
-    Order allow,deny
-    Deny from all
+# Prevent PHP execution in uploads directory
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|phps|cgi|pl|exe)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # Prevent directory listing
 Options -Indexes
 
-# Turn off PHP engine
-<IfModule mod_php7.c>
-    php_flag engine off
-</IfModule>
-<IfModule mod_php.c>
-    php_flag engine off
-</IfModule>
+# Force download for certain file types
+<FilesMatch "\.(pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif)$">
+    Header set Content-Disposition attachment
+</FilesMatch>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'db.php';
+require 'security.php';
 
 // Handle Logout
 if (isset($_GET['logout'])) {
@@ -10,28 +11,51 @@ if (isset($_GET['logout'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS);
-    $password = $_POST['password'];
-    $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
-
-    $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
-    $stmt->execute([$username]);
-    $admin = $stmt->fetch();
-
-    if ($admin && password_verify($password, $admin['password'])) {
-        // Double check college if not super admin or dean
-        if (!$admin['is_super_admin'] && !$admin['is_dean'] && $admin['college'] !== $college) {
-            $error = "Access denied: You are not authorized for the " . htmlspecialchars($college) . " department.";
-        } else {
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_college'] = ($admin['is_super_admin'] || $admin['is_dean']) ? $college : $admin['college'];
-            $_SESSION['is_super_admin'] = (bool)$admin['is_super_admin'];
-            $_SESSION['is_dean'] = (bool)$admin['is_dean'];
-            header("Location: admin_dashboard.php");
-            exit;
-        }
+    // Verify CSRF token
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = "Invalid security token. Please refresh and try again.";
     } else {
-        $error = "Invalid username or password.";
+        // Rate limiting: 5 attempts per 5 minutes per IP
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $rate_key = 'login_ip_' . $ip_address;
+        
+        if (!check_rate_limit($rate_key, 5, 300)) {
+            $remaining_time = 300 - (time() - ($_SESSION['rate_limit_' . $rate_key]['first_attempt'] ?? time()));
+            $error = "Too many login attempts. Please try again in " . ceil($remaining_time / 60) . " minutes.";
+            log_security_event("Rate limit exceeded for login from IP: $ip_address", 'warning');
+        } else {
+            $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS);
+            $password = $_POST['password'];
+            $college = filter_input(INPUT_POST, 'college', FILTER_SANITIZE_SPECIAL_CHARS);
+
+            $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
+            $stmt->execute([$username]);
+            $admin = $stmt->fetch();
+
+            if ($admin && password_verify($password, $admin['password'])) {
+                // Double check college if not super admin or dean
+                if (!$admin['is_super_admin'] && !$admin['is_dean'] && $admin['college'] !== $college) {
+                    $error = "Access denied: You are not authorized for the " . htmlspecialchars($college) . " department.";
+                    log_security_event("Unauthorized college access attempt by: $username", 'warning');
+                } else {
+                    // Successful login - reset rate limit
+                    unset($_SESSION['rate_limit_' . $rate_key]);
+                    
+                    $_SESSION['admin_id'] = $admin['id'];
+                    $_SESSION['admin_college'] = ($admin['is_super_admin'] || $admin['is_dean']) ? $college : $admin['college'];
+                    $_SESSION['is_super_admin'] = (bool)$admin['is_super_admin'];
+                    $_SESSION['is_dean'] = (bool)$admin['is_dean'];
+                    
+                    log_security_event("Successful login: $username", 'info');
+                    
+                    header("Location: admin_dashboard.php");
+                    exit;
+                }
+            } else {
+                $error = "Invalid username or password.";
+                log_security_event("Failed login attempt for: $username from IP: $ip_address", 'warning');
+            }
+        }
     }
 }
 ?>
@@ -127,6 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="POST">
+            <?= csrf_field() ?>
             <div class="mb-3">
                 <label class="form-label small fw-bold text-muted">USERNAME</label>
                 <div class="input-group">

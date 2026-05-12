@@ -76,12 +76,15 @@ function sanitize_for_db($data, $max_length = 255) {
  * 
  * @return string The generated token
  */
-function generate_csrf_token() {
+function generate_csrf_token($max_age = 3600) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     
-    if (empty($_SESSION['csrf_token'])) {
+    // Check if token exists and is not expired
+    $is_expired = isset($_SESSION['csrf_token_time']) && (time() - $_SESSION['csrf_token_time'] > $max_age);
+    
+    if (empty($_SESSION['csrf_token']) || $is_expired) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         $_SESSION['csrf_token_time'] = time();
     }

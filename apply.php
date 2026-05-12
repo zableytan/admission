@@ -555,7 +555,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const data = JSON.parse(savedData);
                 Object.keys(data).forEach(key => {
                     const field = form.elements[key];
-                    if (field && field.type !== 'file' && field.type !== 'password') {
+                    if (field && field.type !== 'file' && field.type !== 'password' && key !== 'csrf_token') {
                         if (field.type === 'checkbox') {
                             field.checked = data[key] === field.value;
                         } else {
@@ -571,7 +571,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const formData = new FormData(form);
             const data = {};
             formData.forEach((value, key) => {
-                if (!(value instanceof File)) {
+                if (!(value instanceof File) && key !== 'csrf_token') {
                     data[key] = value;
                 }
             });

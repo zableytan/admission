@@ -1,5 +1,11 @@
 <?php
 // upload_docs.php
+
+// Start session FIRST before any includes
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use Dompdf\Dompdf;
@@ -8,8 +14,6 @@ use Dompdf\Options;
 require 'vendor/autoload.php';
 require 'db.php';
 require 'security.php';
-
-session_start();
 
 // Security headers
 header("X-Frame-Options: SAMEORIGIN");

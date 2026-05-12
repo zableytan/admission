@@ -4,7 +4,9 @@
  * Handles the collection of detailed personal, medical, and legal history (Step 2).
  * Requires an app_id via GET parameter and updates the existing application record.
  */
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require 'db.php';
 require 'security.php';
 

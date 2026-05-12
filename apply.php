@@ -1,10 +1,15 @@
 <?php
 /**
  * apply.php
- * * Handles the dynamic student application form (STEP 1).
+ * Handles the dynamic student application form (STEP 1).
  * Saves basic demographics and academic scores, then redirects to STEP 2 (personal_data.php).
- * ***FILE UPLOAD LOGIC AND FIELD HAVE BEEN REMOVED.***
+ * FILE UPLOAD LOGIC AND FIELD HAVE BEEN REMOVED.
  */
+
+// Start session FIRST before any includes, so CSRF token is consistent across GET and POST
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include the database connection script
 require 'db.php';

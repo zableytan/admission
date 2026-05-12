@@ -55,6 +55,27 @@ $grouped_apps = [];
 foreach ($applications as $app) {
     $grouped_apps[$app['college']][] = $app;
 }
+
+// Summary Stats
+$total_accepted    = count($applications);
+$total_acknowledged = 0;
+foreach ($applications as $app) {
+    if (!empty($app['registrar_acknowledged'])) $total_acknowledged++;
+}
+$total_pending = $total_accepted - $total_acknowledged;
+$total_colleges = count($grouped_apps);
+
+// Per-college breakdown
+$college_stats = [];
+foreach ($grouped_apps as $cname => $capps) {
+    $ack = array_sum(array_column($capps, 'registrar_acknowledged'));
+    $college_stats[] = [
+        'name'  => $cname,
+        'total' => count($capps),
+        'ack'   => $ack,
+        'pct'   => count($capps) > 0 ? round(($ack / count($capps)) * 100) : 0,
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -65,39 +86,113 @@ foreach ($applications as $app) {
     <link rel="icon" type="image/png" href="DMSF_Logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #196199;
-            --bg-light: #f8f9fa;
+            --primary-dark: #124873;
+            --bg-light: #f0f4f8;
         }
 
         body {
             background-color: var(--bg-light);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         .navbar {
-            background: var(--primary-color) !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #196199 0%, #124873 100%) !important;
+            box-shadow: 0 2px 16px rgba(18,72,115,0.18);
         }
 
         .dashboard-container {
             padding: 30px;
         }
 
+        /* ── STAT CARDS ── */
+        .stat-card {
+            border: none;
+            border-radius: 20px;
+            padding: 28px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.12) !important;
+        }
+        .stat-card .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+        }
+        .stat-card .stat-value {
+            font-size: 2.4rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            opacity: 0.75;
+        }
+        .stat-card .stat-sub {
+            font-size: 0.78rem;
+            margin-top: 10px;
+            opacity: 0.65;
+        }
+        /* Colours */
+        .stat-blue  { background: linear-gradient(135deg,#196199,#1e78bf); color:#fff; box-shadow: 0 8px 24px rgba(25,97,153,.30); }
+        .stat-green { background: linear-gradient(135deg,#1a9e5e,#22c97a); color:#fff; box-shadow: 0 8px 24px rgba(26,158,94,.28); }
+        .stat-amber { background: linear-gradient(135deg,#e67e22,#f39c12); color:#fff; box-shadow: 0 8px 24px rgba(230,126,34,.28); }
+        .stat-purple{ background: linear-gradient(135deg,#6f42c1,#9b59b6); color:#fff; box-shadow: 0 8px 24px rgba(111,66,193,.28); }
+
+        .stat-blue  .stat-icon { background: rgba(255,255,255,.18); color:#fff; }
+        .stat-green .stat-icon { background: rgba(255,255,255,.18); color:#fff; }
+        .stat-amber .stat-icon { background: rgba(255,255,255,.18); color:#fff; }
+        .stat-purple.stat-icon { background: rgba(255,255,255,.18); color:#fff; }
+
+        /* ── BREAKDOWN CARD ── */
+        .breakdown-card {
+            background: #fff;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            padding: 24px 28px;
+        }
+        .breakdown-row { margin-bottom: 14px; }
+        .breakdown-row:last-child { margin-bottom: 0; }
+        .college-pill {
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+        .progress { height: 8px; border-radius: 99px; }
+        .progress-bar { border-radius: 99px; transition: width 1s ease; }
+
+        /* ── EXISTING TABLE STYLES ── */
         .card {
             border: none;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
         }
-
         .card-header {
             background: white;
             border-bottom: 1px solid #eee;
             padding: 20px;
             border-radius: 15px 15px 0 0 !important;
         }
-
         .table thead th {
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -107,30 +202,22 @@ foreach ($applications as $app) {
             background: #fcfcfc;
             padding: 15px;
         }
-
         .table tbody td {
             padding: 15px;
             vertical-align: middle;
             font-size: 0.9rem;
         }
-        
         .applicant-name {
             font-weight: 600;
             color: #2c3e50;
             display: block;
         }
-
         .applicant-email {
             font-size: 0.8rem;
             color: #95a5a6;
         }
-        
-        .dropdown-icon {
-            transition: transform 0.3s ease;
-        }
-        [aria-expanded="true"] .dropdown-icon {
-            transform: rotate(180deg);
-        }
+        .dropdown-icon { transition: transform 0.3s ease; }
+        [aria-expanded="true"] .dropdown-icon { transform: rotate(180deg); }
     </style>
 </head>
 <body>
@@ -154,7 +241,9 @@ foreach ($applications as $app) {
 
     <div class="dashboard-container">
         <div class="container-fluid">
-            <div class="row mb-4">
+
+            <!-- Page Header -->
+            <div class="row align-items-center mb-4">
                 <div class="col-md-7">
                     <h3 class="fw-bold mb-1">Registrar Dashboard</h3>
                     <p class="text-muted mb-0">Track accepted students visiting the registrar office</p>
@@ -169,6 +258,101 @@ foreach ($applications as $app) {
                     </span>
                 </div>
             </div>
+
+            <!-- ═══════════════════ SUMMARY SECTION ═══════════════════ -->
+            <div class="row g-4 mb-4">
+
+                <!-- Stat Card: Total Accepted -->
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card stat-blue h-100">
+                        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                        <div class="stat-value"><?= $total_accepted ?></div>
+                        <div class="stat-label">Total Accepted</div>
+                        <div class="stat-sub">Applicants with Accepted status</div>
+                    </div>
+                </div>
+
+                <!-- Stat Card: Acknowledged -->
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card stat-green h-100">
+                        <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+                        <div class="stat-value"><?= $total_acknowledged ?></div>
+                        <div class="stat-label">Acknowledged</div>
+                        <div class="stat-sub">
+                            <?= $total_accepted > 0 ? round(($total_acknowledged / $total_accepted) * 100) : 0 ?>% of total accepted
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stat Card: Pending -->
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card stat-amber h-100">
+                        <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                        <div class="stat-value"><?= $total_pending ?></div>
+                        <div class="stat-label">Pending Visit</div>
+                        <div class="stat-sub">Yet to visit the registrar</div>
+                    </div>
+                </div>
+
+                <!-- Stat Card: Colleges -->
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card stat-purple h-100">
+                        <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
+                        <div class="stat-value"><?= $total_colleges ?></div>
+                        <div class="stat-label">College<?= $total_colleges !== 1 ? 's' : '' ?></div>
+                        <div class="stat-sub">With accepted applicants</div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (!empty($college_stats)): ?>
+            <!-- Per-College Breakdown -->
+            <div class="breakdown-card mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div>
+                        <h5 class="fw-bold mb-1"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Acknowledgement Progress by College</h5>
+                        <p class="text-muted small mb-0">Real-time tracking of registrar acknowledgements per department</p>
+                    </div>
+                    <span class="badge rounded-pill px-3 py-2" style="background:#eef4fb;color:#196199;font-size:0.8rem;font-weight:700;">
+                        <?= $total_acknowledged ?> / <?= $total_accepted ?> Acknowledged
+                    </span>
+                </div>
+
+                <?php foreach ($college_stats as $cs): ?>
+                <div class="breakdown-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="college-pill text-dark fw-semibold" style="font-size:0.85rem;" title="<?= htmlspecialchars($cs['name']) ?>">
+                            <?= htmlspecialchars($cs['name']) ?>
+                        </span>
+                        <span class="ms-3 text-nowrap" style="font-size:0.8rem;">
+                            <?php if ($cs['ack'] === $cs['total']): ?>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">
+                                    <i class="bi bi-check-circle-fill me-1"></i>All Done
+                                </span>
+                            <?php elseif ($cs['ack'] === 0): ?>
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2">
+                                    <i class="bi bi-clock me-1"></i>None yet
+                                </span>
+                            <?php else: ?>
+                                <span class="text-muted fw-semibold"><?= $cs['ack'] ?>/<?= $cs['total'] ?></span>
+                            <?php endif; ?>
+                            <span class="ms-2 fw-bold" style="color:#196199;min-width:38px;display:inline-block;text-align:right;"><?= $cs['pct'] ?>%</span>
+                        </span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar"
+                             role="progressbar"
+                             style="width: <?= $cs['pct'] ?>%; background: <?= $cs['pct'] == 100 ? '#1a9e5e' : ($cs['pct'] == 0 ? '#dee2e6' : 'linear-gradient(90deg,#196199,#1e9be0)') ?>;"
+                             aria-valuenow="<?= $cs['pct'] ?>"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            <!-- ═══════════════════ END SUMMARY ═══════════════════════ -->
 
             <?php if ($msg): ?>
                 <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">

@@ -132,6 +132,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'])) {
         if ($stmt->execute([$decision, $signed_doc_path, $app_id])) {
             $msg = "Application updated to **$decision** successfully.";
 
+            // --- DECLINE EMAIL ---
+            if ($decision === 'Declined') {
+                $decline_reason = trim($_POST['decline_reason'] ?? '');
+
+                $app_stmt = $pdo->prepare("SELECT given_name, family_name, college FROM applications WHERE id = ?");
+                $app_stmt->execute([$app_id]);
+                $student_data = $app_stmt->fetch();
+                $s_name = ($student_data['given_name'] ?? '') . ' ' . ($student_data['family_name'] ?? '');
+                $s_college = preg_replace('/\s*\(.*?\)/', '', $student_data['college'] ?? '');
+
+                $reason_html = !empty($decline_reason)
+                    ? "<div style='background:#fff3cd;border-left:4px solid #f59e0b;padding:15px 20px;border-radius:6px;margin:20px 0;'>
+                           <strong style='color:#856404;'>Reason provided:</strong>
+                           <p style='margin:8px 0 0;color:#333;'>" . nl2br(htmlspecialchars($decline_reason)) . "</p>
+                       </div>"
+                    : '';
+
+                $smtp_config = require 'mail_config.php';
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host       = $smtp_config['host'];
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = $smtp_config['username'];
+                    $mail->Password   = $smtp_config['password'];
+                    $mail->SMTPSecure = $smtp_config['encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = $smtp_config['port'];
+                    $mail->setFrom($smtp_config['from_email'], $smtp_config['from_name']);
+                    $mail->addAddress($student_email, $s_name);
+                    $mail->isHTML(true);
+                    $mail->Subject = "Update on Your DMSF Admission Application";
+                    $mail->Body = "
+<div style='font-family: Arial, sans-serif; color: #333; line-height: 1.7; max-width: 600px; margin: auto;'>
+    <div style='background: #1a237e; padding: 25px 30px; border-radius: 10px 10px 0 0; text-align: center;'>
+        <h2 style='color: white; margin: 0; font-size: 1.3rem; letter-spacing: 0.5px;'>DMSF Admissions Office</h2>
+        <p style='color: rgba(255,255,255,0.75); margin: 5px 0 0; font-size: 0.85rem;'>Davao Medical School Foundation, Inc.</p>
+    </div>
+    <div style='background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;'>
+        <p style='font-size: 1rem;'>Dear <strong>$s_name</strong>,</p>
+        <p>Thank you for your interest in applying to <strong>$s_college</strong> at Davao Medical School Foundation, Inc.</p>
+        <p>After careful review, we regret to inform you that your application has <strong style='color:#dc2626;'>not been approved</strong> at this time.</p>
+        $reason_html
+        <p>We encourage you to continue pursuing your goals and to consider applying again in future admission periods. Should you choose to reapply, please ensure that all fields are filled out completely and accurately, and that all required documents are uploaded in full and in the correct format to avoid similar issues with your application.</p>
+        <p>For questions or further guidance, please do not hesitate to contact our Admissions Office.</p>
+        <hr style='border:none;border-top:1px solid #e5e7eb;margin:25px 0;'>
+        <p style='font-size: 0.85rem; color: #6b7280; text-align: center;'>
+            This is an automated notification from the DMSF Admission System.<br>
+            &copy; " . date('Y') . " DMSF Registrar's Office
+        </p>
+    </div>
+</div>";
+                    $mail->send();
+                    $msg .= " Decline notification sent to applicant.";
+                } catch (Exception $e) {
+                    $msg .= " (Warning: Email failed — " . $mail->ErrorInfo . ")";
+                    error_log("Decline Mailer Error: " . $mail->ErrorInfo);
+                }
+            }
+
             if ($decision === 'Accepted') {
                 // Fetch student name and admin emails for the notification
                 $app_stmt = $pdo->prepare("SELECT given_name, family_name, college FROM applications WHERE id = ?");
@@ -440,7 +499,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Fetch Applications
-$order_clause = "ORDER BY is_submitted DESC, created_at DESC";
+$order_clause = "ORDER BY created_at DESC";
 
 if ((isset($_SESSION['is_super_admin']) && $_SESSION['is_super_admin'] || isset($_SESSION['is_dean']) && $_SESSION['is_dean']) && ($college === 'All' || $college === '' || $college === null)) {
     // Super Admin or Dean viewing all departments
@@ -1039,14 +1098,14 @@ if ($submission_filter !== 'All') {
                             <!-- Submission Filter Buttons -->
                             <div class="btn-group btn-group-sm" role="group" aria-label="Status filter"
                                 id="submissionFilter">
-                                <button type="button" class="btn btn-primary active" data-filter="all" id="filterAll">
+                                <button type="button" class="btn btn-outline-primary" data-filter="all" id="filterAll">
                                     <i class="bi bi-list-ul me-1"></i> Active
                                 </button>
                                 <button type="button" class="btn btn-outline-success" data-filter="accepted"
                                     id="filterAccepted">
                                     <i class="bi bi-check-circle me-1"></i> Accepted
                                 </button>
-                                <button type="button" class="btn btn-outline-success" data-filter="submitted"
+                                <button type="button" class="btn btn-success active" data-filter="submitted"
                                     id="filterSubmitted">
                                     <i class="bi bi-file-earmark-check me-1"></i> Submitted
                                 </button>
@@ -1087,6 +1146,7 @@ if ($submission_filter !== 'All') {
                                     </th>
                                     <th>College/Score</th>
                                     <th>Status</th>
+                                    <th>Date Submitted</th>
                                     <th>Documents</th>
                                     <th class="pe-4 text-center">Actions</th>
                                 </tr>
@@ -1146,6 +1206,14 @@ if ($submission_filter !== 'All') {
                                                 <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
                                                 <?= $app['status'] ?>
                                             </span>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($app['created_at'])): ?>
+                                                <div class="small fw-semibold text-dark"><?= date('M d, Y', strtotime($app['created_at'])) ?></div>
+                                                <div class="x-small text-muted"><?= date('h:i A', strtotime($app['created_at'])) ?></div>
+                                            <?php else: ?>
+                                                <span class="text-muted small">—</span>
+                                            <?php endif; ?>
                                             <?php if (isset($app['interview_status']) && $app['interview_status'] === 'Scheduled'): ?>
                                                 <div class="mt-2 text-center">
                                                     <span
@@ -1237,9 +1305,14 @@ if ($submission_filter !== 'All') {
                                                             </button>
                                                         </div>
                                                         <div class="col-6">
-                                                            <button type="submit" name="decision" value="Declined"
-                                                                class="btn btn-outline-danger btn-sm w-100 fw-bold">
-                                                                DECLINE
+                                                            <button type="button"
+                                                                class="btn btn-outline-danger btn-sm w-100 fw-bold btn-open-decline-modal"
+                                                                data-app-id="<?= $app['id'] ?>"
+                                                                data-student-email="<?= htmlspecialchars($app['email']) ?>"
+                                                                data-student-name="<?= htmlspecialchars(trim($app['given_name'] . ' ' . $app['family_name'])) ?>"
+                                                                data-college="<?= htmlspecialchars(preg_replace('/\s*\(.*?\)/', '', $app['college'])) ?>"
+                                                                data-csrf="<?= htmlspecialchars($_SESSION['csrf_token'] ?? generate_csrf_token()) ?>">
+                                                                <i class="bi bi-x-circle me-1"></i>DECLINE
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1405,7 +1478,7 @@ if ($submission_filter !== 'All') {
         (function () {
             const filterBtns = document.querySelectorAll('#submissionFilter button');
             const searchInput = document.getElementById('searchInput');
-            let activeFilter = 'all';
+            let activeFilter = 'submitted';
 
             function applyFilters() {
                 const searchVal = (searchInput ? searchInput.value.toLowerCase().trim() : '');
@@ -1561,6 +1634,163 @@ if ($submission_filter !== 'All') {
                     }
                 });
             }
+        });
+    </script>
+
+    <!-- ░░ DECLINE REASON MODAL ░░ -->
+    <div class="modal fade" id="declineReasonModal" tabindex="-1" aria-labelledby="declineReasonModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+                <div class="modal-header border-0" style="background:#1a237e;padding:20px 25px;">
+                    <h5 class="modal-title fw-bold text-white" id="declineReasonModalLabel">
+                        <i class="bi bi-x-circle me-2"></i><span id="declineModalTitle">Decline Application</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" enctype="multipart/form-data" id="declineReasonForm">
+                    <input type="hidden" name="csrf_token" id="declineModalCsrf">
+                    <input type="hidden" name="app_id"       id="declineModalAppId">
+                    <input type="hidden" name="student_email" id="declineModalEmail">
+                    <input type="hidden" name="decision" value="Declined">
+
+                    <!-- ── STEP 1: Enter Reason ── -->
+                    <div id="declineStep1">
+                        <div class="modal-body" style="padding:25px;">
+                            <div class="alert alert-warning d-flex align-items-start gap-2 mb-4" style="border-radius:10px;font-size:0.875rem;">
+                                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+                                <span>The applicant will receive an email notification informing them of this decision. A reason is <strong>required</strong>.</span>
+                            </div>
+                            <div class="mb-3">
+                                <label for="declineReasonText" class="form-label fw-bold" style="font-size:0.85rem;text-transform:uppercase;letter-spacing:.5px;color:#374151;">
+                                    Reason for Declining <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="decline_reason" id="declineReasonText" rows="5" required
+                                    class="form-control"
+                                    style="border-radius:10px;border-color:#d1d5db;font-size:0.9rem;resize:vertical;"
+                                    placeholder="e.g. Incomplete documents, GWA does not meet the minimum requirement, NMAT score below threshold…"></textarea>
+                                <div class="form-text text-muted" style="font-size:0.78rem;">This reason will be included in the email sent to the applicant.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0" style="padding:15px 25px;background:#f9fafb;">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary fw-bold px-4" id="btnPreviewEmail">
+                                <i class="bi bi-eye me-1"></i>Preview Email
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── STEP 2: Email Preview ── -->
+                    <div id="declineStep2" style="display:none;">
+                        <div class="modal-body p-0">
+                            <div style="background:#e8eaf6;padding:10px 20px;border-bottom:1px solid #c5cae9;font-size:0.8rem;color:#3949ab;">
+                                <i class="bi bi-envelope me-1"></i>
+                                <strong>Email Preview</strong> &mdash; This is exactly what the applicant will receive.
+                            </div>
+                            <div style="padding:20px;max-height:60vh;overflow-y:auto;background:#f3f4f6;">
+                                <div id="emailPreviewContent" style="background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.08);"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 justify-content-between" style="padding:15px 25px;background:#f9fafb;">
+                            <button type="button" class="btn btn-outline-secondary" id="btnBackToReason">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                            <button type="submit" class="btn btn-danger fw-bold px-4" id="btnConfirmDecline">
+                                <i class="bi bi-send me-1"></i>Confirm &amp; Send
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Decline Modal Logic ──────────────────────────────────────────────
+
+        function buildEmailPreview(studentName, college, reason) {
+            var reasonHtml = '';
+            if (reason.trim()) {
+                var escaped = reason.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+                reasonHtml = "<div style='background:#fff3cd;border-left:4px solid #f59e0b;padding:15px 20px;border-radius:6px;margin:20px 0;'>"
+                           + "<strong style='color:#856404;'>Reason provided:</strong>"
+                           + "<p style='margin:8px 0 0;color:#333;'>" + escaped + "</p>"
+                           + "</div>";
+            }
+            return "<div style='font-family:Arial,sans-serif;color:#333;line-height:1.7;'>"
+                 + "<div style='background:#1a237e;padding:25px 30px;text-align:center;'>"
+                 + "<h2 style='color:white;margin:0;font-size:1.3rem;letter-spacing:.5px;'>DMSF Admissions Office</h2>"
+                 + "<p style='color:rgba(255,255,255,.75);margin:5px 0 0;font-size:.85rem;'>Davao Medical School Foundation, Inc.</p>"
+                 + "</div>"
+                 + "<div style='background:white;padding:30px;border:1px solid #e5e7eb;border-top:none;'>"
+                 + "<p style='font-size:1rem;'>Dear <strong>" + studentName + "</strong>,</p>"
+                 + "<p>Thank you for your interest in applying to <strong>" + college + "</strong> at Davao Medical School Foundation, Inc.</p>"
+                 + "<p>After careful review, we regret to inform you that your application has <strong style='color:#dc2626;'>not been approved</strong> at this time.</p>"
+                 + reasonHtml
+                 + "<p>We encourage you to continue pursuing your goals and to consider applying again in future admission periods. Should you choose to reapply, please ensure that all fields are filled out completely and accurately, and that all required documents are uploaded in full and in the correct format to avoid similar issues with your application.</p>"
+                 + "<p>For questions or further guidance, please do not hesitate to contact our Admissions Office.</p>"
+                 + "<hr style='border:none;border-top:1px solid #e5e7eb;margin:25px 0;'>"
+                 + "<p style='font-size:.85rem;color:#6b7280;text-align:center;'>This is an automated notification from the DMSF Admission System.<br>&copy; <?= date('Y') ?> DMSF Registrar's Office</p>"
+                 + "</div></div>";
+        }
+
+        // Wire every "DECLINE" button to open the modal
+        document.querySelectorAll('.btn-open-decline-modal').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('declineModalAppId').value  = this.dataset.appId;
+                document.getElementById('declineModalEmail').value  = this.dataset.studentEmail;
+                document.getElementById('declineModalCsrf').value   = this.dataset.csrf;
+                document.getElementById('declineReasonText').value  = '';
+                // Always start at Step 1
+                document.getElementById('declineStep1').style.display = '';
+                document.getElementById('declineStep2').style.display = 'none';
+                document.getElementById('declineModalTitle').textContent = 'Decline Application';
+                document.querySelector('#declineReasonModal .modal-dialog').classList.remove('modal-lg');
+                new bootstrap.Modal(document.getElementById('declineReasonModal')).show();
+            });
+        });
+
+        // "Preview Email" button — validate then show Step 2
+        document.getElementById('btnPreviewEmail').addEventListener('click', function() {
+            var reason = document.getElementById('declineReasonText').value.trim();
+            if (!reason) {
+                document.getElementById('declineReasonText').classList.add('is-invalid');
+                return;
+            }
+            document.getElementById('declineReasonText').classList.remove('is-invalid');
+
+            // Get student name & college from the active button's data attributes
+            var appId      = document.getElementById('declineModalAppId').value;
+            var activeBtn  = document.querySelector('.btn-open-decline-modal[data-app-id="' + appId + '"]');
+            var studentName = activeBtn ? (activeBtn.dataset.studentName || 'Applicant') : 'Applicant';
+            var college     = activeBtn ? (activeBtn.dataset.college    || 'the applied program') : 'the applied program';
+
+            document.getElementById('emailPreviewContent').innerHTML = buildEmailPreview(studentName, college, reason);
+
+            // Switch to Step 2 and widen the dialog
+            document.getElementById('declineStep1').style.display = 'none';
+            document.getElementById('declineStep2').style.display = '';
+            document.getElementById('declineModalTitle').textContent = 'Email Preview';
+            document.querySelector('#declineReasonModal .modal-dialog').classList.add('modal-lg');
+        });
+
+        // "Back" button — return to Step 1
+        document.getElementById('btnBackToReason').addEventListener('click', function() {
+            document.getElementById('declineStep2').style.display = 'none';
+            document.getElementById('declineStep1').style.display = '';
+            document.getElementById('declineModalTitle').textContent = 'Decline Application';
+            document.querySelector('#declineReasonModal .modal-dialog').classList.remove('modal-lg');
+        });
+
+        // On final submit — show loading overlay
+        document.getElementById('declineReasonForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            var btn = document.getElementById('btnConfirmDecline');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending…';
+        });
+
+        document.getElementById('declineReasonText').addEventListener('input', function() {
+            this.classList.remove('is-invalid');
         });
     </script>
 </body>

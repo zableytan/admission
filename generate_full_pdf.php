@@ -70,6 +70,27 @@ function getListText($app, $prefix, $fields)
     return !empty($items) ? implode(', ', $items) : 'None';
 }
 
+/**
+ * Detect the real image type from file content (not extension)
+ * and return the type string FPDF expects ('JPEG', 'PNG', 'GIF').
+ * Returns null if the file is not a recognised image.
+ */
+function getFpdfImageType(string $path): ?string
+{
+    $info = @getimagesize($path);
+    if (!$info) {
+        return null; // not a valid image at all
+    }
+    $mime = $info['mime'] ?? '';
+    $map  = [
+        'image/jpeg' => 'JPEG',
+        'image/jpg'  => 'JPEG',
+        'image/png'  => 'PNG',
+        'image/gif'  => 'GIF',
+    ];
+    return $map[$mime] ?? null;
+}
+
 // Fetch complete application data
 $stmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
 $stmt->execute([$app_id]);
@@ -428,6 +449,17 @@ foreach ($file_fields as $label => $path) {
                 $pdf->Cell(0, 10, "Error importing PDF: $label", 0, 1);
             }
         } else if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+            // Detect the real image type from binary content — do NOT trust the extension
+            $fpdf_type = getFpdfImageType($path);
+            if (!$fpdf_type) {
+                // File is not a valid image; add an error page instead of crashing
+                $pdf->addPage();
+                $pdf->SetFont('Helvetica', 'B', 12);
+                $pdf->SetTextColor(200, 0, 0);
+                $pdf->Cell(0, 10, "Error: '$label' could not be read (invalid or corrupt image).", 0, 1);
+                continue;
+            }
+
             $pdf->addPage();
             $pdf->SetFont('Helvetica', 'B', 14);
             $pdf->SetTextColor(26, 35, 126);
@@ -441,13 +473,19 @@ foreach ($file_fields as $label => $path) {
                 $h = $img_info[1];
                 $ratio = $w / $h;
 
-                if ($label === 'Applicant Passport Photo') {
-                    // Render passport photo at a smaller, standard size (60mm width)
-                    $pdf->Image($path, 10, 30, 60);
-                } else if ($ratio > 1) { // Landscape image
-                    $pdf->Image($path, 10, 30, 190);
-                } else { // Portrait image
-                    $pdf->Image($path, 10, 30, 0, 240);
+                try {
+                    if ($label === 'Applicant Passport Photo') {
+                        // Render passport photo at a smaller, standard size (60mm width)
+                        $pdf->Image($path, 10, 30, 60, 0, $fpdf_type);
+                    } else if ($ratio > 1) { // Landscape image
+                        $pdf->Image($path, 10, 30, 190, 0, $fpdf_type);
+                    } else { // Portrait image
+                        $pdf->Image($path, 10, 30, 0, 240, $fpdf_type);
+                    }
+                } catch (Exception $e) {
+                    $pdf->SetFont('Helvetica', 'I', 10);
+                    $pdf->SetTextColor(150, 0, 0);
+                    $pdf->Cell(0, 10, "Image could not be rendered: " . $e->getMessage(), 0, 1);
                 }
             }
         }
@@ -475,10 +513,26 @@ if (!empty($app_data['other_docs_paths'])) {
                 } catch (Exception $e) {
                 }
             } else if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                // Detect real image type from binary content
+                $fpdf_type = getFpdfImageType($path);
+                if (!$fpdf_type) {
+                    $pdf->addPage();
+                    $pdf->SetFont('Helvetica', 'B', 12);
+                    $pdf->SetTextColor(200, 0, 0);
+                    $pdf->Cell(0, 10, "Error: '$label' could not be read (invalid or corrupt image).", 0, 1);
+                    continue;
+                }
                 $pdf->addPage();
                 $pdf->SetFont('Helvetica', 'B', 14);
+                $pdf->SetTextColor(26, 35, 126);
                 $pdf->Cell(0, 10, $label, 0, 1, 'L');
-                $pdf->Image($path, 10, 25, 190);
+                try {
+                    $pdf->Image($path, 10, 25, 190, 0, $fpdf_type);
+                } catch (Exception $e) {
+                    $pdf->SetFont('Helvetica', 'I', 10);
+                    $pdf->SetTextColor(150, 0, 0);
+                    $pdf->Cell(0, 10, "Image could not be rendered: " . $e->getMessage(), 0, 1);
+                }
             }
         }
     }

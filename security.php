@@ -76,7 +76,7 @@ function sanitize_for_db($data, $max_length = 255) {
  * 
  * @return string The generated token
  */
-function generate_csrf_token($max_age = 3600) {
+function generate_csrf_token($max_age = 86400) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -99,7 +99,7 @@ function generate_csrf_token($max_age = 3600) {
  * @param int $max_age Maximum token age in seconds (default: 1 hour)
  * @return bool Whether the token is valid
  */
-function verify_csrf_token($token, $max_age = 3600) {
+function verify_csrf_token($token, $max_age = 86400) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }

@@ -164,8 +164,10 @@
 
         <div class="info-box">
             <h5><i class="bi bi-info-circle me-2"></i> What's Next?</h5>
-            <p>Your documents are under review. You will receive an email once your application status is updated, usually within 24 hours.<br><br>
-                If it takes longer, you may contact your college's Admissions Office using the email found in the "Contact" button at the lower right.</p>
+            <p>Your documents are under review. You will receive an email once your application status is updated,
+                usually within 24 hours.<br><br>
+                If it takes longer, you may contact your college's Admissions Office using the email found in the
+                "Contact" button at the lower right.</p>
         </div>
 
         <a href="index.php" class="btn btn-home">
